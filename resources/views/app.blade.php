@@ -144,20 +144,71 @@
             return replaced;
         }
 
+        // Words that, when found as a sidebar nav-item label, should be renamed.
+        var TEXT_MAP = {
+            'people': { label: 'Creators',  href: '/hvn/admin/creators' },
+            'news':   { label: 'Community', href: '/hvn/admin/community' },
+        };
+
+        function rewireElement(el, map) {
+            if (el.__hvnAdminPatched) return;
+            el.__hvnAdminPatched = true;
+            if (el.tagName === 'A') {
+                el.setAttribute('href', map.href);
+            }
+            // Remove any Angular routerLink so it doesn't re-navigate.
+            el.removeAttribute('routerLink');
+            el.removeAttribute('ng-reflect-router-link');
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', function(e) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                window.location.href = map.href;
+            }, true);
+        }
+
         function patchSidebarLinks() {
-            // Catch every <a>, including ones nested inside Angular components.
+            // 1. href-based: catch every <a href="/admin/people"> or /admin/news.
             document.querySelectorAll('a[href]').forEach(function(a) {
                 var map = hrefMatch(a.getAttribute('href'));
                 if (!map) return;
-                if (a.__hvnAdminPatched) return;
-                a.__hvnAdminPatched = true;
-                a.setAttribute('href', map.href);
+                rewireElement(a, map);
                 replaceLabelText(a, map.oldText, map.label);
-                a.addEventListener('click', function(e) {
-                    e.stopImmediatePropagation();
-                    e.preventDefault();
-                    window.location.href = map.href;
-                }, true);
+            });
+
+            // 2. text-based: walk every text node looking for standalone
+            // "People" / "News" labels (Angular sidebar may render with no href,
+            // using routerLink + click handler on a non-anchor element).
+            var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+            var nodes = [];
+            var node;
+            while ((node = walker.nextNode())) {
+                var t = (node.textContent || '').trim().toLowerCase();
+                if (TEXT_MAP[t]) nodes.push(node);
+            }
+            nodes.forEach(function(n) {
+                var key = n.textContent.trim().toLowerCase();
+                var map = TEXT_MAP[key];
+                if (!map) return;
+                // Climb to the closest interactive container (link, list-item, role=button, etc.)
+                var host = n.parentElement;
+                while (host && host !== document.body) {
+                    var tag = host.tagName;
+                    if (
+                        tag === 'A' ||
+                        host.hasAttribute('routerLink') ||
+                        host.getAttribute('role') === 'button' ||
+                        host.getAttribute('role') === 'menuitem' ||
+                        host.matches('[mat-list-item], [mat-button], .mat-list-item, .nav-item, .menu-item, li')
+                    ) {
+                        break;
+                    }
+                    host = host.parentElement;
+                }
+                if (!host || host === document.body) host = n.parentElement;
+                // Replace the text content of just this node (preserves siblings/icons).
+                n.textContent = n.textContent.replace(/\S.*\S|\S/, map.label);
+                rewireElement(host, map);
             });
         }
 
