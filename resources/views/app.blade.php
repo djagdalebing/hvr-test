@@ -167,8 +167,27 @@
             }, true);
         }
 
+        // Selector for the sidebar containers ONLY — never touch page content,
+        // table headers, breadcrumbs, modal titles, etc. that may also contain
+        // the words "People" or "News".
+        var SIDEBAR_SELECTOR = [
+            'mat-sidenav',
+            'mat-nav-list',
+            '.mat-sidenav',
+            '.mat-nav-list',
+            'aside',
+            'nav.sidebar',
+            '.sidebar',
+            '.side-nav',
+            '.sidenav',
+            '[class*="sidebar"]',
+            '[class*="side-nav"]',
+            '[class*="sidenav"]'
+        ].join(',');
+
         function patchSidebarLinks() {
             // 1. href-based: catch every <a href="/admin/people"> or /admin/news.
+            // This is safe globally — only matches links pointing at those exact paths.
             document.querySelectorAll('a[href]').forEach(function(a) {
                 var map = hrefMatch(a.getAttribute('href'));
                 if (!map) return;
@@ -176,39 +195,41 @@
                 replaceLabelText(a, map.oldText, map.label);
             });
 
-            // 2. text-based: walk every text node looking for standalone
-            // "People" / "News" labels (Angular sidebar may render with no href,
-            // using routerLink + click handler on a non-anchor element).
-            var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
-            var nodes = [];
-            var node;
-            while ((node = walker.nextNode())) {
-                var t = (node.textContent || '').trim().toLowerCase();
-                if (TEXT_MAP[t]) nodes.push(node);
-            }
-            nodes.forEach(function(n) {
-                var key = n.textContent.trim().toLowerCase();
-                var map = TEXT_MAP[key];
-                if (!map) return;
-                // Climb to the closest interactive container (link, list-item, role=button, etc.)
-                var host = n.parentElement;
-                while (host && host !== document.body) {
-                    var tag = host.tagName;
-                    if (
-                        tag === 'A' ||
-                        host.hasAttribute('routerLink') ||
-                        host.getAttribute('role') === 'button' ||
-                        host.getAttribute('role') === 'menuitem' ||
-                        host.matches('[mat-list-item], [mat-button], .mat-list-item, .nav-item, .menu-item, li')
-                    ) {
-                        break;
-                    }
-                    host = host.parentElement;
+            // 2. text-based: scoped strictly to sidebar containers so we don't
+            // rename page headings, table columns, breadcrumbs, etc.
+            var sidebars = document.querySelectorAll(SIDEBAR_SELECTOR);
+            if (!sidebars.length) return;
+            sidebars.forEach(function(sidebar) {
+                var walker = document.createTreeWalker(sidebar, NodeFilter.SHOW_TEXT, null);
+                var nodes = [];
+                var node;
+                while ((node = walker.nextNode())) {
+                    var t = (node.textContent || '').trim().toLowerCase();
+                    if (TEXT_MAP[t]) nodes.push(node);
                 }
-                if (!host || host === document.body) host = n.parentElement;
-                // Replace the text content of just this node (preserves siblings/icons).
-                n.textContent = n.textContent.replace(/\S.*\S|\S/, map.label);
-                rewireElement(host, map);
+                nodes.forEach(function(n) {
+                    var key = n.textContent.trim().toLowerCase();
+                    var map = TEXT_MAP[key];
+                    if (!map) return;
+                    // Climb to the closest interactive container, but stay inside the sidebar.
+                    var host = n.parentElement;
+                    while (host && host !== sidebar) {
+                        var tag = host.tagName;
+                        if (
+                            tag === 'A' ||
+                            host.hasAttribute('routerLink') ||
+                            host.getAttribute('role') === 'button' ||
+                            host.getAttribute('role') === 'menuitem' ||
+                            host.matches('[mat-list-item], [mat-button], .mat-list-item, .nav-item, .menu-item, li')
+                        ) {
+                            break;
+                        }
+                        host = host.parentElement;
+                    }
+                    if (!host || host === sidebar) host = n.parentElement;
+                    n.textContent = n.textContent.replace(/\S.*\S|\S/, map.label);
+                    rewireElement(host, map);
+                });
             });
         }
 
