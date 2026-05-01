@@ -107,159 +107,47 @@
         window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
     }, true);
 
-    // Patch Angular admin sidebar: rename People→Creators and News→Community,
-    // redirecting to HVN admin pages instead of Angular routes /admin/people and /admin/news.
-    (function patchAdminSidebar() {
+    // Admin redirect: when the user clicks the Angular admin's "People" or "News"
+    // sidebar items (or visits those URLs directly), take them to the HVN admin
+    // pages instead. NO DOM mutation — the sidebar labels still read People/News
+    // but the destination is /hvn/admin/creators or /hvn/admin/community.
+    (function adminRedirect() {
         if (window.location.pathname.indexOf('/admin') !== 0) return;
 
-        // Match by href suffix (most reliable — labels can vary, hrefs cannot).
-        var HREF_MAP = {
-            '/admin/people': { label: 'Creators',  href: '/hvn/admin/creators', oldText: 'people' },
-            '/admin/news':   { label: 'Community', href: '/hvn/admin/community', oldText: 'news' },
+        var REDIRECT_MAP = {
+            '/admin/people': '/hvn/admin/creators',
+            '/admin/news':   '/hvn/admin/community',
         };
 
-        function hrefMatch(href) {
-            if (!href) return null;
-            // Strip absolute-URL scheme/host so '/admin/people' matches 'https://site/admin/people'
-            var path = href.replace(/^https?:\/\/[^/]+/, '');
-            for (var k in HREF_MAP) {
+        function targetFor(path) {
+            if (!path) return null;
+            path = path.replace(/^https?:\/\/[^/]+/, '');
+            for (var k in REDIRECT_MAP) {
                 if (path === k || path.indexOf(k + '/') === 0 || path.indexOf(k + '?') === 0) {
-                    return HREF_MAP[k];
+                    return REDIRECT_MAP[k];
                 }
             }
             return null;
         }
 
-        function replaceLabelText(el, oldText, newText) {
-            // Walk text nodes recursively, replace any node whose trimmed lowercase text matches oldText.
-            var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
-            var node, replaced = false;
-            while ((node = walker.nextNode())) {
-                var t = (node.textContent || '').trim().toLowerCase();
-                if (t === oldText) {
-                    node.textContent = node.textContent.replace(/\S.*\S|\S/, newText);
-                    replaced = true;
-                }
-            }
-            return replaced;
-        }
-
-        // Words that, when found as a sidebar nav-item label, should be renamed.
-        var TEXT_MAP = {
-            'people': { label: 'Creators',  href: '/hvn/admin/creators' },
-            'news':   { label: 'Community', href: '/hvn/admin/community' },
-        };
-
-        function rewireElement(el, map) {
-            if (el.__hvnAdminPatched) return;
-            el.__hvnAdminPatched = true;
-            if (el.tagName === 'A') {
-                el.setAttribute('href', map.href);
-            }
-            // Remove any Angular routerLink so it doesn't re-navigate.
-            el.removeAttribute('routerLink');
-            el.removeAttribute('ng-reflect-router-link');
-            el.style.cursor = 'pointer';
-            el.addEventListener('click', function(e) {
-                e.stopImmediatePropagation();
-                e.preventDefault();
-                window.location.href = map.href;
-            }, true);
-        }
-
-        // Selector for the sidebar containers ONLY — never touch page content,
-        // table headers, breadcrumbs, modal titles, etc. that may also contain
-        // the words "People" or "News".
-        var SIDEBAR_SELECTOR = [
-            'mat-sidenav',
-            'mat-nav-list',
-            '.mat-sidenav',
-            '.mat-nav-list',
-            'aside',
-            'nav.sidebar',
-            '.sidebar',
-            '.side-nav',
-            '.sidenav',
-            '[class*="sidebar"]',
-            '[class*="side-nav"]',
-            '[class*="sidenav"]'
-        ].join(',');
-
-        function patchSidebarLinks() {
-            // 1. href-based: catch every <a href="/admin/people"> or /admin/news.
-            // This is safe globally — only matches links pointing at those exact paths.
-            document.querySelectorAll('a[href]').forEach(function(a) {
-                var map = hrefMatch(a.getAttribute('href'));
-                if (!map) return;
-                rewireElement(a, map);
-                replaceLabelText(a, map.oldText, map.label);
-            });
-
-            // 2. text-based: scoped strictly to sidebar containers so we don't
-            // rename page headings, table columns, breadcrumbs, etc.
-            var sidebars = document.querySelectorAll(SIDEBAR_SELECTOR);
-            if (!sidebars.length) return;
-            sidebars.forEach(function(sidebar) {
-                var walker = document.createTreeWalker(sidebar, NodeFilter.SHOW_TEXT, null);
-                var nodes = [];
-                var node;
-                while ((node = walker.nextNode())) {
-                    var t = (node.textContent || '').trim().toLowerCase();
-                    if (TEXT_MAP[t]) nodes.push(node);
-                }
-                nodes.forEach(function(n) {
-                    var key = n.textContent.trim().toLowerCase();
-                    var map = TEXT_MAP[key];
-                    if (!map) return;
-                    // Climb to the closest interactive container, but stay inside the sidebar.
-                    var host = n.parentElement;
-                    while (host && host !== sidebar) {
-                        var tag = host.tagName;
-                        if (
-                            tag === 'A' ||
-                            host.hasAttribute('routerLink') ||
-                            host.getAttribute('role') === 'button' ||
-                            host.getAttribute('role') === 'menuitem' ||
-                            host.matches('[mat-list-item], [mat-button], .mat-list-item, .nav-item, .menu-item, li')
-                        ) {
-                            break;
-                        }
-                        host = host.parentElement;
-                    }
-                    if (!host || host === sidebar) host = n.parentElement;
-                    n.textContent = n.textContent.replace(/\S.*\S|\S/, map.label);
-                    rewireElement(host, map);
-                });
-            });
-        }
-
-        // Global capture-phase click interceptor — catches any element whose ancestor
-        // <a> points at /admin/people or /admin/news, even if patchSidebarLinks missed it
-        // (e.g. dynamically inserted after observer disconnect).
-        document.addEventListener('click', function(e) {
-            var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-            if (!a) return;
-            var map = hrefMatch(a.getAttribute('href'));
-            if (!map) return;
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            window.location.href = map.href;
-        }, true);
-
-        // If the admin user navigates directly to /admin/people or /admin/news,
-        // bounce them to the HVN admin equivalent.
-        var here = window.location.pathname;
-        var hereMap = hrefMatch(here);
-        if (hereMap) {
-            window.location.replace(hereMap.href);
+        // Bounce direct visits to /admin/people or /admin/news.
+        var here = targetFor(window.location.pathname);
+        if (here) {
+            window.location.replace(here);
             return;
         }
 
-        setTimeout(patchSidebarLinks, 300);
-        setTimeout(patchSidebarLinks, 1200);
-        setTimeout(patchSidebarLinks, 3000);
-        var obs = new MutationObserver(function() { patchSidebarLinks(); });
-        obs.observe(document.body, { childList: true, subtree: true });
+        // Capture-phase click interceptor: hard-navigate to the HVN admin page
+        // before Angular's router can handle the click.
+        document.addEventListener('click', function(e) {
+            var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+            if (!a) return;
+            var dest = targetFor(a.getAttribute('href'));
+            if (!dest) return;
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            window.location.href = dest;
+        }, true);
     }());
 
     // Inject "Join as a Creator" inside Angular's auth-page sign-in/register form.
