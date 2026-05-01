@@ -108,51 +108,84 @@
     }, true);
 
     // Patch Angular admin sidebar: rename People→Creators and News→Community,
-    // redirecting to HVN admin pages instead of Angular routes.
+    // redirecting to HVN admin pages instead of Angular routes /admin/people and /admin/news.
     (function patchAdminSidebar() {
         if (window.location.pathname.indexOf('/admin') !== 0) return;
 
-        var ADMIN_LABEL_MAP = {
-            'people':    { label: 'Creators',  href: '/hvn/admin/creators' },
-            'news':      { label: 'Community', href: '/hvn/admin/community' },
+        // Match by href suffix (most reliable — labels can vary, hrefs cannot).
+        var HREF_MAP = {
+            '/admin/people': { label: 'Creators',  href: '/hvn/admin/creators', oldText: 'people' },
+            '/admin/news':   { label: 'Community', href: '/hvn/admin/community', oldText: 'news' },
         };
 
-        function patchSidebarLinks() {
-            var links = document.querySelectorAll('a, [role="menuitem"], nav-item, .nav-item, sidebar a, aside a');
-            links.forEach(function(el) {
-                var text = (el.textContent || '').trim().toLowerCase();
-                for (var key in ADMIN_LABEL_MAP) {
-                    if (text === key) {
-                        var map = ADMIN_LABEL_MAP[key];
-                        if (el.__hvnAdminPatched) return;
-                        el.__hvnAdminPatched = true;
-                        // Replace text node containing the label
-                        el.childNodes.forEach(function(node) {
-                            if (node.nodeType === 3 && node.textContent.trim().toLowerCase() === key) {
-                                node.textContent = map.label;
-                            }
-                        });
-                        // If no direct text node (wrapped in span), find it
-                        var spans = el.querySelectorAll('span');
-                        spans.forEach(function(span) {
-                            if ((span.textContent || '').trim().toLowerCase() === key) {
-                                span.textContent = map.label;
-                            }
-                        });
-                        el.setAttribute('href', map.href);
-                        el.addEventListener('click', function(e) {
-                            e.stopImmediatePropagation();
-                            e.preventDefault();
-                            window.location.href = map.href;
-                        }, true);
-                        break;
-                    }
+        function hrefMatch(href) {
+            if (!href) return null;
+            // Strip absolute-URL scheme/host so '/admin/people' matches 'https://site/admin/people'
+            var path = href.replace(/^https?:\/\/[^/]+/, '');
+            for (var k in HREF_MAP) {
+                if (path === k || path.indexOf(k + '/') === 0 || path.indexOf(k + '?') === 0) {
+                    return HREF_MAP[k];
                 }
+            }
+            return null;
+        }
+
+        function replaceLabelText(el, oldText, newText) {
+            // Walk text nodes recursively, replace any node whose trimmed lowercase text matches oldText.
+            var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+            var node, replaced = false;
+            while ((node = walker.nextNode())) {
+                var t = (node.textContent || '').trim().toLowerCase();
+                if (t === oldText) {
+                    node.textContent = node.textContent.replace(/\S.*\S|\S/, newText);
+                    replaced = true;
+                }
+            }
+            return replaced;
+        }
+
+        function patchSidebarLinks() {
+            // Catch every <a>, including ones nested inside Angular components.
+            document.querySelectorAll('a[href]').forEach(function(a) {
+                var map = hrefMatch(a.getAttribute('href'));
+                if (!map) return;
+                if (a.__hvnAdminPatched) return;
+                a.__hvnAdminPatched = true;
+                a.setAttribute('href', map.href);
+                replaceLabelText(a, map.oldText, map.label);
+                a.addEventListener('click', function(e) {
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                    window.location.href = map.href;
+                }, true);
             });
         }
 
-        setTimeout(patchSidebarLinks, 500);
-        setTimeout(patchSidebarLinks, 1500);
+        // Global capture-phase click interceptor — catches any element whose ancestor
+        // <a> points at /admin/people or /admin/news, even if patchSidebarLinks missed it
+        // (e.g. dynamically inserted after observer disconnect).
+        document.addEventListener('click', function(e) {
+            var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+            if (!a) return;
+            var map = hrefMatch(a.getAttribute('href'));
+            if (!map) return;
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            window.location.href = map.href;
+        }, true);
+
+        // If the admin user navigates directly to /admin/people or /admin/news,
+        // bounce them to the HVN admin equivalent.
+        var here = window.location.pathname;
+        var hereMap = hrefMatch(here);
+        if (hereMap) {
+            window.location.replace(hereMap.href);
+            return;
+        }
+
+        setTimeout(patchSidebarLinks, 300);
+        setTimeout(patchSidebarLinks, 1200);
+        setTimeout(patchSidebarLinks, 3000);
         var obs = new MutationObserver(function() { patchSidebarLinks(); });
         obs.observe(document.body, { childList: true, subtree: true });
     }());
