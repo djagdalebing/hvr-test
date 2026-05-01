@@ -107,33 +107,34 @@
         window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
     }, true);
 
-    // Admin redirect: when the user clicks the Angular admin's "People" or "News"
-    // sidebar items (or visits those URLs directly), take them to the HVN admin
-    // pages instead. NO DOM mutation — the sidebar labels still read People/News
-    // but the destination is /hvn/admin/creators or /hvn/admin/community.
+    // Admin redirect + label rename: when the user clicks the Angular admin's
+    // "People" or "News" sidebar items (or visits those URLs directly), take them
+    // to the HVN admin pages instead. Also rename the labels in place.
     (function adminRedirect() {
         if (window.location.pathname.indexOf('/admin') !== 0) return;
 
-        var REDIRECT_MAP = {
-            '/admin/people': '/hvn/admin/creators',
-            '/admin/news':   '/hvn/admin/community',
+        // path → { dest, label } — anchored on the href so we never touch
+        // unrelated DOM. Each entry only affects <a href="/admin/{key}">.
+        var ITEM_MAP = {
+            '/admin/people': { dest: '/hvn/admin/creators',  label: 'Creators'  },
+            '/admin/news':   { dest: '/hvn/admin/community', label: 'Community' },
         };
 
-        function targetFor(path) {
+        function lookup(path) {
             if (!path) return null;
             path = path.replace(/^https?:\/\/[^/]+/, '');
-            for (var k in REDIRECT_MAP) {
+            for (var k in ITEM_MAP) {
                 if (path === k || path.indexOf(k + '/') === 0 || path.indexOf(k + '?') === 0) {
-                    return REDIRECT_MAP[k];
+                    return ITEM_MAP[k];
                 }
             }
             return null;
         }
 
         // Bounce direct visits to /admin/people or /admin/news.
-        var here = targetFor(window.location.pathname);
+        var here = lookup(window.location.pathname);
         if (here) {
-            window.location.replace(here);
+            window.location.replace(here.dest);
             return;
         }
 
@@ -142,12 +143,49 @@
         document.addEventListener('click', function(e) {
             var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
             if (!a) return;
-            var dest = targetFor(a.getAttribute('href'));
-            if (!dest) return;
+            var match = lookup(a.getAttribute('href'));
+            if (!match) return;
             e.stopImmediatePropagation();
             e.preventDefault();
-            window.location.href = dest;
+            window.location.href = match.dest;
         }, true);
+
+        // Narrow rename: only touches <a href="/admin/people"> and <a href="/admin/news">.
+        // Within each matched anchor we rename ONLY text nodes whose trimmed lowercase
+        // text equals "people" or "news" — sibling icons, badges, and unrelated DOM
+        // are never touched.
+        function renameAnchorLabel(a, oldText, newText) {
+            if (a.__hvnLabelPatched) return;
+            // Walk only the direct descendants of this anchor.
+            var walker = document.createTreeWalker(a, NodeFilter.SHOW_TEXT, null);
+            var node, didReplace = false;
+            while ((node = walker.nextNode())) {
+                var t = (node.textContent || '').trim().toLowerCase();
+                if (t === oldText) {
+                    node.textContent = node.textContent.replace(/\S.*\S|\S/, newText);
+                    didReplace = true;
+                }
+            }
+            if (didReplace) a.__hvnLabelPatched = true;
+        }
+
+        function patchLabels() {
+            // Match by exact href ending — Angular always renders an href on its
+            // routerLink anchors, so this catches the sidebar items reliably.
+            var sel = 'a[href$="/admin/people"], a[href$="/admin/news"]';
+            document.querySelectorAll(sel).forEach(function(a) {
+                var match = lookup(a.getAttribute('href'));
+                if (!match) return;
+                var oldText = a.getAttribute('href').indexOf('/admin/people') !== -1 ? 'people' : 'news';
+                renameAnchorLabel(a, oldText, match.label);
+            });
+        }
+
+        setTimeout(patchLabels, 300);
+        setTimeout(patchLabels, 1200);
+        setTimeout(patchLabels, 3000);
+        var obs = new MutationObserver(function() { patchLabels(); });
+        obs.observe(document.body, { childList: true, subtree: true });
     }());
 
     // Inject "Join as a Creator" inside Angular's auth-page sign-in/register form.
