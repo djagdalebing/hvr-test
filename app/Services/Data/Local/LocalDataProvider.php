@@ -50,29 +50,22 @@ class LocalDataProvider implements DataProvider
     {
         $titles = collect();
         $people = collect();
+        $q = trim((string) $query);
 
-        if (Arr::get($params, 'type') !== 'person') {
-            $useFulltext =
-                config('scout.driver') === 'mysql' &&
-                config('common.site.scout_mysql_mode') === 'fulltext' &&
-                strlen($query) >= 3;
-
-            if ($useFulltext) {
-                $titles = $this->title->search($query)->take(20)->get();
-            } else {
-                $q = $query;
-                $titles = $this->title
-                    ->where(function ($b) use ($q) {
-                        $b->where('name', 'like', "%$q%")
-                          ->orWhere('original_title', 'like', "%$q%");
-                    })
-                    ->orderByRaw(
-                        'CASE WHEN name = ? THEN 0 WHEN name LIKE ? THEN 1 ELSE 2 END, popularity DESC',
-                        [$q, "$q%"]
-                    )
-                    ->take(20)
-                    ->get();
-            }
+        if ($q !== '' && Arr::get($params, 'type') !== 'person') {
+            $like = '%' . $q . '%';
+            $prefix = $q . '%';
+            $titles = $this->title
+                ->where(function ($b) use ($like) {
+                    $b->where('name', 'like', $like)
+                      ->orWhere('original_title', 'like', $like);
+                })
+                ->orderByRaw(
+                    'CASE WHEN name = ? THEN 0 WHEN name LIKE ? THEN 1 ELSE 2 END, popularity DESC',
+                    [$q, $prefix]
+                )
+                ->take(20)
+                ->get();
 
             if ($with = Arr::get($params, 'with')) {
                 $with = array_filter(explode(',', $with));
@@ -80,9 +73,9 @@ class LocalDataProvider implements DataProvider
             }
         }
 
-        if (Arr::get($params, 'type') !== 'title') {
+        if ($q !== '' && Arr::get($params, 'type') !== 'title') {
             $people = app(Person::class)
-                ->search($query)
+                ->search($q)
                 ->take(20)
                 ->get()
                 ->load('popularCredits');

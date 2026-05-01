@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\Data\Local\LocalDataProvider;
 use App\Services\Data\Tmdb\TmdbApi;
+use App\Title;
 use Common\Core\BaseController;
 use Common\Settings\Settings;
 use Illuminate\Http\Request;
@@ -50,7 +51,10 @@ class SearchController extends BaseController
     private function searchUsing($provider, $query)
     {
         if ($provider === 'tmdb') {
-            return app(TmdbApi::class)->search($query, $this->request->all());
+            $results = app(TmdbApi::class)->search($query, $this->request->all());
+            // Creator-uploaded titles only exist locally — always include them
+            // so they're findable regardless of the configured search provider.
+            return $this->prependCreatorTitles($query, $results);
         }
 
         $results = app(LocalDataProvider::class)->search(
@@ -72,9 +76,46 @@ class SearchController extends BaseController
                     return $group->slice(0, $this->request->get('limit', 8));
                 })
                 ->flatten(1)
-                ->sortByDesc('popularity');
+                ->values();
         }
 
         return $results;
+    }
+
+    /**
+     * Prepend any creator-uploaded titles matching the query so they remain
+     * findable even when the active search provider is TMDB-only.
+     */
+    private function prependCreatorTitles($query, $results): Collection
+    {
+        $q = trim((string) $query);
+        if ($q === '') {
+            return collect($results);
+        }
+
+        $creator = Title::whereHas('videos', function ($v) {
+                $v->whereNotNull('user_id');
+            })
+            ->where(function ($b) use ($q) {
+                $b->where('name', 'like', "%$q%")
+                  ->orWhere('original_title', 'like', "%$q%");
+            })
+            ->orderByRaw(
+                'CASE WHEN name = ? THEN 0 WHEN name LIKE ? THEN 1 ELSE 2 END',
+                [$q, "$q%"]
+            )
+            ->take(8)
+            ->get();
+
+        if ($creator->isEmpty()) {
+            return collect($results);
+        }
+
+        return $creator
+            ->concat($results)
+            ->unique(function ($item) {
+                return ($item['tmdb_id'] ?? null) ?: ($item['name'] ?? '') . ($item['model_type'] ?? '');
+            })
+            ->values();
     }
 }
