@@ -64,6 +64,11 @@ class CreatorContentController extends BaseController
         $record->year         = $request->input('year');
         $record->description  = $request->input('description');
         $record->poster       = '/storage/' . $posterPath;
+        // Player's setCoverImage() falls back through video.thumbnail → episode.poster
+        // → title.images[last] → title.backdrop. It does NOT consult title.poster, so
+        // creator titles without a backdrop render as a gray placeholder. Mirror the
+        // poster into backdrop so the title-page header has an image to display.
+        $record->backdrop     = '/storage/' . $posterPath;
         $record->adult        = false;
         $record->is_series    = ($type === 'series') ? true : false;
         $record->popularity   = 1;
