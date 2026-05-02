@@ -62,7 +62,7 @@ return [
     ['name' => 'streaming.show_captions_panel', 'value' => false],
     ['name' => 'streaming.show_category_select', 'value' => false],
     ['name' => 'streaming.streaming.auto_approve', 'value' => true],
-    ['name' => 'streaming.streaming.show_header_play', 'value' => false],
+    ['name' => 'streaming.show_header_play', 'value' => true],
     ['name' => 'streaming.prefer_full', 'value' => true],
     ['name' => 'content.people_index_min_popularity', 'value' => 0],
     ['name' => 'content.search_provider', 'value' => 'local'],
