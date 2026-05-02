@@ -75,9 +75,13 @@ class CreatorContentController extends BaseController
             $videoPath = $request->file('video_file')->store('creator_content/videos', 'public');
             $videoUrl  = '/storage/' . $videoPath;
             $source    = 'local';
+            // Self-hosted MP4/WebM file → play directly in <video> tag.
+            $videoType = Video::VIDEO_TYPE_DIRECT;
         } else {
-            $videoUrl = $request->input('video_url');
-            $source   = 'external';
+            $videoUrl  = $request->input('video_url');
+            $source    = 'external';
+            // YouTube/Vimeo/etc embed iframes; raw .mp4 URLs play directly.
+            $videoType = $this->detectExternalType($videoUrl);
         }
 
         Video::create([
@@ -85,7 +89,7 @@ class CreatorContentController extends BaseController
             'user_id'  => $user->id,
             'name'     => $record->name,
             'url'      => $videoUrl,
-            'type'     => 'video',
+            'type'     => $videoType,
             'category' => 'full',
             'language' => 'en',
             'source'   => $source,
@@ -94,6 +98,32 @@ class CreatorContentController extends BaseController
         ]);
 
         return response()->json(['title' => $record], 201);
+    }
+
+    /**
+     * Choose the right video type for an external URL so the player
+     * picks the correct renderer (iframe embed vs <video> tag).
+     */
+    private function detectExternalType(string $url): string
+    {
+        $host = parse_url($url, PHP_URL_HOST) ?: '';
+        $path = parse_url($url, PHP_URL_PATH) ?: '';
+        $embedHosts = [
+            'youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be',
+            'vimeo.com', 'player.vimeo.com',
+            'dailymotion.com', 'www.dailymotion.com', 'dai.ly',
+            'facebook.com', 'www.facebook.com', 'fb.watch',
+        ];
+        foreach ($embedHosts as $h) {
+            if ($host === $h || str_ends_with($host, '.' . $h)) {
+                return Video::VIDEO_TYPE_EMBED;
+            }
+        }
+        // Direct file extension → playable in a <video> tag.
+        if (preg_match('/\.(mp4|webm|ogg|m3u8|mov)$/i', $path)) {
+            return Video::VIDEO_TYPE_DIRECT;
+        }
+        return Video::VIDEO_TYPE_EXTERNAL;
     }
 
     /**
