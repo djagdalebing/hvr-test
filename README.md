@@ -140,3 +140,4 @@ git push origin main         # → auto-deploys to prod
 Heads up: the Angular source under `frontend-source/` was reconstructed
 from the production source maps. Some interfaces/components are stubbed
 for build compatibility — see `frontend-source/README.md` for caveats.
+<!-- Fri May  8 17:39:56 EDT 2026 -->
