@@ -65,17 +65,23 @@ jobs:
 
       - name: Sync built bundle into public/client
         run: |
-          # Wipe old hashed bundles but keep static assets (favicon, manifest, etc.)
-          find public/client -maxdepth 1 -type f \( -name '*.js' -o -name '*.js.map' -o -name '*.css' -o -name '*.css.map' -o -name 'index.html' \) -delete
-          cp -p frontend-source/dist/client/*.{js,css,html} public/client/ 2>/dev/null || true
-          cp -p frontend-source/dist/client/*.map public/client/ 2>/dev/null || true
-          ls public/client/main-* public/client/styles* 2>/dev/null
+          # Wipe ONLY old JS chunks. Preserve the original styles.*.css (the
+          # full Vebto/Material framework CSS) — our reconstructed SCSS is just
+          # a stub and doesn't include framework styles.
+          find public/client -maxdepth 1 -type f \( -name '*.js' -o -name '*.js.map' -o -name 'index.html' \) -delete
+          # Copy NEW JS only (skip CSS)
+          cp -p frontend-source/dist/client/*.js public/client/ 2>/dev/null || true
+          cp -p frontend-source/dist/client/*.js.map public/client/ 2>/dev/null || true
+          cp -p frontend-source/dist/client/index.html public/client/ 2>/dev/null || true
+          echo "Bundle files in public/client:"
+          ls public/client/main-* public/client/styles* public/client/runtime-* 2>/dev/null
 
-      - name: Update app.blade.php with current bundle hashes
+      - name: Update app.blade.php with current bundle hashes (JS only)
         run: |
           set -e
           # Extract filenames straight out of public/client/
-          STYLES=$(ls public/client/ | grep -E '^styles\.[a-f0-9]+\.css$' | head -1)
+          # NOTE: we deliberately do NOT touch styles.*.css — the original
+          # Vebto framework CSS stays as-is.
           RUNTIME_E2015=$(ls public/client/ | grep -E '^runtime-es2015\.[a-f0-9]+\.js$' | head -1)
           RUNTIME_ES5=$(ls public/client/ | grep -E '^runtime-es5\.[a-f0-9]+\.js$' | head -1)
           POLY_ES2015=$(ls public/client/ | grep -E '^polyfills-es2015\.[a-f0-9]+\.js$' | head -1)
@@ -84,7 +90,6 @@ jobs:
           MAIN_ES5=$(ls public/client/ | grep -E '^main-es5\.[a-f0-9]+\.js$' | head -1)
 
           echo "Detected bundle files:"
-          echo "  styles:           $STYLES"
           echo "  runtime es2015:   $RUNTIME_E2015"
           echo "  runtime es5:      $RUNTIME_ES5"
           echo "  polyfills es2015: $POLY_ES2015"
@@ -92,8 +97,7 @@ jobs:
           echo "  main es2015:      $MAIN_ES2015"
           echo "  main es5:         $MAIN_ES5"
 
-          # Sanity check: all must be set
-          for f in "$STYLES" "$RUNTIME_E2015" "$RUNTIME_ES5" "$POLY_ES2015" "$POLY_ES5" "$MAIN_ES2015" "$MAIN_ES5"; do
+          for f in "$RUNTIME_E2015" "$RUNTIME_ES5" "$POLY_ES2015" "$POLY_ES5" "$MAIN_ES2015" "$MAIN_ES5"; do
             if [ -z "$f" ]; then
               echo "ERROR: a bundle file was not found in public/client/"
               ls public/client/
@@ -102,24 +106,21 @@ jobs:
           done
 
           BLADE=resources/views/app.blade.php
-
-          # Replace any existing hashed reference with the freshly built ones.
-          # Use perl for portable in-place regex (sed -i flags differ between BSD/GNU).
-          perl -pi -e "s|client/styles\.[a-f0-9]+\.css|client/$STYLES|g"            "$BLADE"
           perl -pi -e "s|client/runtime-es2015\.[a-f0-9]+\.js|client/$RUNTIME_E2015|g" "$BLADE"
           perl -pi -e "s|client/runtime-es5\.[a-f0-9]+\.js|client/$RUNTIME_ES5|g"   "$BLADE"
           perl -pi -e "s|client/polyfills-es2015\.[a-f0-9]+\.js|client/$POLY_ES2015|g" "$BLADE"
           perl -pi -e "s|client/polyfills-es5\.[a-f0-9]+\.js|client/$POLY_ES5|g"    "$BLADE"
           perl -pi -e "s|client/main-es2015\.[a-f0-9]+\.js|client/$MAIN_ES2015|g"   "$BLADE"
           perl -pi -e "s|client/main-es5\.[a-f0-9]+\.js|client/$MAIN_ES5|g"         "$BLADE"
-          # Old single-bundle reference (pre-CI) — replace with the new main es2015
+          # Old pre-CI single-bundle reference — replace with new es2015
           perl -pi -e "s|client/runtime\.[a-f0-9]+\.js|client/$RUNTIME_E2015|g"     "$BLADE"
           perl -pi -e "s|client/polyfills\.[a-f0-9]+\.js|client/$POLY_ES2015|g"     "$BLADE"
           perl -pi -e "s|client/main\.[a-f0-9]+\.js|client/$MAIN_ES2015|g"          "$BLADE"
 
-          # Show the script section to verify
           echo "--- updated angular-scripts section ---"
           awk '/@section\(.angular-scripts/,/@endsection/' "$BLADE" | head -20
+          echo "--- styles section (should keep original) ---"
+          awk '/@section\(.angular-styles/,/@endsection/' "$BLADE" | head -10
 
       # ---------- backend prep ----------
       - name: Set up PHP 7.4
