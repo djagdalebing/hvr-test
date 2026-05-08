@@ -35,9 +35,15 @@
         if (t.indexOf('join') !== -1 && t.indexOf('creator') !== -1) {
             return '/creator-signup';
         }
+        var inAdmin = window.location.pathname.indexOf('/admin') === 0;
         for (var key in HVN_TEXT_MAP) {
             if (t === key || new RegExp('\\b' + key + '\\b').test(t)) {
-                return HVN_TEXT_MAP[key];
+                var path = HVN_TEXT_MAP[key];
+                // Inside /admin, route community/creators links to the admin pages
+                if (inAdmin && (path === '/creators' || path === '/community')) {
+                    return '/admin' + path;
+                }
+                return path;
             }
         }
         return null;
@@ -74,27 +80,191 @@
     });
     navObs.observe(document.body, { childList: true, subtree: true });
 
+    // ----- Iframe overlay (shared by both click handlers) -----
+    var ADMIN_OVERLAY_PATHS = ['/admin/creators', '/admin/community'];
+    var IFRAME_ID = 'hvn-admin-iframe';
+    var iframeDest = null;
+
+    function isAdminOverlayPath(path) {
+        if (!path) return false;
+        for (var i = 0; i < ADMIN_OVERLAY_PATHS.length; i++) {
+            var p = ADMIN_OVERLAY_PATHS[i];
+            if (path === p || path.indexOf(p + '/') === 0 || path.indexOf(p + '?') === 0) return true;
+        }
+        return false;
+    }
+
+    function findContentHost() {
+        return document.querySelector('.content-inner')
+            || document.querySelector('mat-sidenav-content')
+            || document.querySelector('sidenav main')
+            || document.querySelector('main')
+            || document.body;
+    }
+
+    var iframeHost = null;
+    var iframeRepositionTimer = null;
+    var sidebarPatchedLink = null;
+    var sidebarPatchedClasses = [];
+    var sidebarDeactivated = []; // [{el, classes}]
+
+    // Stable class identifier on each SPA sidebar nav-item (set by Angular component, untouched by our shim).
+    var DEST_TO_SIDEBAR_CLASS = {
+        '/admin/creators':  'route-nav-item.people',
+        '/admin/community': 'route-nav-item.news',
+    };
+
+    function findSpaSidebarLink(dest) {
+        var cls = DEST_TO_SIDEBAR_CLASS[dest];
+        if (!cls) return null;
+        return document.querySelector('a.' + cls);
+    }
+
+    function getActiveClassesFromCurrent() {
+        // Sample the SPA's currently-active link to learn what classes mean "active"
+        var probes = ['sidenav a.active', 'sidenav a.router-link-active', 'aside a.active', 'nav a.active', 'a.router-link-active'];
+        for (var i = 0; i < probes.length; i++) {
+            var el = document.querySelector(probes[i]);
+            if (el) {
+                return el.className.split(/\s+/).filter(function(c) { return /active/i.test(c); });
+            }
+        }
+        return ['active', 'router-link-active', 'router-link-active-exact'];
+    }
+
+    function activateSidebarFor(dest) {
+        deactivateSidebar(); // reset previous state
+        var link = findSpaSidebarLink(dest);
+        if (!link) return;
+        var activeClasses = getActiveClassesFromCurrent();
+        // Remove active from any currently-active siblings so highlight moves over
+        var currents = document.querySelectorAll('sidenav a.router-link-active, sidenav a.active, aside a.active, nav a.active, a.router-link-active-exact');
+        for (var i = 0; i < currents.length; i++) {
+            var el = currents[i];
+            if (el === link) continue;
+            var removed = activeClasses.filter(function(c) { return el.classList.contains(c); });
+            removed.forEach(function(c) { el.classList.remove(c); });
+            if (removed.length) sidebarDeactivated.push({el: el, classes: removed});
+        }
+        // Add active classes to our link
+        activeClasses.forEach(function(c) { link.classList.add(c); });
+        sidebarPatchedLink = link;
+        sidebarPatchedClasses = activeClasses;
+    }
+
+    function deactivateSidebar() {
+        if (sidebarPatchedLink) {
+            sidebarPatchedClasses.forEach(function(c) { sidebarPatchedLink.classList.remove(c); });
+        }
+        sidebarDeactivated.forEach(function(rec) {
+            rec.classes.forEach(function(c) { rec.el.classList.add(c); });
+        });
+        sidebarPatchedLink = null;
+        sidebarPatchedClasses = [];
+        sidebarDeactivated = [];
+    }
+
+    function positionIframeOverHost(iframe, host) {
+        var r = host.getBoundingClientRect();
+        // Use fixed positioning relative to viewport, sized from the host's rect.
+        iframe.style.top    = r.top + 'px';
+        iframe.style.left   = r.left + 'px';
+        iframe.style.width  = r.width + 'px';
+        iframe.style.height = r.height + 'px';
+    }
+
+    function showOverlay(dest) {
+        if (window.location.pathname.indexOf('/admin') !== 0) {
+            window.location.href = dest;
+            return;
+        }
+        if (iframeDest === dest) return;
+        var host = findContentHost();
+        if (!host) { window.location.href = dest; return; }
+
+        var iframe = document.getElementById(IFRAME_ID);
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = IFRAME_ID;
+            iframe.style.cssText = 'position:fixed;border:0;background:#fff;z-index:50;';
+            document.body.appendChild(iframe);
+            // Hide host's children so the SPA's "real" content underneath doesn't show.
+            Array.prototype.forEach.call(host.children, function(c) {
+                if (c !== iframe) { c.dataset.__hvnHidden = c.style.visibility || ''; c.style.visibility = 'hidden'; }
+            });
+            iframeHost = host;
+            // Track resizes & SPA layout changes
+            window.addEventListener('resize', schedulePosition);
+            schedulePosition();
+        }
+        positionIframeOverHost(iframe, host);
+        iframe.src = dest + (dest.indexOf('?') === -1 ? '?bare=1' : '&bare=1');
+        iframeDest = dest;
+        try { history.pushState({hvnOverlay: dest}, '', dest); } catch (err) {}
+        activateSidebarFor(dest);
+    }
+
+    function schedulePosition() {
+        clearTimeout(iframeRepositionTimer);
+        iframeRepositionTimer = setTimeout(function() {
+            var iframe = document.getElementById(IFRAME_ID);
+            if (iframe && iframeHost) positionIframeOverHost(iframe, iframeHost);
+        }, 50);
+    }
+
+    function hideOverlay() {
+        var iframe = document.getElementById(IFRAME_ID);
+        if (!iframe) { iframeDest = null; return; }
+        iframe.remove();
+        if (iframeHost) {
+            Array.prototype.forEach.call(iframeHost.children, function(c) {
+                if ('__hvnHidden' in c.dataset) {
+                    c.style.visibility = c.dataset.__hvnHidden;
+                    delete c.dataset.__hvnHidden;
+                }
+            });
+        }
+        iframeHost = null;
+        iframeDest = null;
+        window.removeEventListener('resize', schedulePosition);
+        deactivateSidebar();
+    }
+
     // Intercept ALL link clicks (capture phase) — catches any remaining HVN hrefs
     document.addEventListener('click', function (e) {
         var a = e.target && e.target.closest ? e.target.closest('a') : null;
         if (!a) return;
         var href = a.getAttribute('href') || '';
+        var inAdmin = window.location.pathname.indexOf('/admin') === 0;
 
         // Text-based check takes priority — corrects Angular's wrong hrefs (e.g. "Join as Creator" → /creator-signup)
         var hvnPath = hvnPathForText(a.textContent);
         if (hvnPath) {
             e.stopImmediatePropagation();
             e.preventDefault();
-            window.location.href = hvnPath;
+            if (inAdmin && isAdminOverlayPath(hvnPath)) {
+                showOverlay(hvnPath);
+            } else {
+                window.location.href = hvnPath;
+            }
             return;
         }
 
-        // Force hard navigation for HVN paths
+        // Force hard navigation for HVN paths (or overlay if inside admin)
         if (isHvnPath(href)) {
             e.stopImmediatePropagation();
             e.preventDefault();
-            window.location.href = href;
+            if (inAdmin && isAdminOverlayPath(href)) {
+                showOverlay(href);
+            } else {
+                window.location.href = href;
+            }
             return;
+        }
+
+        // If user clicked any OTHER link while overlay is up, dismiss it so SPA can render the new route.
+        if (iframeDest && !isAdminOverlayPath(href)) {
+            hideOverlay();
         }
 
         // Clean trailing %20 from other links
@@ -116,8 +286,10 @@
         // path → { dest, label } — anchored on the href so we never touch
         // unrelated DOM. Each entry only affects <a href="/admin/{key}">.
         var ITEM_MAP = {
-            '/admin/people': { dest: '/hvn/admin/creators',  label: 'Creators'  },
-            '/admin/news':   { dest: '/hvn/admin/community', label: 'Community' },
+            '/admin/people': { dest: '/admin/creators',  label: 'Creators'  },
+            '/admin/news':   { dest: '/admin/community', label: 'Community' },
+            '/creators':     { dest: '/admin/creators',  label: 'Creators'  },
+            '/community':    { dest: '/admin/community', label: 'Community' },
         };
 
         function lookup(path) {
@@ -131,15 +303,14 @@
             return null;
         }
 
-        // Bounce direct visits to /admin/people or /admin/news.
+        // Bounce direct visits to /admin/people or /admin/news to their overlay equivalents.
         var here = lookup(window.location.pathname);
         if (here) {
             window.location.replace(here.dest);
             return;
         }
 
-        // Capture-phase click interceptor: hard-navigate to the HVN admin page
-        // before Angular's router can handle the click.
+        // Click interceptor for sidebar items mapped via ITEM_MAP (People/News, etc.).
         document.addEventListener('click', function(e) {
             var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
             if (!a) return;
@@ -147,8 +318,18 @@
             if (!match) return;
             e.stopImmediatePropagation();
             e.preventDefault();
-            window.location.href = match.dest;
+            showOverlay(match.dest);
         }, true);
+
+        // Back/forward button support.
+        window.addEventListener('popstate', function() {
+            var path = window.location.pathname;
+            if (isAdminOverlayPath(path)) {
+                showOverlay(path);
+            } else if (iframeDest) {
+                hideOverlay();
+            }
+        });
 
         // Narrow rename: only touches <a href="/admin/people"> and <a href="/admin/news">.
         // Within each matched anchor we rename ONLY text nodes whose trimmed lowercase
@@ -243,14 +424,17 @@
 
 @section('angular-styles')
     {{--angular styles begin--}}
-		<link rel="stylesheet" href="client/styles.dd30edb2e30333fe4043.css" media="print" onload="this.media='all'">
+		<link rel="stylesheet" href="client/styles.121110d50585c52c41c6.css" media="print" onload="this.media='all'">
 	{{--angular styles end--}}
 @endsection
 
 @section('angular-scripts')
     {{--angular scripts begin--}}
-		<script src="client/runtime.da6032f6256ba37882c7.js" defer=""></script>
-		<script src="client/polyfills.d433a9329e434544e226.js" defer=""></script>
-		<script src="client/main.51d3ab87516a2e615d53.js" defer=""></script>
+		<script src="client/runtime-es2015.c3e56a4fa5c2ea84b646.js" type="module"></script>
+		<script src="client/runtime-es5.c3e56a4fa5c2ea84b646.js" nomodule defer></script>
+		<script src="client/polyfills-es2015.d969de841f4a9c1b338c.js" type="module"></script>
+		<script src="client/polyfills-es5.38fac56fdf9abe29758f.js" nomodule defer></script>
+		<script src="client/main-es2015.4ce3895cfa1ee2b59128.js" type="module"></script>
+		<script src="client/main-es5.4ce3895cfa1ee2b59128.js" nomodule defer></script>
 	{{--angular scripts end--}}
 @endsection

@@ -7,11 +7,11 @@
     <p>Review, hide, or delete community discussions.</p>
 </div>
 
-<form class="admin-search-bar" method="GET" action="/hvn/admin/community">
+<form class="admin-search-bar" method="GET" action="/admin/community">
     <input type="text" name="q" value="{{ $search }}" placeholder="Search by post title…">
     <button type="submit">Search</button>
     @if($search)
-        <a href="/hvn/admin/community" style="align-self:center;font-size:13px;color:#555;text-decoration:none;white-space:nowrap;">Clear</a>
+        <a href="/admin/community" style="align-self:center;font-size:13px;color:#555;text-decoration:none;white-space:nowrap;">Clear</a>
     @endif
 </form>
 
@@ -55,13 +55,14 @@
                 <td style="color:#555;font-size:12px;white-space:nowrap;">{{ $post->created_at->diffForHumans() }}</td>
                 <td>
                     <div class="action-btns">
-                        <form method="POST" action="/hvn/admin/community/{{ $post->id }}/hide" style="margin:0;">
+                        <a href="/admin/community/{{ $post->id }}/edit" class="btn-action">Edit</a>
+                        <form method="POST" action="/admin/community/{{ $post->id }}/hide" style="margin:0;">
                             @csrf
                             <button type="submit" class="btn-action">
                                 {{ $post->status === 'published' ? 'Hide' : 'Restore' }}
                             </button>
                         </form>
-                        <form method="POST" action="/hvn/admin/community/{{ $post->id }}" style="margin:0;"
+                        <form method="POST" action="/admin/community/{{ $post->id }}" style="margin:0;"
                               onsubmit="return confirm('Permanently delete this post and all its comments?')">
                             @csrf
                             @method('DELETE')

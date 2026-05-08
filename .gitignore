@@ -1,0 +1,26 @@
+/.DS_Store
+/.idea
+/.vscode
+/_ide_helper.php
+/error_log
+/server.php
+/.env
+/.env.local-backup
+/.env.deploy
+
+# Local Hostinger backup folders (not for repo)
+/new_dir
+/newdirectory
+
+# Frontend build artifacts (rebuilt by CI)
+/frontend-source/node_modules
+/frontend-source/dist
+/frontend-source/.angular
+
+# Laravel runtime caches
+/bootstrap/cache/*.php
+/storage/logs/*.log
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/clockwork

@@ -7,11 +7,11 @@
     <p>Manage creator accounts — toggle access or review profiles.</p>
 </div>
 
-<form class="admin-search-bar" method="GET" action="/hvn/admin/creators">
+<form class="admin-search-bar" method="GET" action="/admin/creators">
     <input type="text" name="q" value="{{ $search }}" placeholder="Search by username or email…">
     <button type="submit">Search</button>
     @if($search)
-        <a href="/hvn/admin/creators" style="align-self:center;font-size:13px;color:#555;text-decoration:none;white-space:nowrap;">Clear</a>
+        <a href="/admin/creators" style="align-self:center;font-size:13px;color:#555;text-decoration:none;white-space:nowrap;">Clear</a>
     @endif
 </form>
 
@@ -50,8 +50,9 @@
                 </td>
                 <td>
                     <div class="action-btns">
+                        <a href="/admin/creators/{{ $creator->id }}/edit" class="btn-action">Edit</a>
                         <a href="/creators/{{ $creator->username }}" class="btn-action" target="_blank">View</a>
-                        <form method="POST" action="/hvn/admin/creators/{{ $creator->id }}/toggle" style="margin:0;"
+                        <form method="POST" action="/admin/creators/{{ $creator->id }}/toggle" style="margin:0;"
                               data-username="{{ $creator->username }}"
                               onsubmit="return confirm('Toggle creator access for ' + this.dataset.username + '?')">
                             @csrf

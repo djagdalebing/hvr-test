@@ -1,0 +1,87 @@
+<div class="datatable-page-header">
+    <div class="header-content">
+        <h1 trans>Community</h1>
+        <p trans>Review, hide, edit, or delete community posts.</p>
+    </div>
+</div>
+
+<div class="search-bar">
+    <input type="text" [(ngModel)]="query" (keyup.enter)="search()" placeholder="Search by post title…">
+    <button mat-button color="accent" (click)="search()">Search</button>
+</div>
+
+<mat-progress-bar *ngIf="loading$ | async" mode="indeterminate"></mat-progress-bar>
+
+<table class="material-table" *ngIf="(posts$ | async)?.length; else noResults">
+    <thead>
+        <tr>
+            <th>Post</th>
+            <th>Author</th>
+            <th>Stats</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let p of posts$ | async">
+            <td>
+                <div style="font-weight:500">{{ p.title }}</div>
+                <div class="muted ellipsis">{{ p.body }}</div>
+            </td>
+            <td>{{ p.author?.username || '—' }}</td>
+            <td class="muted">{{ p.comments_count }} comments · {{ p.likes_count }} likes</td>
+            <td>
+                <span class="badge"
+                      [class.green]="p.status === 'published'"
+                      [class.red]="p.status === 'removed'">
+                    {{ p.status }}
+                </span>
+            </td>
+            <td>
+                <button mat-button (click)="openEdit(p)">Edit</button>
+                <button mat-button (click)="toggleHide(p)">{{ p.status === 'published' ? 'Hide' : 'Restore' }}</button>
+                <button mat-button color="warn" (click)="deletePost(p)">Delete</button>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<ng-template #noResults>
+    <div class="no-results" *ngIf="!(loading$ | async)">No posts found.</div>
+</ng-template>
+
+<div class="pagination" *ngIf="pagination$ | async as p">
+    <button mat-button (click)="load(p.current_page - 1)" [disabled]="p.current_page <= 1">← Prev</button>
+    <span>Page {{ p.current_page }} of {{ p.last_page }}</span>
+    <button mat-button (click)="load(p.current_page + 1)" [disabled]="p.current_page >= p.last_page">Next →</button>
+</div>
+
+<div class="edit-overlay" *ngIf="editing">
+    <div class="edit-card">
+        <h2>Edit Post</h2>
+
+        <div class="form-row">
+            <label>Title</label>
+            <input type="text" [(ngModel)]="form.title" maxlength="255">
+        </div>
+
+        <div class="form-row">
+            <label>Body</label>
+            <textarea rows="6" [(ngModel)]="form.body"></textarea>
+        </div>
+
+        <div class="form-row" style="max-width:240px;">
+            <label>Status</label>
+            <select [(ngModel)]="form.status">
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+                <option value="removed">Hidden</option>
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button mat-button (click)="closeEdit()">Cancel</button>
+            <button mat-flat-button color="accent" (click)="saveEdit()">Save changes</button>
+        </div>
+    </div>
+</div>

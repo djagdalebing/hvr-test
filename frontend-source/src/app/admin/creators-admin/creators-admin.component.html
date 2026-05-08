@@ -1,0 +1,111 @@
+<div class="datatable-page-header">
+    <div class="header-content">
+        <h1 trans>Creators</h1>
+        <p trans>Manage creator accounts.</p>
+    </div>
+</div>
+
+<div class="search-bar">
+    <input type="text" [(ngModel)]="query" (keyup.enter)="search()" placeholder="Search by username or email…">
+    <button mat-button color="accent" (click)="search()">Search</button>
+</div>
+
+<mat-progress-bar *ngIf="loading$ | async" mode="indeterminate"></mat-progress-bar>
+
+<table class="material-table" *ngIf="(creators$ | async)?.length; else noResults">
+    <thead>
+        <tr>
+            <th>Creator</th>
+            <th>Display name</th>
+            <th>Bio</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let c of creators$ | async">
+            <td>
+                <div style="font-weight:500">{{ c.username }}</div>
+                <div class="muted">{{ c.email }}</div>
+            </td>
+            <td>{{ c.display_name || '—' }}</td>
+            <td class="ellipsis">{{ c.bio || '—' }}</td>
+            <td>
+                <span class="badge" [class.green]="c.role === 'creator'" [class.red]="c.role !== 'creator'">
+                    {{ c.role === 'creator' ? 'Active' : 'Revoked' }}
+                </span>
+            </td>
+            <td>
+                <button mat-button (click)="openEdit(c)">Edit</button>
+                <button mat-button color="warn" (click)="toggleRole(c)">
+                    {{ c.role === 'creator' ? 'Revoke' : 'Restore' }}
+                </button>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<ng-template #noResults>
+    <div class="no-results" *ngIf="!(loading$ | async)">No creators found.</div>
+</ng-template>
+
+<div class="pagination" *ngIf="pagination$ | async as p">
+    <button mat-button (click)="load(p.current_page - 1)" [disabled]="p.current_page <= 1">← Prev</button>
+    <span>Page {{ p.current_page }} of {{ p.last_page }}</span>
+    <button mat-button (click)="load(p.current_page + 1)" [disabled]="p.current_page >= p.last_page">Next →</button>
+</div>
+
+<div class="edit-overlay" *ngIf="editing">
+    <div class="edit-card">
+        <h2>Edit {{ editing.username }}</h2>
+
+        <div class="form-row">
+            <label>Display name</label>
+            <input type="text" [(ngModel)]="form.display_name">
+        </div>
+
+        <div class="form-row">
+            <label>Bio</label>
+            <textarea rows="4" [(ngModel)]="form.bio"></textarea>
+        </div>
+
+        <div class="form-row">
+            <label>Profile photo URL</label>
+            <input type="text" [(ngModel)]="form.profile_photo">
+        </div>
+
+        <div class="form-row">
+            <label>Contact email</label>
+            <input type="email" [(ngModel)]="form.contact_email">
+        </div>
+
+        <div class="form-row">
+            <label>Website</label>
+            <input type="text" [(ngModel)]="form.website_url">
+        </div>
+
+        <div class="form-grid">
+            <div class="form-row">
+                <label>YouTube</label>
+                <input type="text" [(ngModel)]="form.youtube_url">
+            </div>
+            <div class="form-row">
+                <label>Twitter / X</label>
+                <input type="text" [(ngModel)]="form.twitter_url">
+            </div>
+            <div class="form-row">
+                <label>Instagram</label>
+                <input type="text" [(ngModel)]="form.instagram_url">
+            </div>
+            <div class="form-row">
+                <label>Facebook</label>
+                <input type="text" [(ngModel)]="form.facebook_url">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button mat-button (click)="closeEdit()">Cancel</button>
+            <button mat-flat-button color="accent" (click)="saveEdit()">Save changes</button>
+        </div>
+    </div>
+</div>

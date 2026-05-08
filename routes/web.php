@@ -106,6 +106,17 @@ Route::group(['prefix' => 'secure'], function () {
     Route::get('user-profile/{user}/ratings', [UserProfileController::class, 'loadRatings']);
     Route::get('user-profile/{user}/reviews', [UserProfileController::class, 'loadReviews']);
     Route::get('user-profile/{user}/comments', [UserProfileController::class, 'loadComments']);
+
+    // HVN ADMIN — JSON API for native Angular tabs
+    Route::get('admin/creators',                 [HvnAdminController::class, 'creatorsJson']);
+    Route::post('admin/creators/{id}',           [HvnAdminController::class, 'updateCreator']);
+    Route::post('admin/creators/{id}/toggle',    [HvnAdminController::class, 'toggleCreator']);
+    Route::delete('admin/creators',              [HvnAdminController::class, 'deleteCreatorsJson']);
+    Route::get('admin/community',                [HvnAdminController::class, 'communityJson']);
+    Route::post('admin/community/{id}',          [HvnAdminController::class, 'updatePost']);
+    Route::post('admin/community/{id}/hide',     [HvnAdminController::class, 'hidePost']);
+    Route::delete('admin/community/{id}',        [HvnAdminController::class, 'deletePost']);
+    Route::delete('admin/community',             [HvnAdminController::class, 'deleteCommunityPostsJson']);
 });
 
 // FRONT-END ROUTES THAT NEED TO BE PRE-RENDERED
@@ -143,15 +154,30 @@ Route::get('creators/{username}', [HvnController::class, 'creatorProfile'])->whe
 Route::get('creator/dashboard', [HvnController::class, 'creatorDashboard']);
 Route::post('creator/profile', [HvnController::class, 'profileUpdate']);
 
-// HVN ADMIN — must be before the catch-all
-Route::get('hvn/admin',                          [HvnAdminController::class, 'dashboard']);
-Route::get('hvn/admin/creators',                 [HvnAdminController::class, 'creators']);
-Route::get('hvn/admin/community',                [HvnAdminController::class, 'community']);
-Route::get('hvn/admin/content',                  [HvnAdminController::class, 'content']);
-Route::post('hvn/admin/creators/{id}/toggle',    [HvnAdminController::class, 'toggleCreator']);
-Route::post('hvn/admin/community/{id}/hide',     [HvnAdminController::class, 'hidePost']);
-Route::delete('hvn/admin/community/{id}',        [HvnAdminController::class, 'deletePost']);
-Route::delete('hvn/admin/content/{id}',          [HvnAdminController::class, 'deleteContent']);
+// HVN ADMIN — Blade (legacy, used by iframe overlay shim)
+Route::get('admin/creators',                   [HvnAdminController::class, 'creators']);
+Route::get('admin/creators/{id}/edit',         [HvnAdminController::class, 'editCreator']);
+Route::post('admin/creators/{id}',             [HvnAdminController::class, 'updateCreator']);
+Route::post('admin/creators/{id}/toggle',      [HvnAdminController::class, 'toggleCreator']);
+Route::get('admin/community',                  [HvnAdminController::class, 'community']);
+Route::get('admin/community/{id}/edit',        [HvnAdminController::class, 'editPost']);
+Route::post('admin/community/{id}',            [HvnAdminController::class, 'updatePost']);
+Route::post('admin/community/{id}/hide',       [HvnAdminController::class, 'hidePost']);
+Route::delete('admin/community/{id}',          [HvnAdminController::class, 'deletePost']);
+Route::delete('admin/community/comments/{id}', [HvnAdminController::class, 'deleteComment']);
+
+// HVN ADMIN — JSON API for native Angular admin tabs (under SPA's /secure prefix)
+Route::group(['prefix' => 'secure/admin'], function () {
+    Route::get('creators',          [HvnAdminController::class, 'apiCreators']);
+    Route::put('creators/{id}',     [HvnAdminController::class, 'apiUpdateCreator']);
+    Route::post('creators/{id}/toggle', [HvnAdminController::class, 'apiToggleCreator']);
+    Route::get('community',         [HvnAdminController::class, 'apiCommunity']);
+    Route::put('community/{id}',    [HvnAdminController::class, 'apiUpdatePost']);
+    Route::post('community/{id}/hide', [HvnAdminController::class, 'apiHidePost']);
+    Route::delete('community/{id}', [HvnAdminController::class, 'apiDeletePost']);
+    Route::get('community/{id}/comments', [HvnAdminController::class, 'apiPostComments']);
+    Route::delete('community/comments/{id}', [HvnAdminController::class, 'apiDeleteComment']);
+});
 
 // SESSION LOGOUT for server-rendered pages
 Route::post('logout', [HvnController::class, 'logout']);

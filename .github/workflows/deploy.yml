@@ -1,0 +1,136 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - dummy
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Deploy target'
+        required: true
+        default: 'dummy'
+        type: choice
+        options:
+          - dummy
+          - prod
+
+# Required GitHub repo Secrets:
+#   HOSTINGER_HOST          e.g. 145.223.xxx.xxx (Hostinger SSH host)
+#   HOSTINGER_PORT          e.g. 65002 (Hostinger SSH port)
+#   HOSTINGER_USER          e.g. u181171629
+#   HOSTINGER_SSH_KEY       The PRIVATE half of the deploy key
+#
+#   HOSTINGER_DUMMY_PATH    e.g. /home/u181171629/domains/aqua-narwhal-640720.hostingersite.com/public_html
+#   HOSTINGER_PROD_PATH     e.g. /home/u181171629/public_html  (or wherever prod lives)
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---------- decide target ----------
+      - name: Resolve deploy target
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TARGET="${{ inputs.target }}"
+          elif [ "${{ github.ref_name }}" = "main" ] || [ "${{ github.ref_name }}" = "master" ]; then
+            TARGET="prod"
+          else
+            TARGET="dummy"
+          fi
+          echo "target=$TARGET" >> $GITHUB_OUTPUT
+          echo "Deploying to: $TARGET"
+
+      # ---------- frontend build ----------
+      - name: Set up Node 16
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'
+
+      - name: Install npm deps
+        working-directory: frontend-source
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: Build Angular bundle
+        working-directory: frontend-source
+        run: npx ng build --configuration production
+
+      - name: Sync built bundle into public/client
+        run: |
+          # Wipe old hashed bundles but keep static assets (favicon, manifest, etc.)
+          find public/client -maxdepth 1 -type f \( -name '*.js' -o -name '*.js.map' -o -name '*.css' -o -name '*.css.map' -o -name 'index.html' \) -delete
+          cp -p frontend-source/dist/client/*.{js,css,html} public/client/ 2>/dev/null || true
+          cp -p frontend-source/dist/client/*.map public/client/ 2>/dev/null || true
+          ls public/client/main-* public/client/styles* 2>/dev/null
+
+      # ---------- backend prep ----------
+      - name: Set up PHP 7.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          tools: composer:v2
+          extensions: mbstring, mysqli, pdo, pdo_mysql, gd, zip, bcmath, exif, fileinfo
+
+      - name: Composer install (no dev)
+        run: composer install --no-dev --optimize-autoloader --no-progress --no-interaction
+
+      # ---------- deploy ----------
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.HOSTINGER_PORT || 22 }} -H ${{ secrets.HOSTINGER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Determine remote path
+        id: path
+        run: |
+          if [ "${{ steps.target.outputs.target }}" = "prod" ]; then
+            echo "remote=${{ secrets.HOSTINGER_PROD_PATH }}" >> $GITHUB_OUTPUT
+          else
+            echo "remote=${{ secrets.HOSTINGER_DUMMY_PATH }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Rsync to Hostinger
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.HOSTINGER_PORT || 22 }} -o StrictHostKeyChecking=no" \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='frontend-source' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='storage/logs/*.log' \
+            --exclude='storage/framework/cache/data/*' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/views/*' \
+            --exclude='bootstrap/cache/*.php' \
+            --exclude='*.DS_Store' \
+            --exclude='new_dir' \
+            --exclude='newdirectory' \
+            ./ ${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${{ steps.path.outputs.remote }}/
+
+      - name: Post-deploy (clear caches, link storage)
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.HOSTINGER_PORT || 22 }} \
+              ${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }} \
+              "cd ${{ steps.path.outputs.remote }} && \
+               php artisan view:clear || true && \
+               php artisan route:clear || true && \
+               php artisan config:clear || true && \
+               php artisan cache:clear || true && \
+               (php artisan storage:link || true)"
+
+      - name: Deploy summary
+        run: |
+          echo "✓ Deployed branch '${{ github.ref_name }}' to ${{ steps.target.outputs.target }}"
+          echo "  Remote path: ${{ steps.path.outputs.remote }}"
