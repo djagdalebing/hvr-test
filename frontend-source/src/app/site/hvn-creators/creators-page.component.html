@@ -1,0 +1,51 @@
+<media-item-header></media-item-header>
+
+<div class="hvn-page">
+    <header class="hvn-page-header">
+        <h1>Creators</h1>
+        <p class="subtitle">Discover indie content creators on Her Vision Network.</p>
+        <div class="search-row">
+            <input
+                type="text"
+                [formControl]="searchControl"
+                placeholder="Search by name, bio…"
+                class="hvn-search-input"
+            />
+        </div>
+    </header>
+
+    <mat-progress-bar *ngIf="loading" mode="indeterminate" color="accent"></mat-progress-bar>
+
+    <ng-container *ngIf="!loading && creators.length === 0">
+        <div class="empty-state">
+            <h3>No creators yet</h3>
+            <p>Be the first — <a routerLink="/creator-signup" class="accent-link">join as a Creator</a>.</p>
+        </div>
+    </ng-container>
+
+    <div class="creator-grid" *ngIf="creators.length">
+        <a *ngFor="let c of creators"
+           [routerLink]="['/creators', c.username]"
+           class="creator-card">
+            <div class="creator-avatar">
+                <img *ngIf="photoUrl(c); else letter" [src]="photoUrl(c)" [alt]="displayName(c)">
+                <ng-template #letter>{{ initial(c) }}</ng-template>
+            </div>
+            <div class="creator-info">
+                <div class="creator-name">{{ displayName(c) }}</div>
+                <div class="creator-handle">{{ c.username }}</div>
+                <div class="creator-bio" *ngIf="bio(c)">{{ bio(c) }}</div>
+            </div>
+        </a>
+    </div>
+
+    <nav class="hvn-pagination" *ngIf="pagination && pagination.last_page > 1">
+        <button mat-button (click)="load(pagination.current_page - 1)"
+                [disabled]="pagination.current_page <= 1">← Prev</button>
+        <span>Page {{ pagination.current_page }} of {{ pagination.last_page }}</span>
+        <button mat-button (click)="load(pagination.current_page + 1)"
+                [disabled]="pagination.current_page >= pagination.last_page">Next →</button>
+    </nav>
+</div>
+
+<footer></footer>

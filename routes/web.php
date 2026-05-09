@@ -143,24 +143,27 @@ Route::get('news', 'NewsController@index')->middleware('prerenderIfCrawler');
 Route::get('news/{id}', 'NewsController@show')->middleware('prerenderIfCrawler');
 Route::get('lists/{id}', 'ListController@show')->middleware('prerenderIfCrawler');
 
-// HVN STANDALONE PAGES — must be before the catch-all
+// HVN STANDALONE PAGES — Blade routes for /creators and /community removed.
+// These are now native Angular SPA pages served by the catch-all below; the
+// SPA hits the JSON API endpoints in the secure group further down.
 Route::get('creator-signup', [HvnController::class, 'creatorSignup']);
-Route::get('community', [HvnController::class, 'community']);
 Route::post('community/posts', [HvnController::class, 'communityStore']);
-Route::get('community/{id}/{slug?}', [HvnController::class, 'communityShow'])->where('id', '[0-9]+')->where('slug', '[^/]*');
 Route::post('community/{id}/comments', [HvnController::class, 'commentStore'])->where('id', '[0-9]+');
-Route::get('creators', [HvnController::class, 'creators']);
-Route::get('creators/{username}', [HvnController::class, 'creatorProfile'])->where('username', '[^/]+');
 Route::get('creator/dashboard', [HvnController::class, 'creatorDashboard']);
 Route::post('creator/profile', [HvnController::class, 'profileUpdate']);
 
-// HVN ADMIN — Blade (legacy, used by iframe overlay shim)
-Route::get('admin/creators',                   [HvnAdminController::class, 'creators']);
-Route::get('admin/creators/{id}/edit',         [HvnAdminController::class, 'editCreator']);
+// HVN PUBLIC JSON API — consumed by the SPA's native creators/community pages.
+Route::group(['prefix' => 'secure'], function () {
+    Route::get('creators',                [HvnController::class, 'apiCreatorsList']);
+    Route::get('creators/{username}',     [HvnController::class, 'apiCreatorProfile'])->where('username', '[^/]+');
+    Route::get('community',               [HvnController::class, 'apiCommunityList']);
+    Route::get('community/{id}',          [HvnController::class, 'apiCommunityShow'])->where('id', '[0-9]+');
+});
+
+// HVN ADMIN — Blade GET routes removed; native Angular admin tabs handle these now.
+// Mutating endpoints below are kept in case anything else still calls them.
 Route::post('admin/creators/{id}',             [HvnAdminController::class, 'updateCreator']);
 Route::post('admin/creators/{id}/toggle',      [HvnAdminController::class, 'toggleCreator']);
-Route::get('admin/community',                  [HvnAdminController::class, 'community']);
-Route::get('admin/community/{id}/edit',        [HvnAdminController::class, 'editPost']);
 Route::post('admin/community/{id}',            [HvnAdminController::class, 'updatePost']);
 Route::post('admin/community/{id}/hide',       [HvnAdminController::class, 'hidePost']);
 Route::delete('admin/community/{id}',          [HvnAdminController::class, 'deletePost']);

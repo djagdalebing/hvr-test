@@ -1,48 +1,41 @@
 // @ts-nocheck
-import {ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation} from '@angular/core';
+import {Component, OnInit, ViewEncapsulation} from '@angular/core';
+import {Observable} from 'rxjs';
+import {DatatableService} from '@common/datatable/datatable.service';
 import {AppHttpClient} from '@common/core/http/app-http-client.service';
 import {Toast} from '@common/core/ui/toast.service';
-import {BehaviorSubject} from 'rxjs';
+import {CurrentUser} from '@common/auth/current-user';
 
 @Component({
     selector: 'community-admin',
     templateUrl: './community-admin.component.html',
     styleUrls: ['./community-admin.component.scss'],
+    providers: [DatatableService],
     encapsulation: ViewEncapsulation.None,
-    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CommunityAdminComponent implements OnInit {
-    public loading$ = new BehaviorSubject<boolean>(false);
-    public posts$ = new BehaviorSubject<any[]>([]);
-    public pagination$ = new BehaviorSubject<any>(null);
-    public query = '';
+    public filters: any[] = [];
+    public posts$ = this.datatable.data$ as Observable<any[]>;
     public editing: any = null;
     public form: any = {};
 
-    constructor(private http: AppHttpClient, private toast: Toast) {}
+    constructor(
+        public currentUser: CurrentUser,
+        public datatable: DatatableService<any>,
+        private http: AppHttpClient,
+        private toast: Toast,
+    ) {}
 
-    ngOnInit() { this.load(); }
-
-    public load(page = 1) {
-        this.loading$.next(true);
-        this.http.get('admin/community', {page, perPage: 20, query: this.query}).subscribe(
-            (res: any) => {
-                this.posts$.next(res.pagination.data || []);
-                this.pagination$.next(res.pagination);
-                this.loading$.next(false);
-            },
-            () => { this.toast.open('Failed to load posts'); this.loading$.next(false); },
-        );
+    ngOnInit() {
+        this.datatable.init({uri: 'admin/community'});
     }
 
-    public search() { this.load(1); }
-
-    public openEdit(post: any) {
-        this.editing = post;
+    public openEdit(p: any) {
+        this.editing = p;
         this.form = {
-            title: post.title || '',
-            body: post.body || '',
-            status: post.status || 'published',
+            title: p.title || '',
+            body: p.body || '',
+            status: p.status || 'published',
         };
     }
 
@@ -51,26 +44,22 @@ export class CommunityAdminComponent implements OnInit {
     public saveEdit() {
         if (!this.editing) return;
         this.http.post('admin/community/' + this.editing.id, this.form).subscribe(
-            () => {
-                this.toast.open('Post updated.');
-                this.closeEdit();
-                this.load(this.pagination$.value?.current_page || 1);
-            },
+            () => { this.toast.open('Post updated.'); this.closeEdit(); this.datatable.reset(); },
             () => this.toast.open('Failed to save'),
         );
     }
 
-    public toggleHide(post: any) {
-        this.http.post('admin/community/' + post.id + '/hide', {}).subscribe(
-            () => { this.load(this.pagination$.value?.current_page || 1); this.toast.open('Status updated.'); },
+    public toggleHide(p: any) {
+        this.http.post('admin/community/' + p.id + '/hide', {}).subscribe(
+            () => { this.datatable.reset(); this.toast.open('Status updated.'); },
             () => this.toast.open('Failed'),
         );
     }
 
-    public deletePost(post: any) {
+    public deletePost(p: any) {
         if (!confirm('Permanently delete this post and all its comments?')) return;
-        this.http.delete('admin/community/' + post.id).subscribe(
-            () => { this.load(this.pagination$.value?.current_page || 1); this.toast.open('Deleted.'); },
+        this.http.delete('admin/community/' + p.id).subscribe(
+            () => { this.datatable.reset(); this.toast.open('Deleted.'); },
             () => this.toast.open('Failed to delete'),
         );
     }

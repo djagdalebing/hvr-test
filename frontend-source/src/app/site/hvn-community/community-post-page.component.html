@@ -1,0 +1,62 @@
+<media-item-header></media-item-header>
+
+<div class="hvn-page">
+    <a routerLink="/community" class="back-link">← Back to Community</a>
+
+    <mat-progress-bar *ngIf="loading" mode="indeterminate" color="accent"></mat-progress-bar>
+
+    <div class="not-found" *ngIf="notFound">
+        <h2>Post not found</h2>
+        <p>This post doesn’t exist or has been removed.</p>
+    </div>
+
+    <ng-container *ngIf="!loading && post && !notFound">
+        <article class="post">
+            <header class="post-header">
+                <div class="post-avatar">{{ initial(post.user?.username) }}</div>
+                <div>
+                    <h1>{{ post.title }}</h1>
+                    <div class="post-meta">
+                        <span>by {{ post.user?.username || 'unknown' }}</span>
+                        <span class="dot">·</span>
+                        <span>{{ post.created_at | date:'mediumDate' }}</span>
+                    </div>
+                </div>
+            </header>
+            <div class="post-body">{{ post.body }}</div>
+        </article>
+
+        <section class="comments-section">
+            <h2>Comments ({{ post.comments?.length || 0 }})</h2>
+
+            <div class="comment-form" *ngIf="currentUser.isLoggedIn(); else loginPrompt">
+                <textarea [(ngModel)]="comment" rows="3" placeholder="Add a comment…"></textarea>
+                <div class="comment-actions">
+                    <button mat-flat-button color="accent" (click)="submitComment()" [disabled]="submitting || !comment.trim()">
+                        {{ submitting ? 'Posting…' : 'Post comment' }}
+                    </button>
+                </div>
+            </div>
+            <ng-template #loginPrompt>
+                <div class="login-prompt">
+                    <a routerLink="/login" class="accent-link">Log in</a> to leave a comment.
+                </div>
+            </ng-template>
+
+            <ul class="comment-list" *ngIf="post.comments?.length">
+                <li *ngFor="let c of post.comments" class="comment">
+                    <div class="comment-avatar">{{ initial(c.user?.username) }}</div>
+                    <div class="comment-body">
+                        <div class="comment-author">
+                            {{ c.user?.username || 'unknown' }}
+                            <span class="comment-time">· {{ c.created_at | date:'shortDate' }}</span>
+                        </div>
+                        <div class="comment-text">{{ c.body }}</div>
+                    </div>
+                </li>
+            </ul>
+        </section>
+    </ng-container>
+</div>
+
+<footer></footer>

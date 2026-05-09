@@ -1,1 +1,82 @@
-/* stub — original SCSS not in source maps */
+/* extracted from production bundle */
+:host {
+    display: flex;
+    padding-top: var(--top-offset);
+    --nav-width: 225px;
+    --top-offset: 70px;
+}
+
+.no-navbar:host { --top-offset: 0px; }
+
+/* nav and main are projected from the parent (admin) component, so we use
+   ::ng-deep to pierce view encapsulation — without it Angular emits
+   [_nghost-X] main[_ngcontent-X] which can never match the projected child. */
+.nav-closed:host ::ng-deep nav {
+    transform: translate(-100%);
+    box-shadow: none;
+}
+
+.enable-transitions:host ::ng-deep nav {
+    transition-duration: .4s;
+    transition-timing-function: cubic-bezier(.25, .8, .25, 1);
+    transition-property: transform;
+}
+
+:host ::ng-deep nav {
+    width: var(--nav-width);
+    overflow: auto;
+    padding: 26px 8px 16px;
+    border-right: 1px solid var(--be-divider-default);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: var(--top-offset);
+    bottom: 0;
+    z-index: 4;
+    background-color: var(--be-background);
+}
+
+@media only screen and (max-width: 768px) {
+    :host ::ng-deep nav {
+        box-shadow: 0 3px 5px -1px #0003, 0 5px 8px #00000024, 0 1px 14px #0000001f;
+    }
+}
+
+:host .backdrop {
+    display: block;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    position: absolute;
+    z-index: 1;
+    transition-duration: .4s;
+    transition-timing-function: cubic-bezier(.25, .8, .25, 1);
+    transition-property: background-color, visibility;
+    visibility: hidden;
+}
+
+:host .backdrop.visible {
+    visibility: visible;
+    background-color: var(--be-backdrop);
+    opacity: .6;
+}
+
+@media only screen and (min-width: 768px) {
+    :host .backdrop { display: none; }
+}
+
+:host ::ng-deep main {
+    min-width: 0;
+    flex: 1 1 auto;
+    background-color: var(--be-background-alternative);
+    min-height: calc(100vh - var(--top-offset, 0px));
+    display: flex;
+    flex-direction: column;
+}
+
+@media only screen and (min-width: 768px) {
+    :host ::ng-deep main {
+        margin-left: var(--nav-width);
+    }
+}

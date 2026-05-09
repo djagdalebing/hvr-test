@@ -174,4 +174,77 @@ class HvnController extends Controller
     {
         return auth()->user() ?? auth('sanctum')->user();
     }
+
+    // -----------------------------------------------------------------
+    // Public JSON API for the native Angular SPA pages (Creators / Community)
+    // Mounted under /secure/* in routes/web.php so AppHttpClient hits them.
+    // -----------------------------------------------------------------
+
+    public function apiCreatorsList(Request $request): JsonResponse
+    {
+        $perPage = min(48, max(1, (int) $request->input('perPage', 24)));
+        $query   = trim((string) $request->input('query', ''));
+
+        $q = \App\User::where('role', 'creator')
+            ->whereNotNull('username')
+            ->with('creatorProfile')
+            ->orderBy('username');
+
+        if ($query !== '') {
+            $q->where(function ($w) use ($query) {
+                $w->where('username', 'like', '%' . $query . '%')
+                  ->orWhereHas('creatorProfile', function ($p) use ($query) {
+                      $p->where('display_name', 'like', '%' . $query . '%')
+                        ->orWhere('bio', 'like', '%' . $query . '%');
+                  });
+            });
+        }
+
+        $page = $q->paginate($perPage);
+
+        return response()->json(['pagination' => $page]);
+    }
+
+    public function apiCreatorProfile(string $username): JsonResponse
+    {
+        $user = \App\User::where('username', $username)
+            ->where('role', 'creator')
+            ->with('creatorProfile')
+            ->firstOrFail();
+
+        return response()->json([
+            'user'    => $user,
+            'profile' => $user->creatorProfile,
+        ]);
+    }
+
+    public function apiCommunityList(Request $request): JsonResponse
+    {
+        $perPage = min(50, max(1, (int) $request->input('perPage', 15)));
+        $query   = trim((string) $request->input('query', ''));
+
+        $q = CommunityPost::with(['user:id,username'])
+            ->published()
+            ->withCount(['comments', 'likes'])
+            ->orderByDesc('created_at');
+
+        if ($query !== '') {
+            $q->where(function ($w) use ($query) {
+                $w->where('title', 'like', '%' . $query . '%')
+                  ->orWhere('body', 'like', '%' . $query . '%');
+            });
+        }
+
+        return response()->json(['pagination' => $q->paginate($perPage)]);
+    }
+
+    public function apiCommunityShow(int $postId): JsonResponse
+    {
+        $post = CommunityPost::with(['user:id,username', 'comments.user:id,username'])
+            ->published()
+            ->withCount(['comments', 'likes'])
+            ->findOrFail($postId);
+
+        return response()->json(['post' => $post]);
+    }
 }

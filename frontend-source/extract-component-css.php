@@ -2,8 +2,7 @@
 // Extract component-scoped CSS from compiled Angular bundle and write into
 // the matching .component.scss files in src/.
 
-// Inside the repo, frontend-source/ is a sibling of public/.
-$bundleDir = __DIR__ . '/../public/client_original_backup';
+$bundleDir = __DIR__ . '/../public_html/public/client_original_backup';
 $srcDir    = __DIR__ . '/src';
 
 if (!is_dir($bundleDir)) { fwrite(STDERR, "Bundle dir not found: $bundleDir\n"); exit(1); }

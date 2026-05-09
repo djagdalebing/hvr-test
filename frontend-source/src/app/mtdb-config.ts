@@ -31,7 +31,7 @@ export const MTDB_CONFIG: AppConfig = {
         pages: [
             {name: 'titles', icon: 'movie', route: 'titles', permission: 'titles.view'},
             {name: 'creators', icon: 'recent-actors', route: 'creators', permission: 'admin'},
-            {name: 'community', icon: 'forum', route: 'community', permission: 'admin'},
+            {name: 'community', icon: 'description', route: 'community', permission: 'admin'},
             {name: 'videos', icon: 'slow-motion-video', route: 'videos', permission: 'videos.view'},
             {name: 'lists', icon: 'format-list-numbered', route: 'lists', permission: 'lists.view'},
             {name: 'reviews', icon: 'rate-review', route: 'reviews', permission: 'reviews.view'},

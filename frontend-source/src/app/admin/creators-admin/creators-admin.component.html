@@ -1,111 +1,111 @@
 <div class="datatable-page-header">
-    <div class="header-content">
-        <h1 trans>Creators</h1>
-        <p trans>Manage creator accounts.</p>
+    <h1 trans>Creators</h1>
+    <div class="header">
+        <datatable-filters pluralName="creators" [filters]="filters"></datatable-filters>
     </div>
 </div>
 
-<div class="search-bar">
-    <input type="text" [(ngModel)]="query" (keyup.enter)="search()" placeholder="Search by username or email…">
-    <button mat-button color="accent" (click)="search()">Search</button>
-</div>
+<div class="datatable responsive-table">
+    <mat-progress-bar
+        class="loading-bar"
+        mode="indeterminate"
+        color="accent"
+        *ngIf="datatable.paginator && datatable.paginator.loading$ | async"
+    ></mat-progress-bar>
 
-<mat-progress-bar *ngIf="loading$ | async" mode="indeterminate"></mat-progress-bar>
+    <table class="material-table">
+        <thead>
+            <tr>
+                <th trans>Creator</th>
+                <th trans>Display name</th>
+                <th trans>Bio</th>
+                <th trans>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let c of creators$ | async">
+                <td data-label="Creator">
+                    <div style="font-weight:500">{{ c.username }}</div>
+                    <div class="muted">{{ c.email }}</div>
+                </td>
+                <td data-label="Display name">{{ c.display_name || '—' }}</td>
+                <td data-label="Bio" class="ellipsis">{{ c.bio || '—' }}</td>
+                <td data-label="Status">
+                    <span class="badge" [class.green]="c.role === 'creator'" [class.red]="c.role !== 'creator'">
+                        {{ c.role === 'creator' ? 'Active' : 'Revoked' }}
+                    </span>
+                </td>
+                <td class="edit-column">
+                    <button mat-icon-button (click)="openEdit(c)" [matTooltip]="'Edit creator' | trans">
+                        <mat-icon svgIcon="edit"></mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="toggleRole(c)"
+                            [matTooltip]="(c.role === 'creator' ? 'Revoke' : 'Restore') | trans">
+                        <mat-icon [svgIcon]="c.role === 'creator' ? 'block' : 'check'"></mat-icon>
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 
-<table class="material-table" *ngIf="(creators$ | async)?.length; else noResults">
-    <thead>
-        <tr>
-            <th>Creator</th>
-            <th>Display name</th>
-            <th>Bio</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr *ngFor="let c of creators$ | async">
-            <td>
-                <div style="font-weight:500">{{ c.username }}</div>
-                <div class="muted">{{ c.email }}</div>
-            </td>
-            <td>{{ c.display_name || '—' }}</td>
-            <td class="ellipsis">{{ c.bio || '—' }}</td>
-            <td>
-                <span class="badge" [class.green]="c.role === 'creator'" [class.red]="c.role !== 'creator'">
-                    {{ c.role === 'creator' ? 'Active' : 'Revoked' }}
-                </span>
-            </td>
-            <td>
-                <button mat-button (click)="openEdit(c)">Edit</button>
-                <button mat-button color="warn" (click)="toggleRole(c)">
-                    {{ c.role === 'creator' ? 'Revoke' : 'Restore' }}
-                </button>
-            </td>
-        </tr>
-    </tbody>
-</table>
-
-<ng-template #noResults>
-    <div class="no-results" *ngIf="!(loading$ | async)">No creators found.</div>
-</ng-template>
-
-<div class="pagination" *ngIf="pagination$ | async as p">
-    <button mat-button (click)="load(p.current_page - 1)" [disabled]="p.current_page <= 1">← Prev</button>
-    <span>Page {{ p.current_page }} of {{ p.last_page }}</span>
-    <button mat-button (click)="load(p.current_page + 1)" [disabled]="p.current_page >= p.last_page">Next →</button>
+    <no-results-message svgImage="users.svg" *ngIf="datatable.paginator.noResults$ | async">
+        <span primary-text trans>No creators found.</span>
+    </no-results-message>
+    <datatable-footer></datatable-footer>
 </div>
 
 <div class="edit-overlay" *ngIf="editing">
     <div class="edit-card">
         <h2>Edit {{ editing.username }}</h2>
 
-        <div class="form-row">
-            <label>Display name</label>
-            <input type="text" [(ngModel)]="form.display_name">
-        </div>
+        <mat-form-field appearance="outline">
+            <mat-label trans>Display name</mat-label>
+            <input matInput [(ngModel)]="form.display_name">
+        </mat-form-field>
 
-        <div class="form-row">
-            <label>Bio</label>
-            <textarea rows="4" [(ngModel)]="form.bio"></textarea>
-        </div>
+        <mat-form-field appearance="outline">
+            <mat-label trans>Bio</mat-label>
+            <textarea matInput rows="4" [(ngModel)]="form.bio"></textarea>
+        </mat-form-field>
 
-        <div class="form-row">
-            <label>Profile photo URL</label>
-            <input type="text" [(ngModel)]="form.profile_photo">
-        </div>
+        <mat-form-field appearance="outline">
+            <mat-label trans>Profile photo URL</mat-label>
+            <input matInput [(ngModel)]="form.profile_photo">
+        </mat-form-field>
 
-        <div class="form-row">
-            <label>Contact email</label>
-            <input type="email" [(ngModel)]="form.contact_email">
-        </div>
+        <mat-form-field appearance="outline">
+            <mat-label trans>Contact email</mat-label>
+            <input matInput type="email" [(ngModel)]="form.contact_email">
+        </mat-form-field>
 
-        <div class="form-row">
-            <label>Website</label>
-            <input type="text" [(ngModel)]="form.website_url">
-        </div>
+        <mat-form-field appearance="outline">
+            <mat-label trans>Website</mat-label>
+            <input matInput [(ngModel)]="form.website_url">
+        </mat-form-field>
 
         <div class="form-grid">
-            <div class="form-row">
-                <label>YouTube</label>
-                <input type="text" [(ngModel)]="form.youtube_url">
-            </div>
-            <div class="form-row">
-                <label>Twitter / X</label>
-                <input type="text" [(ngModel)]="form.twitter_url">
-            </div>
-            <div class="form-row">
-                <label>Instagram</label>
-                <input type="text" [(ngModel)]="form.instagram_url">
-            </div>
-            <div class="form-row">
-                <label>Facebook</label>
-                <input type="text" [(ngModel)]="form.facebook_url">
-            </div>
+            <mat-form-field appearance="outline">
+                <mat-label trans>YouTube</mat-label>
+                <input matInput [(ngModel)]="form.youtube_url">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+                <mat-label trans>Twitter / X</mat-label>
+                <input matInput [(ngModel)]="form.twitter_url">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+                <mat-label trans>Instagram</mat-label>
+                <input matInput [(ngModel)]="form.instagram_url">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+                <mat-label trans>Facebook</mat-label>
+                <input matInput [(ngModel)]="form.facebook_url">
+            </mat-form-field>
         </div>
 
         <div class="form-actions">
-            <button mat-button (click)="closeEdit()">Cancel</button>
-            <button mat-flat-button color="accent" (click)="saveEdit()">Save changes</button>
+            <button mat-button (click)="closeEdit()" trans>Cancel</button>
+            <button mat-flat-button color="accent" (click)="saveEdit()" trans>Save changes</button>
         </div>
     </div>
 </div>

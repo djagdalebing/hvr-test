@@ -18,8 +18,8 @@
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.app.json",
-            "deployUrl": "client/",
-            "aot": false,
+            "deployUrl": "/client/",
+            "aot": true,
             "assets": [
               "src/favicon",
               "src/manifest.json"
@@ -50,7 +50,7 @@
               ],
               "optimization": true,
               "outputHashing": "all",
-              "sourceMap": true,
+              "sourceMap": false,
               "namedChunks": false,
               "extractLicenses": true,
               "vendorChunk": false,

@@ -105,6 +105,10 @@ import {ProfileCommentsTabComponent} from './user-profile/tabs/profile-comments-
 import {CommentsModule} from '@common/comments/comments.module';
 import { MediaViewModeSwitcherComponent } from './shared/media-view/media-view-mode-switcher/media-view-mode-switcher.component';
 import {AppFooterModule} from '@common/shared/app-footer/app-footer.module';
+import {CreatorsPageComponent} from './hvn-creators/creators-page.component';
+import {CreatorProfilePageComponent} from './hvn-creators/creator-profile-page.component';
+import {CommunityPageComponent} from './hvn-community/community-page.component';
+import {CommunityPostPageComponent} from './hvn-community/community-post-page.component';
 
 @NgModule({
     imports: [
@@ -156,6 +160,10 @@ import {AppFooterModule} from '@common/shared/app-footer/app-footer.module';
     ],
     declarations: [
         TitlePageContainerComponent,
+        CreatorsPageComponent,
+        CreatorProfilePageComponent,
+        CommunityPageComponent,
+        CommunityPostPageComponent,
         TitleSecondaryDetailsPanelComponent,
         TitleCastPanelComponent,
         HomepageComponent,

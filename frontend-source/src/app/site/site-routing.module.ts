@@ -24,6 +24,10 @@ import {ProfileListTabComponent} from './user-profile/tabs/profile-list-tab/prof
 import {ProfileRatingsTabComponent} from './user-profile/tabs/profile-ratings-tab/profile-ratings-tab.component';
 import {ProfileReviewTabComponent} from './user-profile/tabs/profile-review-tab/profile-review-tab.component';
 import {ProfileCommentsTabComponent} from './user-profile/tabs/profile-comments-tab/profile-comments-tab.component';
+import {CreatorsPageComponent} from './hvn-creators/creators-page.component';
+import {CreatorProfilePageComponent} from './hvn-creators/creator-profile-page.component';
+import {CommunityPageComponent} from './hvn-community/community-page.component';
+import {CommunityPostPageComponent} from './hvn-community/community-post-page.component';
 
 const routes: Routes = [
     {
@@ -230,6 +234,30 @@ const routes: Routes = [
                 component: UserListsComponent,
                 canActivate: [AuthGuard],
                 data: {name: 'Your Lists'},
+            },
+
+            // HVN: creators (public)
+            {
+                path: 'creators',
+                component: CreatorsPageComponent,
+                data: {name: 'creators', willSetSeo: true},
+            },
+            {
+                path: 'creators/:username',
+                component: CreatorProfilePageComponent,
+                data: {name: 'creator-profile', willSetSeo: true},
+            },
+
+            // HVN: community (public)
+            {
+                path: 'community',
+                component: CommunityPageComponent,
+                data: {name: 'community', willSetSeo: true},
+            },
+            {
+                path: 'community/:id',
+                component: CommunityPostPageComponent,
+                data: {name: 'community-post', willSetSeo: true},
             },
 
             // news

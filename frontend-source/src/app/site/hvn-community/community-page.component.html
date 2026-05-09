@@ -1,0 +1,66 @@
+<media-item-header></media-item-header>
+
+<div class="hvn-page">
+    <header class="hvn-page-header">
+        <h1>Community</h1>
+        <p class="subtitle">Ask questions, share ideas and connect with the Her Vision Network community.</p>
+    </header>
+
+    <div class="compose-row">
+        <input type="text" [formControl]="searchControl" placeholder="Search posts…" class="hvn-search-input" />
+        <button mat-flat-button color="accent" (click)="openCompose()" *ngIf="!composing">
+            <mat-icon svgIcon="add"></mat-icon>
+            <span>New Post</span>
+        </button>
+    </div>
+
+    <div class="compose-card" *ngIf="composing">
+        <input type="text" [(ngModel)]="draftTitle" placeholder="Post title" maxlength="255" class="compose-title">
+        <textarea [(ngModel)]="draftBody" rows="5" placeholder="Share your thoughts…" class="compose-body"></textarea>
+        <div class="compose-actions">
+            <button mat-button (click)="cancelCompose()">Cancel</button>
+            <button mat-flat-button color="accent" (click)="submitPost()" [disabled]="submitting">
+                {{ submitting ? 'Posting…' : 'Post' }}
+            </button>
+        </div>
+    </div>
+
+    <mat-progress-bar *ngIf="loading" mode="indeterminate" color="accent"></mat-progress-bar>
+
+    <ng-container *ngIf="!loading && posts.length === 0">
+        <div class="empty-state">
+            <h3>No posts yet</h3>
+            <p>Be the first to start a discussion.</p>
+        </div>
+    </ng-container>
+
+    <ul class="post-list" *ngIf="posts.length">
+        <li *ngFor="let p of posts" class="post-item">
+            <a [routerLink]="['/community', p.id]" class="post-link">
+                <div class="post-avatar">{{ ((p.user?.username || '?') + '').charAt(0).toUpperCase() }}</div>
+                <div class="post-body">
+                    <div class="post-title">{{ p.title }}</div>
+                    <div class="post-snippet">{{ p.body }}</div>
+                    <div class="post-meta">
+                        <span class="author">by {{ p.user?.username || 'unknown' }}</span>
+                        <span class="dot">·</span>
+                        <span>{{ timeAgo(p.created_at) }}</span>
+                        <span class="spacer"></span>
+                        <span class="stat"><mat-icon svgIcon="comment"></mat-icon>{{ p.comments_count || 0 }}</span>
+                        <span class="stat"><mat-icon svgIcon="favorite-border"></mat-icon>{{ p.likes_count || 0 }}</span>
+                    </div>
+                </div>
+            </a>
+        </li>
+    </ul>
+
+    <nav class="hvn-pagination" *ngIf="pagination && pagination.last_page > 1">
+        <button mat-button (click)="load(pagination.current_page - 1)"
+                [disabled]="pagination.current_page <= 1">← Prev</button>
+        <span>Page {{ pagination.current_page }} of {{ pagination.last_page }}</span>
+        <button mat-button (click)="load(pagination.current_page + 1)"
+                [disabled]="pagination.current_page >= pagination.last_page">Next →</button>
+    </nav>
+</div>
+
+<footer></footer>

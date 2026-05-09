@@ -1,87 +1,91 @@
 <div class="datatable-page-header">
-    <div class="header-content">
-        <h1 trans>Community</h1>
-        <p trans>Review, hide, edit, or delete community posts.</p>
+    <h1 trans>Community</h1>
+    <div class="header">
+        <datatable-filters pluralName="posts" [filters]="filters"></datatable-filters>
     </div>
 </div>
 
-<div class="search-bar">
-    <input type="text" [(ngModel)]="query" (keyup.enter)="search()" placeholder="Search by post title…">
-    <button mat-button color="accent" (click)="search()">Search</button>
-</div>
+<div class="datatable responsive-table">
+    <mat-progress-bar
+        class="loading-bar"
+        mode="indeterminate"
+        color="accent"
+        *ngIf="datatable.paginator && datatable.paginator.loading$ | async"
+    ></mat-progress-bar>
 
-<mat-progress-bar *ngIf="loading$ | async" mode="indeterminate"></mat-progress-bar>
+    <table class="material-table">
+        <thead>
+            <tr>
+                <th trans>Post</th>
+                <th trans>Author</th>
+                <th trans>Stats</th>
+                <th trans>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let p of posts$ | async">
+                <td data-label="Post">
+                    <div style="font-weight:500">{{ p.title }}</div>
+                    <div class="muted ellipsis">{{ p.body }}</div>
+                </td>
+                <td data-label="Author">{{ p.author?.username || '—' }}</td>
+                <td data-label="Stats" class="muted">{{ p.comments_count }} comments · {{ p.likes_count }} likes</td>
+                <td data-label="Status">
+                    <span class="badge"
+                          [class.green]="p.status === 'published'"
+                          [class.red]="p.status === 'removed'">
+                        {{ p.status }}
+                    </span>
+                </td>
+                <td class="edit-column">
+                    <button mat-icon-button (click)="openEdit(p)" [matTooltip]="'Edit post' | trans">
+                        <mat-icon svgIcon="edit"></mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="toggleHide(p)"
+                            [matTooltip]="(p.status === 'published' ? 'Hide' : 'Restore') | trans">
+                        <mat-icon [svgIcon]="p.status === 'published' ? 'visibility-off' : 'visibility'"></mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="deletePost(p)" [matTooltip]="'Delete' | trans">
+                        <mat-icon svgIcon="delete"></mat-icon>
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 
-<table class="material-table" *ngIf="(posts$ | async)?.length; else noResults">
-    <thead>
-        <tr>
-            <th>Post</th>
-            <th>Author</th>
-            <th>Stats</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr *ngFor="let p of posts$ | async">
-            <td>
-                <div style="font-weight:500">{{ p.title }}</div>
-                <div class="muted ellipsis">{{ p.body }}</div>
-            </td>
-            <td>{{ p.author?.username || '—' }}</td>
-            <td class="muted">{{ p.comments_count }} comments · {{ p.likes_count }} likes</td>
-            <td>
-                <span class="badge"
-                      [class.green]="p.status === 'published'"
-                      [class.red]="p.status === 'removed'">
-                    {{ p.status }}
-                </span>
-            </td>
-            <td>
-                <button mat-button (click)="openEdit(p)">Edit</button>
-                <button mat-button (click)="toggleHide(p)">{{ p.status === 'published' ? 'Hide' : 'Restore' }}</button>
-                <button mat-button color="warn" (click)="deletePost(p)">Delete</button>
-            </td>
-        </tr>
-    </tbody>
-</table>
-
-<ng-template #noResults>
-    <div class="no-results" *ngIf="!(loading$ | async)">No posts found.</div>
-</ng-template>
-
-<div class="pagination" *ngIf="pagination$ | async as p">
-    <button mat-button (click)="load(p.current_page - 1)" [disabled]="p.current_page <= 1">← Prev</button>
-    <span>Page {{ p.current_page }} of {{ p.last_page }}</span>
-    <button mat-button (click)="load(p.current_page + 1)" [disabled]="p.current_page >= p.last_page">Next →</button>
+    <no-results-message svgImage="newspaper.svg" *ngIf="datatable.paginator.noResults$ | async">
+        <span primary-text trans>No posts found.</span>
+    </no-results-message>
+    <datatable-footer></datatable-footer>
 </div>
 
 <div class="edit-overlay" *ngIf="editing">
     <div class="edit-card">
-        <h2>Edit Post</h2>
+        <h2 trans>Edit Post</h2>
 
-        <div class="form-row">
-            <label>Title</label>
-            <input type="text" [(ngModel)]="form.title" maxlength="255">
-        </div>
+        <mat-form-field appearance="outline">
+            <mat-label trans>Title</mat-label>
+            <input matInput [(ngModel)]="form.title" maxlength="255">
+        </mat-form-field>
 
-        <div class="form-row">
-            <label>Body</label>
-            <textarea rows="6" [(ngModel)]="form.body"></textarea>
-        </div>
+        <mat-form-field appearance="outline">
+            <mat-label trans>Body</mat-label>
+            <textarea matInput rows="6" [(ngModel)]="form.body"></textarea>
+        </mat-form-field>
 
-        <div class="form-row" style="max-width:240px;">
-            <label>Status</label>
-            <select [(ngModel)]="form.status">
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-                <option value="removed">Hidden</option>
-            </select>
-        </div>
+        <mat-form-field appearance="outline" style="max-width:240px;">
+            <mat-label trans>Status</mat-label>
+            <mat-select [(ngModel)]="form.status">
+                <mat-option value="published" trans>Published</mat-option>
+                <mat-option value="draft" trans>Draft</mat-option>
+                <mat-option value="removed" trans>Hidden</mat-option>
+            </mat-select>
+        </mat-form-field>
 
         <div class="form-actions">
-            <button mat-button (click)="closeEdit()">Cancel</button>
-            <button mat-flat-button color="accent" (click)="saveEdit()">Save changes</button>
+            <button mat-button (click)="closeEdit()" trans>Cancel</button>
+            <button mat-flat-button color="accent" (click)="saveEdit()" trans>Save changes</button>
         </div>
     </div>
 </div>

@@ -1,1 +1,51 @@
-@import "../creators-admin/creators-admin.component.scss";
+community-admin {
+    display: block;
+
+    .muted { font-size: 12px; opacity: .55; margin-top: 2px; }
+    .ellipsis { max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        background: #444;
+        &.green { background: rgba(76, 175, 80, 0.18); color: #4ade80; }
+        &.red   { background: rgba(244, 67, 54, 0.18); color: #f87171; }
+    }
+
+    .edit-column { white-space: nowrap; text-align: right; }
+
+    .edit-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+    }
+
+    .edit-card {
+        background: var(--be-background, #1d1d1d);
+        color: var(--be-text, #fff);
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 720px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        h2 { margin: 0 0 16px; font-size: 20px; font-weight: 500; }
+        mat-form-field { width: 100%; }
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 16px;
+    }
+}

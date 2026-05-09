@@ -1,0 +1,34 @@
+<media-item-header></media-item-header>
+
+<div class="hvn-page">
+    <a routerLink="/creators" class="back-link">← Back to Creators</a>
+
+    <mat-progress-bar *ngIf="loading" mode="indeterminate" color="accent"></mat-progress-bar>
+
+    <div class="not-found" *ngIf="notFound">
+        <h2>Creator not found</h2>
+        <p>This creator doesn’t exist or is no longer active.</p>
+    </div>
+
+    <ng-container *ngIf="!loading && user && !notFound">
+        <header class="profile-header">
+            <div class="avatar">
+                <img *ngIf="photoUrl(); else letter" [src]="photoUrl()" [alt]="displayName()">
+                <ng-template #letter>{{ initial() }}</ng-template>
+            </div>
+            <div class="meta">
+                <h1>{{ displayName() }}</h1>
+                <div class="handle">{{ user.username }}</div>
+                <div class="bio" *ngIf="profile?.bio">{{ profile.bio }}</div>
+                <div class="socials" *ngIf="socialLinks().length">
+                    <a *ngFor="let s of socialLinks()" [href]="s.url" target="_blank" rel="noopener" class="social-chip">
+                        <mat-icon [svgIcon]="s.icon"></mat-icon>
+                        <span>{{ s.label }}</span>
+                    </a>
+                </div>
+            </div>
+        </header>
+    </ng-container>
+</div>
+
+<footer></footer>
