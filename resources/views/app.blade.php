@@ -430,12 +430,12 @@
 @endsection
 
 @section('angular-scripts')
-    {{--angular scripts begin--}}
-		<script src="client/runtime-es2015.c3e56a4fa5c2ea84b646.js" type="module"></script>
-		<script src="client/runtime-es5.c3e56a4fa5c2ea84b646.js" nomodule defer></script>
+    {{--angular scripts begin — LOCAL TEST: pointing at our reconstructed bundle --}}
+		<script src="client/runtime-es2015.4ad46ccd5c0b2bab2626.js" type="module"></script>
+		<script src="client/runtime-es5.4ad46ccd5c0b2bab2626.js" nomodule defer></script>
 		<script src="client/polyfills-es2015.d969de841f4a9c1b338c.js" type="module"></script>
 		<script src="client/polyfills-es5.38fac56fdf9abe29758f.js" nomodule defer></script>
-		<script src="client/main-es2015.4ce3895cfa1ee2b59128.js" type="module"></script>
-		<script src="client/main-es5.4ce3895cfa1ee2b59128.js" nomodule defer></script>
+		<script src="client/main-es2015.562bd08746c91771597b.js" type="module"></script>
+		<script src="client/main-es5.562bd08746c91771597b.js" nomodule defer></script>
 	{{--angular scripts end--}}
 @endsection
