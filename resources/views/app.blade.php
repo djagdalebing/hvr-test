@@ -425,7 +425,7 @@
 @section('angular-styles')
     {{--angular styles begin--}}
 		{{-- This is the ORIGINAL Vebto-built CSS. Do not regenerate — our reconstructed SCSS is a stub. --}}
-		<link rel="stylesheet" href="client/styles.dd30edb2e30333fe4043.css" media="print" onload="this.media='all'">
+		<link rel="stylesheet" href="client/styles.dd30edb2e30333fe4043.css">
 	{{--angular styles end--}}
 @endsection
 
