@@ -160,12 +160,29 @@ function cleanCss($css) {
     return $css;
 }
 
+// Files that have been hand-fixed and must NOT be regenerated from the
+// bundle. The auto-extractor strips Angular's encapsulation markers, which
+// for some components silently drops a needed ::ng-deep — see
+// sidenav.component.scss, where the projected <nav>/<main> elements live in
+// the parent component's encapsulation scope. Regenerating the file would
+// re-break the full-width admin layout.
+$preserveBasenames = [
+    'sidenav.component.scss',
+];
+
 $written = 0;
+$skipped = 0;
 foreach ($writeMap as $scssPath => $cssList) {
+    if (in_array(basename($scssPath), $preserveBasenames, true) && file_exists($scssPath)) {
+        echo "  preserve: " . str_replace($srcDir . '/', '', $scssPath) . "\n";
+        $skipped++;
+        continue;
+    }
     $combined = implode("\n", array_map('cleanCss', $cssList));
     @mkdir(dirname($scssPath), 0755, true);
     file_put_contents($scssPath, "/* extracted from production bundle */\n" . $combined . "\n");
     $written++;
 }
+echo "Wrote $written, preserved $skipped.\n";
 echo "Wrote $written .scss files.\n";
 echo "Done.\n";
