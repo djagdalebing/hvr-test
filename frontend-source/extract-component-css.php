@@ -2,10 +2,26 @@
 // Extract component-scoped CSS from compiled Angular bundle and write into
 // the matching .component.scss files in src/.
 
-$bundleDir = __DIR__ . '/../public_html/public/client_original_backup';
-$srcDir    = __DIR__ . '/src';
+// Locate the original Vebto bundle backup. Local checkout has the repo
+// rooted at .../hervisionnetwork.com/public_html/, so the bundle lives at
+//   __DIR__/../public/client_original_backup
+// CI checks the repo out as /home/runner/work/<repo>/<repo>/, with the same
+// internal layout, so the same path works there. The legacy "public_html"
+// segment is kept as a fallback for older local layouts.
+$candidates = [
+    __DIR__ . '/../public/client_original_backup',
+    __DIR__ . '/../public_html/public/client_original_backup',
+];
+$bundleDir = null;
+foreach ($candidates as $c) {
+    if (is_dir($c)) { $bundleDir = $c; break; }
+}
+$srcDir = __DIR__ . '/src';
 
-if (!is_dir($bundleDir)) { fwrite(STDERR, "Bundle dir not found: $bundleDir\n"); exit(1); }
+if (!$bundleDir) {
+    fwrite(STDERR, "Bundle dir not found. Tried:\n  " . implode("\n  ", $candidates) . "\n");
+    exit(1);
+}
 if (!is_dir($srcDir))    { fwrite(STDERR, "Src dir not found: $srcDir\n"); exit(1); }
 
 // 1. Build a selector → scss-path index by scanning every component.ts in src
