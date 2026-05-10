@@ -107,6 +107,7 @@ import { MediaViewModeSwitcherComponent } from './shared/media-view/media-view-m
 import {AppFooterModule} from '@common/shared/app-footer/app-footer.module';
 import {CreatorsPageComponent} from './hvn-creators/creators-page.component';
 import {CreatorProfilePageComponent} from './hvn-creators/creator-profile-page.component';
+import {CreatorDashboardPageComponent} from './hvn-creators/creator-dashboard-page.component';
 import {CommunityPageComponent} from './hvn-community/community-page.component';
 import {CommunityPostPageComponent} from './hvn-community/community-post-page.component';
 
@@ -162,6 +163,7 @@ import {CommunityPostPageComponent} from './hvn-community/community-post-page.co
         TitlePageContainerComponent,
         CreatorsPageComponent,
         CreatorProfilePageComponent,
+        CreatorDashboardPageComponent,
         CommunityPageComponent,
         CommunityPostPageComponent,
         TitleSecondaryDetailsPanelComponent,

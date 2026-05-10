@@ -27,11 +27,10 @@ class ServeHvnPages
         $c = app(HvnController::class);
 
         if ($request->isMethod('GET')) {
-            // /creators, /creators/{username}, /community, /community/{id}
-            // are now native Angular SPA routes — let them fall through to the
-            // catch-all so app.blade.php (the SPA shell) is served.
-            if ($path === 'creator-signup')    return $this->r($c->creatorSignup());
-            if ($path === 'creator/dashboard') return $this->r($c->creatorDashboard($request));
+            // /creators, /creators/{username}, /community, /community/{id},
+            // /creator/dashboard are now native Angular SPA routes — let them
+            // fall through to the catch-all so app.blade.php is served.
+            if ($path === 'creator-signup') return $this->r($c->creatorSignup());
         }
 
         if ($request->isMethod('POST')) {

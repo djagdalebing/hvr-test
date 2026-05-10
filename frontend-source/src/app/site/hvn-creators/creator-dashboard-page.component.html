@@ -1,0 +1,70 @@
+<media-item-header></media-item-header>
+
+<div class="hvn-page">
+    <mat-progress-bar *ngIf="loading" mode="indeterminate" color="accent"></mat-progress-bar>
+
+    <div class="not-allowed" *ngIf="denied">
+        <h2>Creators only</h2>
+        <p>You need a creator account to view this page.</p>
+        <a routerLink="/creator-signup" mat-flat-button color="accent">Apply as Creator</a>
+    </div>
+
+    <ng-container *ngIf="!loading && !denied && user">
+        <div class="dash-grid">
+            <aside class="dash-profile">
+                <div class="dash-avatar">
+                    <img *ngIf="photoUrl(); else letter" [src]="photoUrl()" [alt]="displayName()">
+                    <ng-template #letter>{{ initial() }}</ng-template>
+                </div>
+                <div class="dash-name">{{ displayName() }}</div>
+                <div class="dash-handle">{{ user.username }}</div>
+                <div class="dash-bio" *ngIf="profile?.bio">{{ profile.bio }}</div>
+                <a [routerLink]="['/creators', user.username]" mat-stroked-button class="dash-action">View public profile</a>
+            </aside>
+
+            <div class="dash-main">
+                <div class="dash-stats">
+                    <div class="stat-card">
+                        <div class="stat-num">{{ totals.posts }}</div>
+                        <div class="stat-label">Posts</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-num">{{ totals.comments }}</div>
+                        <div class="stat-label">Comments</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-num">{{ totals.titles }}</div>
+                        <div class="stat-label">Titles uploaded</div>
+                    </div>
+                </div>
+
+                <h2 class="dash-section-title">Recent posts</h2>
+                <div *ngIf="posts.length === 0" class="dash-empty">You haven't posted anything yet.</div>
+                <ul class="dash-list" *ngIf="posts.length">
+                    <li *ngFor="let p of posts" class="dash-list-row">
+                        <a [routerLink]="['/community', p.id]" class="dash-list-title">{{ p.title }}</a>
+                        <div class="dash-list-meta">
+                            <span><mat-icon svgIcon="comment"></mat-icon>{{ p.comments_count || 0 }}</span>
+                            <span><mat-icon svgIcon="thumb-up"></mat-icon>{{ p.likes_count || 0 }}</span>
+                            <span class="dash-list-date">{{ p.created_at | date:'mediumDate' }}</span>
+                        </div>
+                    </li>
+                </ul>
+
+                <h2 class="dash-section-title">Your titles</h2>
+                <div *ngIf="content.length === 0" class="dash-empty">No content uploaded yet.</div>
+                <ul class="dash-list" *ngIf="content.length">
+                    <li *ngFor="let t of content" class="dash-list-row">
+                        <a [routerLink]="['/titles', t.id, t.name || '-']" class="dash-list-title">{{ t.name }}</a>
+                        <div class="dash-list-meta">
+                            <span class="dash-list-type">{{ t.type || 'movie' }}</span>
+                            <span class="dash-list-date">{{ t.created_at | date:'mediumDate' }}</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </ng-container>
+</div>
+
+<footer></footer>

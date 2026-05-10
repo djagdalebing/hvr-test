@@ -296,6 +296,45 @@ class HvnController extends Controller
         return response()->json(['post' => $post]);
     }
 
+    public function apiCreatorDashboard(): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->role !== 'creator') {
+            return response()->json(['message' => 'Forbidden — creators only.'], 403);
+        }
+
+        $profile = $user->creatorProfile;
+
+        $posts = CommunityPost::where('user_id', $user->id)
+            ->published()
+            ->withCount(['comments', 'likes'])
+            ->orderByDesc('created_at')
+            ->take(20)
+            ->get();
+
+        $content = Title::whereHas('videos', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->with(['videos' => function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            }])
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json([
+            'user'    => $user->only(['id', 'username', 'email', 'avatar', 'role', 'blocked']),
+            'profile' => $profile,
+            'posts'   => $posts,
+            'content' => $content,
+            'totals'  => [
+                'posts'    => CommunityPost::where('user_id', $user->id)->count(),
+                'comments' => \App\CommunityComment::where('user_id', $user->id)->count(),
+                'titles'   => $content->count(),
+            ],
+        ]);
+    }
+
     public function apiToggleCommentLike(int $commentId): JsonResponse
     {
         $user = $this->resolveUser();

@@ -26,6 +26,7 @@ import {ProfileReviewTabComponent} from './user-profile/tabs/profile-review-tab/
 import {ProfileCommentsTabComponent} from './user-profile/tabs/profile-comments-tab/profile-comments-tab.component';
 import {CreatorsPageComponent} from './hvn-creators/creators-page.component';
 import {CreatorProfilePageComponent} from './hvn-creators/creator-profile-page.component';
+import {CreatorDashboardPageComponent} from './hvn-creators/creator-dashboard-page.component';
 import {CommunityPageComponent} from './hvn-community/community-page.component';
 import {CommunityPostPageComponent} from './hvn-community/community-post-page.component';
 
@@ -234,6 +235,14 @@ const routes: Routes = [
                 component: UserListsComponent,
                 canActivate: [AuthGuard],
                 data: {name: 'Your Lists'},
+            },
+
+            // HVN: creator dashboard (logged-in creator)
+            {
+                path: 'creator/dashboard',
+                component: CreatorDashboardPageComponent,
+                canActivate: [AuthGuard],
+                data: {name: 'creator-dashboard', willSetSeo: true},
             },
 
             // HVN: creators (public)

@@ -11,6 +11,13 @@ export const MTDB_CONFIG: AppConfig = {
         defaultColor: 'primary',
         defaultPosition: 'primary',
         dropdownItems: [
+            {route: '/creator/dashboard', name: 'Creator Dashboard', icon: 'dashboard',
+             showFn: (settings: any, currentUser: any) => {
+                 // Our User has a single-string `role` column ('creator'|'viewer'|'admin'),
+                 // not Vebto's roles[] array — pull from the BehaviorSubject directly.
+                 const m = currentUser?.model$?.value || {};
+                 return m.role === 'creator';
+             }} as any,
             {route: '/watchlist', name: 'Watchlist', icon: 'playlist-add-check'},
             {route: '/lists', name: 'Your Lists', icon: 'list'},
         ]
