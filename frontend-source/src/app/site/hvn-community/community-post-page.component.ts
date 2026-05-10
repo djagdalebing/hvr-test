@@ -65,8 +65,13 @@ export class CommunityPostPageComponent implements OnInit {
 
     // -------- post edit / delete --------
 
+    public isAdmin(): boolean {
+        return !!this.currentUser.hasPermission('admin');
+    }
+
     public ownsPost(): boolean {
         const u = this.currentUser.get('id');
+        if (this.isAdmin()) return true;
         return !!(u && this.post && this.post.user_id && +u === +this.post.user_id);
     }
 
@@ -97,6 +102,7 @@ export class CommunityPostPageComponent implements OnInit {
 
     public ownsComment(c: any): boolean {
         const u = this.currentUser.get('id');
+        if (this.isAdmin()) return true;
         return !!(u && c && c.user_id && +u === +c.user_id);
     }
 

@@ -259,7 +259,7 @@ class HvnController extends Controller
         if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
 
         $post = CommunityPost::findOrFail($postId);
-        if ((int) $post->user_id !== (int) $user->id) {
+        if ((int) $post->user_id !== (int) $user->id && !$user->hasPermission('admin')) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -281,7 +281,7 @@ class HvnController extends Controller
         if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
 
         $post = CommunityPost::findOrFail($postId);
-        if ((int) $post->user_id !== (int) $user->id) {
+        if ((int) $post->user_id !== (int) $user->id && !$user->hasPermission('admin')) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -298,7 +298,7 @@ class HvnController extends Controller
         if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
 
         $comment = CommunityComment::findOrFail($commentId);
-        if ((int) $comment->user_id !== (int) $user->id) {
+        if ((int) $comment->user_id !== (int) $user->id && !$user->hasPermission('admin')) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -316,7 +316,7 @@ class HvnController extends Controller
         if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
 
         $comment = CommunityComment::findOrFail($commentId);
-        if ((int) $comment->user_id !== (int) $user->id) {
+        if ((int) $comment->user_id !== (int) $user->id && !$user->hasPermission('admin')) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
