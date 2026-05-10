@@ -153,11 +153,15 @@ Route::get('creator/dashboard', [HvnController::class, 'creatorDashboard']);
 Route::post('creator/profile', [HvnController::class, 'profileUpdate']);
 
 // HVN PUBLIC JSON API — consumed by the SPA's native creators/community pages.
+// AppHttpClient auto-prefixes outgoing requests with 'secure/', so all SPA
+// reads AND writes have to live under this prefix.
 Route::group(['prefix' => 'secure'], function () {
     Route::get('creators',                [HvnController::class, 'apiCreatorsList']);
     Route::get('creators/{username}',     [HvnController::class, 'apiCreatorProfile'])->where('username', '[^/]+');
     Route::get('community',               [HvnController::class, 'apiCommunityList']);
     Route::get('community/{id}',          [HvnController::class, 'apiCommunityShow'])->where('id', '[0-9]+');
+    Route::post('community/posts',        [HvnController::class, 'communityStore']);
+    Route::post('community/{id}/comments',[HvnController::class, 'commentStore'])->where('id', '[0-9]+');
 });
 
 // HVN ADMIN — Blade GET routes removed; native Angular admin tabs handle these now.
