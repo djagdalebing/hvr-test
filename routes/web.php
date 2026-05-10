@@ -149,8 +149,10 @@ Route::get('lists/{id}', 'ListController@show')->middleware('prerenderIfCrawler'
 Route::get('creator-signup', [HvnController::class, 'creatorSignup']);
 Route::post('community/posts', [HvnController::class, 'communityStore']);
 Route::post('community/{id}/comments', [HvnController::class, 'commentStore'])->where('id', '[0-9]+');
-Route::get('creator/dashboard', [HvnController::class, 'creatorDashboard']);
-Route::post('creator/profile', [HvnController::class, 'profileUpdate']);
+// /creator/dashboard is the native SPA route now — let the catch-all serve
+// app.blade.php. The Blade route was shadowing the SPA on hard reload.
+// /creator/profile lives under /secure/creator/profile (HvnController::profileUpdate)
+// — see the secure group below — so we no longer need the top-level POST route.
 
 // HVN PUBLIC JSON API — consumed by the SPA's native creators/community pages.
 // AppHttpClient auto-prefixes outgoing requests with 'secure/', so all SPA
