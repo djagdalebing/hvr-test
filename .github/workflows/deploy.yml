@@ -148,7 +148,6 @@ jobs:
             --exclude='storage/framework/sessions/*' \
             --exclude='storage/framework/views/*' \
             --exclude='bootstrap/cache/*.php' \
-            --exclude='public/storage' \
             --exclude='*.DS_Store' \
             --exclude='new_dir' \
             --exclude='newdirectory' \

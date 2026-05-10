@@ -1,2 +1,10 @@
 *
 !.gitignore
+!avatars/
+!avatars/**
+!branding_media/
+!branding_media/**
+!creator_content/
+!creator_content/**
+!homepage/
+!homepage/**
