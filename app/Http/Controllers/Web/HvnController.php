@@ -49,6 +49,9 @@ class HvnController extends Controller
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
+        if ($user->isBlocked()) {
+            return response()->json(['message' => 'Your account is blocked.'], 403);
+        }
 
         $request->validate([
             'title' => 'required|string|max:255',
@@ -80,6 +83,9 @@ class HvnController extends Controller
         $user = $this->resolveUser();
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+        if ($user->isBlocked()) {
+            return response()->json(['message' => 'Your account is blocked.'], 403);
         }
 
         $request->validate(['body' => 'required|string|max:5000']);
@@ -137,6 +143,9 @@ class HvnController extends Controller
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
+        if ($user->isBlocked()) {
+            return response()->json(['message' => 'Your account is blocked.'], 403);
+        }
         if ($user->role !== 'creator') {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
@@ -173,6 +182,22 @@ class HvnController extends Controller
     private function resolveUser()
     {
         return auth()->user() ?? auth('sanctum')->user();
+    }
+
+    /**
+     * Resolve the current user, return null if anonymous, OR a 403
+     * JSON response if the user is blocked. Caller does:
+     *   $user = $this->requireActiveUser($r); if ($user instanceof JsonResponse) return $user;
+     */
+    private function requireActiveUser()
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
+        if (method_exists($user, 'isBlocked') && $user->isBlocked()) {
+            return response()->json(['message' => 'Your account is blocked.'], 403);
+        }
+        return $user;
     }
 
     // -----------------------------------------------------------------
@@ -275,6 +300,7 @@ class HvnController extends Controller
     {
         $user = $this->resolveUser();
         if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
 
         $comment = CommunityComment::findOrFail($commentId);
 
@@ -302,6 +328,7 @@ class HvnController extends Controller
     {
         $user = $this->resolveUser();
         if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
 
         $post = CommunityPost::published()->findOrFail($postId);
 
@@ -334,6 +361,7 @@ class HvnController extends Controller
     {
         $user = $this->resolveUser();
         if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
 
         $post = CommunityPost::findOrFail($postId);
         if ((int) $post->user_id !== (int) $user->id && !$user->hasPermission('admin')) {
@@ -356,6 +384,7 @@ class HvnController extends Controller
     {
         $user = $this->resolveUser();
         if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
 
         $post = CommunityPost::findOrFail($postId);
         if ((int) $post->user_id !== (int) $user->id && !$user->hasPermission('admin')) {
@@ -373,6 +402,7 @@ class HvnController extends Controller
     {
         $user = $this->resolveUser();
         if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
 
         $comment = CommunityComment::findOrFail($commentId);
         if ((int) $comment->user_id !== (int) $user->id && !$user->hasPermission('admin')) {
@@ -391,6 +421,7 @@ class HvnController extends Controller
     {
         $user = $this->resolveUser();
         if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
 
         $comment = CommunityComment::findOrFail($commentId);
         if ((int) $comment->user_id !== (int) $user->id && !$user->hasPermission('admin')) {

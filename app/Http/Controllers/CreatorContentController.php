@@ -37,6 +37,9 @@ class CreatorContentController extends BaseController
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
+        if ($user && method_exists($user, 'isBlocked') && $user->isBlocked()) {
+            return response()->json(['message' => 'Your account is blocked.'], 403);
+        }
 
         $this->validate($request, [
             'title'       => 'required|string|min:2|max:250',
@@ -136,7 +139,11 @@ class CreatorContentController extends BaseController
      */
     public function destroy(Request $request, int $titleId): JsonResponse
     {
-        $userId = $request->user()->id;
+        $user = $request->user();
+        if ($user && method_exists($user, 'isBlocked') && $user->isBlocked()) {
+            return response()->json(['message' => 'Your account is blocked.'], 403);
+        }
+        $userId = $user->id;
 
         $videos = Video::where('title_id', $titleId)->where('user_id', $userId)->get();
         if ($videos->isEmpty()) {

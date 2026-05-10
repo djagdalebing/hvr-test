@@ -55,6 +55,26 @@ export class CreatorsAdminComponent implements OnInit {
         );
     }
 
+    public toggleBlock(c: any) {
+        const verb = c.blocked ? 'Unblock' : 'Block';
+        if (!confirm(verb + ' ' + c.username + '? Blocked users cannot post, comment, or upload content.')) return;
+        this.http.post('admin/creators/' + c.id + '/block', {}).subscribe(
+            (res: any) => {
+                c.blocked = !!res?.blocked;
+                this.toast.open(c.blocked ? 'User blocked.' : 'User unblocked.');
+            },
+            () => this.toast.open('Failed to update'),
+        );
+    }
+
+    public deleteCreator(c: any) {
+        if (!confirm('Permanently delete ' + c.username + '? This removes their posts, comments and likes too.')) return;
+        this.http.delete('admin/creators/' + c.id).subscribe(
+            () => { this.toast.open('Deleted.'); this.datatable.reset(); },
+            () => this.toast.open('Failed to delete'),
+        );
+    }
+
     public toggleRole(c: any) {
         const verb = c.role === 'creator' ? 'Revoke' : 'Restore';
         if (!confirm(verb + ' creator access for ' + c.username + '?')) return;

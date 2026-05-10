@@ -32,17 +32,27 @@
                 <td data-label="Display name">{{ c.display_name || '—' }}</td>
                 <td data-label="Bio" class="ellipsis">{{ c.bio || '—' }}</td>
                 <td data-label="Status">
-                    <span class="badge" [class.green]="c.role === 'creator'" [class.red]="c.role !== 'creator'">
+                    <span class="badge" *ngIf="!c.blocked"
+                          [class.green]="c.role === 'creator'" [class.red]="c.role !== 'creator'">
                         {{ c.role === 'creator' ? 'Active' : 'Revoked' }}
                     </span>
+                    <span class="badge red" *ngIf="c.blocked">Blocked</span>
                 </td>
                 <td class="edit-column">
                     <button mat-icon-button (click)="openEdit(c)" [matTooltip]="'Edit creator' | trans">
                         <mat-icon svgIcon="edit"></mat-icon>
                     </button>
-                    <button mat-icon-button color="warn" (click)="toggleRole(c)"
-                            [matTooltip]="(c.role === 'creator' ? 'Revoke' : 'Restore') | trans">
-                        <mat-icon [svgIcon]="c.role === 'creator' ? 'block' : 'check'"></mat-icon>
+                    <button mat-icon-button (click)="toggleRole(c)"
+                            [matTooltip]="(c.role === 'creator' ? 'Revoke creator access' : 'Restore creator access') | trans">
+                        <mat-icon [svgIcon]="c.role === 'creator' ? 'remove' : 'check'"></mat-icon>
+                    </button>
+                    <button mat-icon-button [color]="c.blocked ? 'accent' : 'warn'" (click)="toggleBlock(c)"
+                            [matTooltip]="(c.blocked ? 'Unblock' : 'Block') | trans">
+                        <mat-icon [svgIcon]="c.blocked ? 'lock-open' : 'lock'"></mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="deleteCreator(c)"
+                            [matTooltip]="'Delete user' | trans">
+                        <mat-icon svgIcon="delete"></mat-icon>
                     </button>
                 </td>
             </tr>

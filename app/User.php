@@ -22,7 +22,13 @@ class User extends BaseUser
         'available_space'   => 'integer',
         'email_verified_at' => 'datetime',
         'role'              => 'string',
+        'blocked'           => 'boolean',
     ];
+
+    public function isBlocked(): bool
+    {
+        return (bool) ($this->blocked ?? false);
+    }
 
     public function watchlist(): HasOne
     {

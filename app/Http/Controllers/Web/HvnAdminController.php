@@ -411,6 +411,36 @@ class HvnAdminController extends Controller
         return ['status' => 'success', 'role' => $creator->role];
     }
 
+    public function apiToggleBlock(Request $request, int $userId)
+    {
+        $this->apiAdminOrAbort();
+        $u = User::findOrFail($userId);
+        $u->blocked = !$u->blocked;
+        $u->save();
+        return ['status' => 'success', 'blocked' => (bool) $u->blocked];
+    }
+
+    public function apiDeleteCreator(Request $request, int $userId)
+    {
+        $this->apiAdminOrAbort();
+        $u = User::findOrFail($userId);
+
+        // Best-effort cascade — these tables may have FKs that ON DELETE CASCADE
+        // already, but we delete explicitly so it works regardless of schema.
+        \App\CommunityComment::where('user_id', $u->id)->delete();
+        \App\CommunityLike::where('user_id', $u->id)->delete();
+        if (class_exists(\App\CommunityCommentLike::class)) {
+            \App\CommunityCommentLike::where('user_id', $u->id)->delete();
+        }
+        \App\CommunityPost::where('user_id', $u->id)->delete();
+        if (\Illuminate\Support\Facades\Schema::hasTable('creator_profiles')) {
+            \Illuminate\Support\Facades\DB::table('creator_profiles')->where('user_id', $u->id)->delete();
+        }
+
+        $u->delete();
+        return ['status' => 'success'];
+    }
+
     public function apiCommunity(Request $request)
     {
         $this->apiAdminOrAbort();
