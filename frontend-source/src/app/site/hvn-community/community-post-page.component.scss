@@ -206,6 +206,29 @@
         opacity: .9;
         white-space: pre-wrap;
     }
+
+    .comment-footer {
+        margin-top: 6px;
+        .comment-like {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: none;
+            border: 0;
+            padding: 2px 6px;
+            margin-left: -6px;
+            border-radius: 4px;
+            color: inherit;
+            font: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: .7;
+            transition: color .15s ease, background .15s ease, opacity .15s ease;
+            mat-icon { width: 14px; height: 14px; font-size: 14px; }
+            &:hover { opacity: 1; background: rgba(255,255,255,0.04); }
+            &.liked { color: var(--be-accent, #F65F54); opacity: 1; }
+        }
+    }
 }
 
 .edit-block {

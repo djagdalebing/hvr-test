@@ -247,16 +247,55 @@ class HvnController extends Controller
 
     public function apiCommunityShow(int $postId): JsonResponse
     {
-        $post = CommunityPost::with(['user:id,username', 'comments.user:id,username'])
+        $user = $this->resolveUser();
+
+        $post = CommunityPost::with([
+                'user:id,username',
+                'comments' => function ($q) use ($user) {
+                    $q->withCount('likes')
+                      ->with('user:id,username');
+                    if ($user) {
+                        $q->withExists(['likes as liked_by_me' => function ($lq) use ($user) {
+                            $lq->where('user_id', $user->id);
+                        }]);
+                    }
+                },
+            ])
             ->published()
             ->withCount(['comments', 'likes'])
             ->findOrFail($postId);
 
-        $user = $this->resolveUser();
         $post->liked_by_me = $user ? \App\CommunityLike::where('post_id', $post->id)
             ->where('user_id', $user->id)->exists() : false;
 
         return response()->json(['post' => $post]);
+    }
+
+    public function apiToggleCommentLike(int $commentId): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+
+        $comment = CommunityComment::findOrFail($commentId);
+
+        $existing = \App\CommunityCommentLike::where('comment_id', $comment->id)
+            ->where('user_id', $user->id)->first();
+        if ($existing) {
+            $existing->delete();
+            $liked = false;
+        } else {
+            \App\CommunityCommentLike::create([
+                'comment_id' => $comment->id,
+                'user_id'    => $user->id,
+                'created_at' => now(),
+            ]);
+            $liked = true;
+        }
+
+        return response()->json([
+            'liked'       => $liked,
+            'likes_count' => \App\CommunityCommentLike::where('comment_id', $comment->id)->count(),
+        ]);
     }
 
     public function apiToggleLike(int $postId): JsonResponse

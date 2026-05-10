@@ -97,6 +97,14 @@
                             </ng-container>
                         </div>
                         <div class="comment-text" *ngIf="editingCommentId !== c.id">{{ c.body }}</div>
+                        <div class="comment-footer" *ngIf="editingCommentId !== c.id">
+                            <button type="button" class="comment-like" [class.liked]="c.liked_by_me"
+                                    (click)="toggleCommentLike(c)"
+                                    [matTooltip]="(c.liked_by_me ? 'Unlike' : 'Like') | trans">
+                                <mat-icon svgIcon="thumb-up"></mat-icon>
+                                <span>{{ c.likes_count || 0 }}</span>
+                            </button>
+                        </div>
                         <div class="edit-block" *ngIf="editingCommentId === c.id">
                             <textarea [(ngModel)]="editCommentBody" rows="3"></textarea>
                             <div class="edit-actions">
