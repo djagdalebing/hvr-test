@@ -16,7 +16,9 @@ class CreatorContentController extends BaseController
      */
     public function index(Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
+        $user = $request->user();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        $userId = $user->id;
 
         $titles = Title::whereHas('videos', function ($q) use ($userId) {
             $q->where('user_id', $userId);
@@ -37,8 +39,14 @@ class CreatorContentController extends BaseController
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
-        if ($user && method_exists($user, 'isBlocked') && $user->isBlocked()) {
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+        if (method_exists($user, 'isBlocked') && $user->isBlocked()) {
             return response()->json(['message' => 'Your account is blocked.'], 403);
+        }
+        if ($user->role !== 'creator') {
+            return response()->json(['message' => 'Forbidden — creators only.'], 403);
         }
 
         $this->validate($request, [
@@ -140,8 +148,14 @@ class CreatorContentController extends BaseController
     public function destroy(Request $request, int $titleId): JsonResponse
     {
         $user = $request->user();
-        if ($user && method_exists($user, 'isBlocked') && $user->isBlocked()) {
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+        if (method_exists($user, 'isBlocked') && $user->isBlocked()) {
             return response()->json(['message' => 'Your account is blocked.'], 403);
+        }
+        if ($user->role !== 'creator') {
+            return response()->json(['message' => 'Forbidden — creators only.'], 403);
         }
         $userId = $user->id;
 

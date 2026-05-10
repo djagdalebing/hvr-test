@@ -91,7 +91,60 @@ creator-dashboard-page {
 .dash-section-title {
     font-size: 18px;
     font-weight: 500;
+    margin: 0;
+}
+
+.dash-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin: 0 0 14px;
+    button mat-icon { vertical-align: middle; margin-right: 4px; width: 18px; height: 18px; font-size: 18px; }
+}
+
+.upload-panel {
+    background: var(--be-background-alternative, #232323);
+    border: 1px solid var(--be-divider-default, rgba(255,255,255,0.06));
+    border-radius: 8px;
+    padding: 18px;
+    margin-bottom: 16px;
+
+    .upload-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 14px;
+        @media (max-width: 640px) { grid-template-columns: 1fr; }
+    }
+
+    .field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 13px;
+        &.full { grid-column: 1 / -1; }
+        label { opacity: .75; .req { color: var(--be-accent, #F65F54); } .hint { opacity: .55; font-size: 11px; margin-left: 4px; } }
+
+        input[type=text], input[type=url], input[type=number], textarea, select {
+            background: var(--be-background, #1a1a1a);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 4px;
+            color: inherit; font: inherit;
+            padding: 8px 12px;
+            outline: none;
+            &:focus { border-color: rgba(255,255,255,0.35); }
+        }
+        textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+        input[type=file] {
+            color: inherit; font: inherit; font-size: 12px;
+        }
+    }
+
+    .upload-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 14px;
+    }
 }
 
 .dash-empty {

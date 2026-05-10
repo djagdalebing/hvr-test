@@ -51,14 +51,69 @@
                     </li>
                 </ul>
 
-                <h2 class="dash-section-title">Your titles</h2>
-                <div *ngIf="content.length === 0" class="dash-empty">No content uploaded yet.</div>
+                <div class="dash-section-head">
+                    <h2 class="dash-section-title">Your titles</h2>
+                    <button mat-flat-button color="accent" (click)="toggleUpload()">
+                        <mat-icon svgIcon="add"></mat-icon>
+                        <span>{{ showUpload ? 'Cancel' : 'Upload new title' }}</span>
+                    </button>
+                </div>
+
+                <div class="upload-panel" *ngIf="showUpload">
+                    <div class="upload-grid">
+                        <div class="field full">
+                            <label>Title <span class="req">*</span></label>
+                            <input type="text" [(ngModel)]="form.title" maxlength="250" placeholder="My short film">
+                        </div>
+                        <div class="field">
+                            <label>Type</label>
+                            <select [(ngModel)]="form.type">
+                                <option value="movie">Movie</option>
+                                <option value="short">Short</option>
+                                <option value="series">Series</option>
+                                <option value="documentary">Documentary</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Year</label>
+                            <input type="number" min="1900" max="2099" [(ngModel)]="form.year">
+                        </div>
+                        <div class="field full">
+                            <label>Description</label>
+                            <textarea rows="3" [(ngModel)]="form.description" maxlength="5000"></textarea>
+                        </div>
+                        <div class="field full">
+                            <label>Video URL <span class="hint">— or upload a file below</span></label>
+                            <input type="url" [(ngModel)]="form.video_url" placeholder="https://youtube.com/... or https://vimeo.com/...">
+                        </div>
+                        <div class="field">
+                            <label>Video file <span class="hint">(mp4/webm/ogg/mov, max 500MB)</span></label>
+                            <input type="file" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo"
+                                   (change)="onFile('video_file', $event)">
+                        </div>
+                        <div class="field">
+                            <label>Cover image <span class="req">*</span> <span class="hint">(jpg/png/webp, max 5MB)</span></label>
+                            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFile('cover', $event)">
+                        </div>
+                    </div>
+                    <div class="upload-actions">
+                        <button mat-button (click)="toggleUpload()" [disabled]="uploading">Cancel</button>
+                        <button mat-flat-button color="accent" (click)="submitUpload()" [disabled]="uploading">
+                            {{ uploading ? 'Uploading…' : 'Upload' }}
+                        </button>
+                    </div>
+                </div>
+
+                <div *ngIf="content.length === 0 && !showUpload" class="dash-empty">No content uploaded yet.</div>
                 <ul class="dash-list" *ngIf="content.length">
                     <li *ngFor="let t of content" class="dash-list-row">
                         <a [routerLink]="['/titles', t.id, t.name || '-']" class="dash-list-title">{{ t.name }}</a>
                         <div class="dash-list-meta">
                             <span class="dash-list-type">{{ t.type || 'movie' }}</span>
                             <span class="dash-list-date">{{ t.created_at | date:'mediumDate' }}</span>
+                            <button mat-icon-button color="warn" (click)="deleteTitle(t)" [matTooltip]="'Delete title' | trans">
+                                <mat-icon svgIcon="delete"></mat-icon>
+                            </button>
                         </div>
                     </li>
                 </ul>
