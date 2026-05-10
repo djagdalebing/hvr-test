@@ -247,4 +247,81 @@ class HvnController extends Controller
 
         return response()->json(['post' => $post]);
     }
+
+    // -----------------------------------------------------------------
+    // Owner edit / delete for community posts and comments.
+    // Used by the SPA's community-post-page when current user owns the row.
+    // -----------------------------------------------------------------
+
+    public function apiUpdateOwnPost(Request $request, int $postId): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+
+        $post = CommunityPost::findOrFail($postId);
+        if ((int) $post->user_id !== (int) $user->id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'body'  => 'required|string|max:10000',
+        ]);
+
+        $post->title = $request->input('title');
+        $post->body  = $request->input('body');
+        $post->save();
+
+        return response()->json(['post' => $post]);
+    }
+
+    public function apiDeleteOwnPost(int $postId): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+
+        $post = CommunityPost::findOrFail($postId);
+        if ((int) $post->user_id !== (int) $user->id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        // Cascade-delete comments alongside the post so we don't orphan rows.
+        CommunityComment::where('post_id', $post->id)->delete();
+        $post->delete();
+
+        return response()->json(['message' => 'Deleted.']);
+    }
+
+    public function apiUpdateOwnComment(Request $request, int $commentId): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+
+        $comment = CommunityComment::findOrFail($commentId);
+        if ((int) $comment->user_id !== (int) $user->id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $request->validate(['body' => 'required|string|max:5000']);
+
+        $comment->body = $request->input('body');
+        $comment->save();
+
+        return response()->json(['comment' => $comment]);
+    }
+
+    public function apiDeleteOwnComment(int $commentId): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+
+        $comment = CommunityComment::findOrFail($commentId);
+        if ((int) $comment->user_id !== (int) $user->id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $comment->delete();
+
+        return response()->json(['message' => 'Deleted.']);
+    }
 }

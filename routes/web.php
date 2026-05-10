@@ -162,6 +162,12 @@ Route::group(['prefix' => 'secure'], function () {
     Route::get('community/{id}',          [HvnController::class, 'apiCommunityShow'])->where('id', '[0-9]+');
     Route::post('community/posts',        [HvnController::class, 'communityStore']);
     Route::post('community/{id}/comments',[HvnController::class, 'commentStore'])->where('id', '[0-9]+');
+
+    // Owner edit/delete (controller checks ownership; admin uses /secure/admin/*).
+    Route::put('community/{id}',          [HvnController::class, 'apiUpdateOwnPost'])->where('id', '[0-9]+');
+    Route::delete('community/{id}',       [HvnController::class, 'apiDeleteOwnPost'])->where('id', '[0-9]+');
+    Route::put('community/comments/{id}', [HvnController::class, 'apiUpdateOwnComment'])->where('id', '[0-9]+');
+    Route::delete('community/comments/{id}', [HvnController::class, 'apiDeleteOwnComment'])->where('id', '[0-9]+');
 });
 
 // HVN ADMIN — Blade GET routes removed; native Angular admin tabs handle these now.

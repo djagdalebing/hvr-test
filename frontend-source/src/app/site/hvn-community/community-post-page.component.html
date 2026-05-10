@@ -14,16 +14,32 @@
         <article class="post">
             <header class="post-header">
                 <div class="post-avatar">{{ initial(post.user?.username) }}</div>
-                <div>
-                    <h1>{{ post.title }}</h1>
+                <div class="post-header-meta">
+                    <h1 *ngIf="!editingPost">{{ post.title }}</h1>
+                    <input *ngIf="editingPost" type="text" class="edit-title" [(ngModel)]="editTitle" maxlength="255" placeholder="Title">
                     <div class="post-meta">
                         <span>by {{ post.user?.username || 'unknown' }}</span>
                         <span class="dot">·</span>
                         <span>{{ post.created_at | date:'mediumDate' }}</span>
                     </div>
                 </div>
+                <div class="owner-actions" *ngIf="ownsPost() && !editingPost">
+                    <button mat-icon-button (click)="startEditPost()" [matTooltip]="'Edit post' | trans">
+                        <mat-icon svgIcon="edit"></mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="deletePost()" [matTooltip]="'Delete post' | trans">
+                        <mat-icon svgIcon="delete"></mat-icon>
+                    </button>
+                </div>
             </header>
-            <div class="post-body">{{ post.body }}</div>
+            <div class="post-body" *ngIf="!editingPost">{{ post.body }}</div>
+            <div class="edit-block" *ngIf="editingPost">
+                <textarea [(ngModel)]="editBody" rows="6" placeholder="Body"></textarea>
+                <div class="edit-actions">
+                    <button mat-button (click)="cancelEditPost()">Cancel</button>
+                    <button mat-flat-button color="accent" (click)="saveEditPost()">Save changes</button>
+                </div>
+            </div>
         </article>
 
         <section class="comments-section">
@@ -50,8 +66,24 @@
                         <div class="comment-author">
                             {{ c.user?.username || 'unknown' }}
                             <span class="comment-time">· {{ c.created_at | date:'shortDate' }}</span>
+                            <span class="spacer"></span>
+                            <ng-container *ngIf="ownsComment(c) && editingCommentId !== c.id">
+                                <button mat-icon-button class="comment-action" (click)="startEditComment(c)" [matTooltip]="'Edit' | trans">
+                                    <mat-icon svgIcon="edit"></mat-icon>
+                                </button>
+                                <button mat-icon-button class="comment-action" color="warn" (click)="deleteComment(c)" [matTooltip]="'Delete' | trans">
+                                    <mat-icon svgIcon="delete"></mat-icon>
+                                </button>
+                            </ng-container>
                         </div>
-                        <div class="comment-text">{{ c.body }}</div>
+                        <div class="comment-text" *ngIf="editingCommentId !== c.id">{{ c.body }}</div>
+                        <div class="edit-block" *ngIf="editingCommentId === c.id">
+                            <textarea [(ngModel)]="editCommentBody" rows="3"></textarea>
+                            <div class="edit-actions">
+                                <button mat-button (click)="cancelEditComment()">Cancel</button>
+                                <button mat-flat-button color="accent" (click)="saveEditComment(c)">Save</button>
+                            </div>
+                        </div>
                     </div>
                 </li>
             </ul>
