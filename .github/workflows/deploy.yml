@@ -175,6 +175,12 @@ jobs:
               -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
               ${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }} \
               "cd ${{ steps.path.outputs.remote }} && \
+               # Bump mtimes on all PHP files so LiteSpeed/opcache invalidates
+               # the cached bytecode and re-reads from disk on the next hit.
+               # rsync preserves source mtimes, so without this the new files
+               # look identical-age to opcache and the old bytecode wins.
+               find app bootstrap config database routes -type f -name '*.php' -exec touch {} + 2>/dev/null || true && \
+               rm -f bootstrap/cache/services.php bootstrap/cache/packages.php bootstrap/cache/routes-v7.php bootstrap/cache/config.php && \
                php artisan view:clear || true && \
                php artisan route:clear || true && \
                php artisan config:clear || true && \
