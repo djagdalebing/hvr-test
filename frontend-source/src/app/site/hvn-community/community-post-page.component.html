@@ -28,11 +28,15 @@
                         <span>{{ post.created_at | date:'mediumDate' }}</span>
                     </div>
                 </div>
-                <div class="owner-actions" *ngIf="ownsPost() && !editingPost">
-                    <button mat-icon-button (click)="startEditPost()" [matTooltip]="'Edit post' | trans">
+                <div class="owner-actions" *ngIf="(ownsPost() || isAdmin()) && !editingPost">
+                    <button *ngIf="isAdmin()" mat-icon-button (click)="togglePin()"
+                            [matTooltip]="(post.pinned ? 'Unpin' : 'Pin to top') | trans">
+                        <mat-icon [svgIcon]="post.pinned ? 'star' : 'star-border'"></mat-icon>
+                    </button>
+                    <button *ngIf="ownsPost()" mat-icon-button (click)="startEditPost()" [matTooltip]="'Edit post' | trans">
                         <mat-icon svgIcon="edit"></mat-icon>
                     </button>
-                    <button mat-icon-button color="warn" (click)="deletePost()" [matTooltip]="'Delete post' | trans">
+                    <button *ngIf="ownsPost()" mat-icon-button color="warn" (click)="deletePost()" [matTooltip]="'Delete post' | trans">
                         <mat-icon svgIcon="delete"></mat-icon>
                     </button>
                 </div>

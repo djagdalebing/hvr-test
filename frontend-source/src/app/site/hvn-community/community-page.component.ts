@@ -78,6 +78,22 @@ export class CommunityPageComponent implements OnInit {
         );
     }
 
+    public isAdmin(): boolean {
+        return !!this.currentUser.hasPermission('admin');
+    }
+
+    public togglePin(p: any, ev?: Event) {
+        if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+        this.http.post('admin/community/' + p.id + '/pin', {}).subscribe(
+            (res: any) => {
+                p.pinned = !!res?.pinned;
+                this.toast.open(p.pinned ? 'Pinned to top.' : 'Unpinned.');
+                this.load(this.pagination?.current_page || 1);
+            },
+            () => this.toast.open('Failed to update pin'),
+        );
+    }
+
     public timeAgo(ts: string): string {
         if (!ts) return '';
         const diff = (Date.now() - new Date(ts).getTime()) / 1000;

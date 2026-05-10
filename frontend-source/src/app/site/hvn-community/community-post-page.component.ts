@@ -63,6 +63,16 @@ export class CommunityPostPageComponent implements OnInit {
         return ((name || '?') + '').charAt(0).toUpperCase();
     }
 
+    public togglePin() {
+        this.http.post('admin/community/' + this.post.id + '/pin', {}).subscribe(
+            (res: any) => {
+                this.post.pinned = !!res?.pinned;
+                this.toast.open(this.post.pinned ? 'Pinned to top.' : 'Unpinned.');
+            },
+            () => this.toast.open('Failed to update pin'),
+        );
+    }
+
     // -------- post edit / delete --------
 
     public isAdmin(): boolean {

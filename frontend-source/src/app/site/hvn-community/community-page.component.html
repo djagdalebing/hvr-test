@@ -53,6 +53,11 @@
                         <span class="spacer"></span>
                         <span class="stat"><mat-icon svgIcon="comment"></mat-icon>{{ p.comments_count || 0 }}</span>
                         <span class="stat"><mat-icon svgIcon="favorite-border"></mat-icon>{{ p.likes_count || 0 }}</span>
+                        <button *ngIf="isAdmin()" mat-icon-button class="pin-btn"
+                                (click)="togglePin(p, $event)"
+                                [matTooltip]="(p.pinned ? 'Unpin' : 'Pin to top') | trans">
+                            <mat-icon [svgIcon]="p.pinned ? 'star' : 'star-border'"></mat-icon>
+                        </button>
                     </div>
                 </div>
             </a>
