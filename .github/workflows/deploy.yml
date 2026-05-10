@@ -148,6 +148,7 @@ jobs:
             --exclude='storage/framework/sessions/*' \
             --exclude='storage/framework/views/*' \
             --exclude='bootstrap/cache/*.php' \
+            --exclude='public/storage' \
             --exclude='*.DS_Store' \
             --exclude='new_dir' \
             --exclude='newdirectory' \
@@ -163,6 +164,11 @@ jobs:
                php artisan config:clear || true && \
                php artisan cache:clear || true && \
                php artisan migrate --force || true && \
+               # Force-recreate the storage symlink so /storage/* serves
+               # files from storage/app/public. If public/storage is a
+               # stale real directory it shadows the symlink and Apache
+               # returns 422 for non-admin requests; rm it first.
+               (test -L public/storage || rm -rf public/storage) && \
                (php artisan storage:link || true)"
 
       - name: Deploy summary

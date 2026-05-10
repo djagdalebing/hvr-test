@@ -196,5 +196,15 @@ Route::group(['prefix' => 'secure/admin'], function () {
 // SESSION LOGOUT for server-rendered pages
 Route::post('logout', [HvnController::class, 'logout']);
 
+// Static-file fallback for /storage/* — when Hostinger's storage:link is
+// missing, broken, or shadowed by a real directory the Apache rewrite
+// punts these requests to PHP; without this route Laravel returns 422
+// for the binary path. Serve them straight from storage/app/public.
+Route::get('storage/{path}', function ($path) {
+    $abs = storage_path('app/public/' . $path);
+    if (!is_file($abs)) abort(404);
+    return response()->file($abs);
+})->where('path', '.*');
+
 // CATCH ALL ROUTES AND REDIRECT TO HOME
 Route::get('{all}', $homeController)->where('all', '.*');
