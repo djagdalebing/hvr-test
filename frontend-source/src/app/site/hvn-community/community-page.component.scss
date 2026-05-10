@@ -156,6 +156,18 @@
         gap: 4px;
         mat-icon { width: 14px; height: 14px; font-size: 14px; }
     }
+    .like-btn {
+        background: none;
+        border: 0;
+        padding: 0;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+        opacity: .8;
+        transition: color .15s ease, opacity .15s ease;
+        &:hover { opacity: 1; }
+        &.liked { color: var(--be-accent, #F65F54); opacity: 1; }
+    }
     .pin-btn {
         width: 28px; height: 28px; line-height: 28px;
         opacity: .85;

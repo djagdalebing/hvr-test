@@ -42,6 +42,17 @@
                 </div>
             </header>
             <div class="post-body" *ngIf="!editingPost">{{ post.body }}</div>
+            <div class="post-actions" *ngIf="!editingPost">
+                <button type="button" class="like-btn" [class.liked]="post.liked_by_me"
+                        (click)="toggleLike()"
+                        [matTooltip]="(post.liked_by_me ? 'Unlike' : 'Like') | trans">
+                    <mat-icon svgIcon="thumb-up"></mat-icon>
+                    <span>{{ post.likes_count || 0 }}</span>
+                </button>
+                <span class="stat">
+                    <mat-icon svgIcon="comment"></mat-icon>{{ post.comments?.length || 0 }}
+                </span>
+            </div>
             <div class="edit-block" *ngIf="editingPost">
                 <textarea [(ngModel)]="editBody" rows="6" placeholder="Body"></textarea>
                 <div class="edit-actions">

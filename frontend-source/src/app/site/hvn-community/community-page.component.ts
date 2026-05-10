@@ -94,6 +94,18 @@ export class CommunityPageComponent implements OnInit {
         );
     }
 
+    public toggleLike(p: any, ev?: Event) {
+        if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+        if (!this.currentUser.isLoggedIn()) { this.toast.open('Please log in to like posts.'); return; }
+        this.http.post('community/' + p.id + '/like', {}).subscribe(
+            (res: any) => {
+                p.liked_by_me = !!res?.liked;
+                p.likes_count = +res?.likes_count || 0;
+            },
+            () => this.toast.open('Failed to update like'),
+        );
+    }
+
     public timeAgo(ts: string): string {
         if (!ts) return '';
         const diff = (Date.now() - new Date(ts).getTime()) / 1000;

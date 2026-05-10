@@ -52,7 +52,12 @@
                         <span>{{ timeAgo(p.created_at) }}</span>
                         <span class="spacer"></span>
                         <span class="stat"><mat-icon svgIcon="comment"></mat-icon>{{ p.comments_count || 0 }}</span>
-                        <span class="stat"><mat-icon svgIcon="favorite-border"></mat-icon>{{ p.likes_count || 0 }}</span>
+                        <button class="stat like-btn" type="button"
+                                [class.liked]="p.liked_by_me"
+                                (click)="toggleLike(p, $event)"
+                                [matTooltip]="(p.liked_by_me ? 'Unlike' : 'Like') | trans">
+                            <mat-icon svgIcon="thumb-up"></mat-icon>{{ p.likes_count || 0 }}
+                        </button>
                         <button *ngIf="isAdmin()" mat-icon-button class="pin-btn"
                                 (click)="togglePin(p, $event)"
                                 [matTooltip]="(p.pinned ? 'Unpin' : 'Pin to top') | trans">

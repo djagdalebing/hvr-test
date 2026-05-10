@@ -223,9 +223,15 @@ class HvnController extends Controller
         $perPage = min(50, max(1, (int) $request->input('perPage', 15)));
         $query   = trim((string) $request->input('query', ''));
 
+        $user = $this->resolveUser();
         $q = CommunityPost::with(['user:id,username'])
             ->published()
             ->withCount(['comments', 'likes'])
+            ->when($user, function ($query) use ($user) {
+                $query->withExists(['likes as liked_by_me' => function ($lq) use ($user) {
+                    $lq->where('user_id', $user->id);
+                }]);
+            })
             ->orderByDesc('pinned')
             ->orderByDesc('created_at');
 
@@ -246,7 +252,38 @@ class HvnController extends Controller
             ->withCount(['comments', 'likes'])
             ->findOrFail($postId);
 
+        $user = $this->resolveUser();
+        $post->liked_by_me = $user ? \App\CommunityLike::where('post_id', $post->id)
+            ->where('user_id', $user->id)->exists() : false;
+
         return response()->json(['post' => $post]);
+    }
+
+    public function apiToggleLike(int $postId): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+
+        $post = CommunityPost::published()->findOrFail($postId);
+
+        $existing = \App\CommunityLike::where('post_id', $post->id)
+            ->where('user_id', $user->id)->first();
+        if ($existing) {
+            $existing->delete();
+            $liked = false;
+        } else {
+            \App\CommunityLike::create([
+                'post_id'    => $post->id,
+                'user_id'    => $user->id,
+                'created_at' => now(),
+            ]);
+            $liked = true;
+        }
+
+        return response()->json([
+            'liked'       => $liked,
+            'likes_count' => \App\CommunityLike::where('post_id', $post->id)->count(),
+        ]);
     }
 
     // -----------------------------------------------------------------

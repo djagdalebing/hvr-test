@@ -97,6 +97,43 @@
     opacity: .9;
 }
 
+.post-actions {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-size: 13px;
+
+    .stat {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        opacity: .7;
+        mat-icon { width: 18px; height: 18px; font-size: 18px; }
+    }
+
+    .like-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: none;
+        border: 0;
+        padding: 4px 8px;
+        margin-left: -8px;
+        border-radius: 4px;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        opacity: .8;
+        transition: color .15s ease, background .15s ease, opacity .15s ease;
+        mat-icon { width: 18px; height: 18px; font-size: 18px; }
+        &:hover { opacity: 1; background: rgba(255,255,255,0.04); }
+        &.liked { color: var(--be-accent, #F65F54); opacity: 1; }
+    }
+}
+
 .comments-section {
     margin-top: 32px;
     h2 {

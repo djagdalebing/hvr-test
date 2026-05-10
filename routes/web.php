@@ -162,6 +162,7 @@ Route::group(['prefix' => 'secure'], function () {
     Route::get('community/{id}',          [HvnController::class, 'apiCommunityShow'])->where('id', '[0-9]+');
     Route::post('community/posts',        [HvnController::class, 'communityStore']);
     Route::post('community/{id}/comments',[HvnController::class, 'commentStore'])->where('id', '[0-9]+');
+    Route::post('community/{id}/like',    [HvnController::class, 'apiToggleLike'])->where('id', '[0-9]+');
 
     // Owner edit/delete (controller checks ownership; admin uses /secure/admin/*).
     Route::put('community/{id}',          [HvnController::class, 'apiUpdateOwnPost'])->where('id', '[0-9]+');

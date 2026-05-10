@@ -63,6 +63,17 @@ export class CommunityPostPageComponent implements OnInit {
         return ((name || '?') + '').charAt(0).toUpperCase();
     }
 
+    public toggleLike() {
+        if (!this.currentUser.isLoggedIn()) { this.toast.open('Please log in to like posts.'); return; }
+        this.http.post('community/' + this.post.id + '/like', {}).subscribe(
+            (res: any) => {
+                this.post.liked_by_me = !!res?.liked;
+                this.post.likes_count = +res?.likes_count || 0;
+            },
+            () => this.toast.open('Failed to update like'),
+        );
+    }
+
     public togglePin() {
         this.http.post('admin/community/' + this.post.id + '/pin', {}).subscribe(
             (res: any) => {
