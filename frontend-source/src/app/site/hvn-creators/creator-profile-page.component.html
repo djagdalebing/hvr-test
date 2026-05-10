@@ -28,6 +28,27 @@
                 </div>
             </div>
         </header>
+
+        <section class="profile-section" *ngIf="projects.length">
+            <h2>Previous work</h2>
+            <ul class="project-grid">
+                <li *ngFor="let p of projects" class="project-card">
+                    <div class="project-thumb" [class.placeholder]="!projectImage(p)">
+                        <img *ngIf="projectImage(p)" [src]="projectImage(p)" [alt]="p.title">
+                    </div>
+                    <div class="project-body">
+                        <div class="project-title">{{ p.title }}</div>
+                        <div class="project-sub">
+                            <span *ngIf="p.role">{{ p.role }}</span>
+                            <span *ngIf="p.role && p.year"> · </span>
+                            <span *ngIf="p.year">{{ p.year }}</span>
+                        </div>
+                        <p class="project-desc" *ngIf="p.description">{{ p.description }}</p>
+                        <a *ngIf="p.url" [href]="p.url" target="_blank" rel="noopener" class="project-link">Visit ↗</a>
+                    </div>
+                </li>
+            </ul>
+        </section>
     </ng-container>
 </div>
 

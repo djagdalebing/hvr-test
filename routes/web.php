@@ -165,6 +165,12 @@ Route::group(['prefix' => 'secure'], function () {
     Route::post('community/{id}/like',    [HvnController::class, 'apiToggleLike'])->where('id', '[0-9]+');
     Route::post('community/comments/{id}/like', [HvnController::class, 'apiToggleCommentLike'])->where('id', '[0-9]+');
     Route::get('creator/dashboard',       [HvnController::class, 'apiCreatorDashboard']);
+    // Creator profile + projects (portfolio)
+    Route::post('creator/profile',        [HvnController::class, 'profileUpdate']);
+    Route::get('creator/projects',        [HvnController::class, 'apiListProjects']);
+    Route::post('creator/projects',       [HvnController::class, 'apiStoreProject']);
+    Route::post('creator/projects/{id}',  [HvnController::class, 'apiUpdateProject'])->where('id', '[0-9]+');
+    Route::delete('creator/projects/{id}',[HvnController::class, 'apiDeleteProject'])->where('id', '[0-9]+');
     // Creator content uploads — same controller as the /api/v1 routes,
     // mounted under /secure so session-cookie auth (the SPA) reaches it.
     Route::get('creator/content',         [\App\Http\Controllers\CreatorContentController::class, 'index']);

@@ -15,6 +15,7 @@ export class CreatorProfilePageComponent implements OnInit {
     public notFound = false;
     public user: any = null;
     public profile: any = null;
+    public projects: any[] = [];
 
     constructor(
         private route: ActivatedRoute,
@@ -34,6 +35,7 @@ export class CreatorProfilePageComponent implements OnInit {
             (res: any) => {
                 this.user = res.user;
                 this.profile = res.profile;
+                this.projects = res.projects || [];
                 this.loading = false;
                 this.cd.markForCheck();
             },
@@ -52,6 +54,10 @@ export class CreatorProfilePageComponent implements OnInit {
 
     public initial(): string {
         return (this.displayName() || '?').charAt(0).toUpperCase();
+    }
+
+    public projectImage(p: any): string | null {
+        return p?.image_path ? '/storage/' + p.image_path : null;
     }
 
     public socialLinks() {

@@ -151,21 +151,129 @@ class HvnController extends Controller
         }
 
         $request->validate([
-            'username'      => 'required|string|min:3|max:30|alpha_dash|unique:users,username,' . $user->id,
+            'username'      => 'sometimes|required|string|min:3|max:30|alpha_dash|unique:users,username,' . $user->id,
             'display_name'  => 'nullable|string|max:100',
-            'bio'           => 'nullable|string|max:1000',
+            'bio'           => 'nullable|string|max:2000',
             'website_url'   => 'nullable|url|max:255',
             'contact_email' => 'nullable|email|max:255',
+            'youtube_url'   => 'nullable|url|max:255',
+            'twitter_url'   => 'nullable|url|max:255',
+            'instagram_url' => 'nullable|url|max:255',
+            'facebook_url'  => 'nullable|url|max:255',
+            'profile_photo' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
-        $user->username = $request->input('username');
-        $user->save();
+        if ($request->filled('username')) {
+            $user->username = $request->input('username');
+            $user->save();
+        }
 
         $profile = CreatorProfile::firstOrCreate(['user_id' => $user->id]);
-        $profile->fill($request->only('display_name', 'bio', 'website_url', 'contact_email'));
+        $profile->fill($request->only(
+            'display_name', 'bio', 'website_url', 'contact_email',
+            'youtube_url', 'twitter_url', 'instagram_url', 'facebook_url'
+        ));
+
+        if ($request->hasFile('profile_photo')) {
+            $stored = $request->file('profile_photo')
+                ->store('creator_profiles', 'public');
+            $profile->profile_photo = $stored;
+        }
+
         $profile->save();
 
-        return response()->json(['message' => 'Profile updated.']);
+        return response()->json(['message' => 'Profile updated.', 'profile' => $profile->fresh()]);
+    }
+
+    // -----------------------------------------------------------------
+    // Creator projects (previous work / portfolio)
+    // -----------------------------------------------------------------
+
+    public function apiListProjects(): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
+        if ($user->role !== 'creator') return response()->json(['message' => 'Forbidden.'], 403);
+
+        $projects = \App\CreatorProject::where('user_id', $user->id)
+            ->orderBy('position')
+            ->orderByDesc('id')
+            ->get();
+        return response()->json(['projects' => $projects]);
+    }
+
+    public function apiStoreProject(Request $request): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
+        if ($user->role !== 'creator') return response()->json(['message' => 'Forbidden.'], 403);
+
+        $request->validate([
+            'title'       => 'required|string|max:200',
+            'role'        => 'nullable|string|max:200',
+            'year'        => 'nullable|integer|min:1900|max:2100',
+            'description' => 'nullable|string|max:5000',
+            'url'         => 'nullable|url|max:500',
+            'image'       => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+
+        $data = $request->only(['title', 'role', 'year', 'description', 'url']);
+        $data['user_id']  = $user->id;
+        $data['position'] = (int) (\App\CreatorProject::where('user_id', $user->id)->max('position') ?? 0) + 1;
+
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $request->file('image')->store('creator_projects', 'public');
+        }
+
+        $project = \App\CreatorProject::create($data);
+        return response()->json(['project' => $project], 201);
+    }
+
+    public function apiUpdateProject(Request $request, int $id): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
+        if ($user->role !== 'creator') return response()->json(['message' => 'Forbidden.'], 403);
+
+        $project = \App\CreatorProject::findOrFail($id);
+        if ((int) $project->user_id !== (int) $user->id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $request->validate([
+            'title'       => 'required|string|max:200',
+            'role'        => 'nullable|string|max:200',
+            'year'        => 'nullable|integer|min:1900|max:2100',
+            'description' => 'nullable|string|max:5000',
+            'url'         => 'nullable|url|max:500',
+            'image'       => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+
+        $project->fill($request->only(['title', 'role', 'year', 'description', 'url']));
+        if ($request->hasFile('image')) {
+            $project->image_path = $request->file('image')->store('creator_projects', 'public');
+        }
+        $project->save();
+
+        return response()->json(['project' => $project]);
+    }
+
+    public function apiDeleteProject(int $id): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
+        if ($user->role !== 'creator') return response()->json(['message' => 'Forbidden.'], 403);
+
+        $project = \App\CreatorProject::findOrFail($id);
+        if ((int) $project->user_id !== (int) $user->id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+        $project->delete();
+        return response()->json(['message' => 'Deleted.']);
     }
 
     public function creatorProfile(string $username)
@@ -237,9 +345,15 @@ class HvnController extends Controller
             ->with('creatorProfile')
             ->firstOrFail();
 
+        $projects = \App\CreatorProject::where('user_id', $user->id)
+            ->orderBy('position')
+            ->orderByDesc('id')
+            ->get();
+
         return response()->json([
-            'user'    => $user,
-            'profile' => $user->creatorProfile,
+            'user'     => $user,
+            'profile'  => $user->creatorProfile,
+            'projects' => $projects,
         ]);
     }
 
@@ -322,15 +436,22 @@ class HvnController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        $projects = \App\CreatorProject::where('user_id', $user->id)
+            ->orderBy('position')
+            ->orderByDesc('id')
+            ->get();
+
         return response()->json([
-            'user'    => $user->only(['id', 'username', 'email', 'avatar', 'role', 'blocked']),
-            'profile' => $profile,
-            'posts'   => $posts,
-            'content' => $content,
-            'totals'  => [
+            'user'     => $user->only(['id', 'username', 'email', 'avatar', 'role', 'blocked']),
+            'profile'  => $profile,
+            'posts'    => $posts,
+            'content'  => $content,
+            'projects' => $projects,
+            'totals'   => [
                 'posts'    => CommunityPost::where('user_id', $user->id)->count(),
                 'comments' => \App\CommunityComment::where('user_id', $user->id)->count(),
                 'titles'   => $content->count(),
+                'projects' => $projects->count(),
             ],
         ]);
     }

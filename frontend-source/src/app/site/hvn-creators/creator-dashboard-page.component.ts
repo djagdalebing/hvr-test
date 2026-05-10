@@ -39,6 +39,7 @@ export class CreatorDashboardPageComponent implements OnInit {
                 this.profile = res.profile;
                 this.posts = res.posts || [];
                 this.content = res.content || [];
+                this.projects = res.projects || [];
                 this.totals = res.totals || this.totals;
                 this.loading = false;
                 this.cd.markForCheck();
@@ -115,6 +116,109 @@ export class CreatorDashboardPageComponent implements OnInit {
                 this.toast.open(String(msg));
             },
         );
+    }
+
+    // ----- profile edit -----
+    public showProfileEdit = false;
+    public savingProfile = false;
+    public pForm: any = {};
+    public pPhoto: File | null = null;
+
+    public toggleProfileEdit() {
+        this.showProfileEdit = !this.showProfileEdit;
+        if (this.showProfileEdit) {
+            const p = this.profile || {};
+            this.pForm = {
+                display_name:  p.display_name  || '',
+                bio:           p.bio           || '',
+                contact_email: p.contact_email || '',
+                website_url:   p.website_url   || '',
+                youtube_url:   p.youtube_url   || '',
+                twitter_url:   p.twitter_url   || '',
+                instagram_url: p.instagram_url || '',
+                facebook_url:  p.facebook_url  || '',
+            };
+            this.pPhoto = null;
+        }
+    }
+
+    public onProfilePhoto(ev: Event) {
+        const input = ev.target as HTMLInputElement;
+        this.pPhoto = input.files && input.files.length ? input.files[0] : null;
+    }
+
+    public saveProfile() {
+        if (this.savingProfile) return;
+        const fd = new FormData();
+        Object.keys(this.pForm).forEach(k => {
+            if (this.pForm[k] != null) fd.append(k, this.pForm[k]);
+        });
+        if (this.pPhoto) fd.append('profile_photo', this.pPhoto);
+
+        this.savingProfile = true;
+        this.http.post('creator/profile', fd).subscribe(
+            (res: any) => {
+                this.savingProfile = false;
+                if (res?.profile) this.profile = res.profile;
+                this.showProfileEdit = false;
+                this.toast.open('Profile updated.');
+            },
+            (err: any) => {
+                this.savingProfile = false;
+                const msg = err?.error?.message || (err?.error?.errors ? Object.values(err.error.errors).flat()[0] : 'Failed to save.');
+                this.toast.open(String(msg));
+            },
+        );
+    }
+
+    // ----- projects -----
+    public projects: any[] = [];
+    public projectForm: any = {open: false, id: null, title: '', role: '', year: null, description: '', url: '', image: null};
+
+    public openNewProject() {
+        this.projectForm = {open: true, id: null, title: '', role: '', year: null, description: '', url: '', image: null};
+    }
+
+    public openEditProject(p: any) {
+        this.projectForm = {open: true, id: p.id, title: p.title || '', role: p.role || '', year: p.year || null,
+            description: p.description || '', url: p.url || '', image: null};
+    }
+
+    public closeProject() { this.projectForm.open = false; }
+
+    public onProjectImage(ev: Event) {
+        const input = ev.target as HTMLInputElement;
+        this.projectForm.image = input.files && input.files.length ? input.files[0] : null;
+    }
+
+    public saveProject() {
+        const f = this.projectForm;
+        if (!f.title || !f.title.trim()) { this.toast.open('Title is required.'); return; }
+        const fd = new FormData();
+        fd.append('title', f.title.trim());
+        if (f.role) fd.append('role', f.role);
+        if (f.year) fd.append('year', String(f.year));
+        if (f.description) fd.append('description', f.description);
+        if (f.url) fd.append('url', f.url);
+        if (f.image) fd.append('image', f.image);
+
+        const uri = f.id ? 'creator/projects/' + f.id : 'creator/projects';
+        this.http.post(uri, fd).subscribe(
+            () => { this.closeProject(); this.toast.open(f.id ? 'Project updated.' : 'Project added.'); this.load(); },
+            (err: any) => this.toast.open(err?.error?.message || 'Failed to save project.'),
+        );
+    }
+
+    public deleteProject(p: any) {
+        if (!confirm('Delete project "' + p.title + '"?')) return;
+        this.http.delete('creator/projects/' + p.id).subscribe(
+            () => { this.toast.open('Project deleted.'); this.load(); },
+            (err: any) => this.toast.open(err?.error?.message || 'Failed to delete.'),
+        );
+    }
+
+    public projectImage(p: any): string | null {
+        return p?.image_path ? '/storage/' + p.image_path : null;
     }
 
     public deleteTitle(t: any) {

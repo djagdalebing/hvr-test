@@ -20,6 +20,9 @@
                 <div class="dash-handle">{{ user.username }}</div>
                 <div class="dash-bio" *ngIf="profile?.bio">{{ profile.bio }}</div>
                 <a [routerLink]="['/creators', user.username]" mat-stroked-button class="dash-action">View public profile</a>
+                <button mat-flat-button color="accent" class="dash-action" (click)="toggleProfileEdit()">
+                    {{ showProfileEdit ? 'Close' : 'Edit profile' }}
+                </button>
             </aside>
 
             <div class="dash-main">
@@ -37,6 +40,97 @@
                         <div class="stat-label">Titles uploaded</div>
                     </div>
                 </div>
+
+                <div class="upload-panel" *ngIf="showProfileEdit">
+                    <div class="upload-grid">
+                        <div class="field full">
+                            <label>Display name</label>
+                            <input type="text" maxlength="100" [(ngModel)]="pForm.display_name">
+                        </div>
+                        <div class="field full">
+                            <label>Bio / About</label>
+                            <textarea rows="4" maxlength="2000" [(ngModel)]="pForm.bio"
+                                      placeholder="Tell viewers about yourself, your style, experience…"></textarea>
+                        </div>
+                        <div class="field full">
+                            <label>Profile photo <span class="hint">(jpg/png/webp, max 5MB)</span></label>
+                            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onProfilePhoto($event)">
+                        </div>
+                        <div class="field">
+                            <label>Contact email</label>
+                            <input type="email" [(ngModel)]="pForm.contact_email">
+                        </div>
+                        <div class="field">
+                            <label>Website</label>
+                            <input type="url" [(ngModel)]="pForm.website_url" placeholder="https://...">
+                        </div>
+                        <div class="field"><label>YouTube</label><input type="url" [(ngModel)]="pForm.youtube_url"></div>
+                        <div class="field"><label>Twitter / X</label><input type="url" [(ngModel)]="pForm.twitter_url"></div>
+                        <div class="field"><label>Instagram</label><input type="url" [(ngModel)]="pForm.instagram_url"></div>
+                        <div class="field"><label>Facebook</label><input type="url" [(ngModel)]="pForm.facebook_url"></div>
+                    </div>
+                    <div class="upload-actions">
+                        <button mat-button (click)="toggleProfileEdit()" [disabled]="savingProfile">Cancel</button>
+                        <button mat-flat-button color="accent" (click)="saveProfile()" [disabled]="savingProfile">
+                            {{ savingProfile ? 'Saving…' : 'Save profile' }}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="dash-section-head">
+                    <h2 class="dash-section-title">Previous work / projects</h2>
+                    <button mat-flat-button color="accent" (click)="openNewProject()" *ngIf="!projectForm.open">
+                        <mat-icon svgIcon="add"></mat-icon><span>Add project</span>
+                    </button>
+                </div>
+
+                <div class="upload-panel" *ngIf="projectForm.open">
+                    <div class="upload-grid">
+                        <div class="field full">
+                            <label>Title <span class="req">*</span></label>
+                            <input type="text" maxlength="200" [(ngModel)]="projectForm.title">
+                        </div>
+                        <div class="field"><label>Role</label><input type="text" maxlength="200" [(ngModel)]="projectForm.role"
+                                placeholder="Director, Editor, Cinematographer…"></div>
+                        <div class="field"><label>Year</label><input type="number" min="1900" max="2100" [(ngModel)]="projectForm.year"></div>
+                        <div class="field full">
+                            <label>Description</label>
+                            <textarea rows="3" maxlength="5000" [(ngModel)]="projectForm.description"></textarea>
+                        </div>
+                        <div class="field"><label>Link</label><input type="url" [(ngModel)]="projectForm.url" placeholder="https://..."></div>
+                        <div class="field"><label>Image <span class="hint">(jpg/png/webp, max 5MB)</span></label>
+                            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onProjectImage($event)"></div>
+                    </div>
+                    <div class="upload-actions">
+                        <button mat-button (click)="closeProject()">Cancel</button>
+                        <button mat-flat-button color="accent" (click)="saveProject()">
+                            {{ projectForm.id ? 'Save changes' : 'Add project' }}
+                        </button>
+                    </div>
+                </div>
+
+                <div *ngIf="projects.length === 0 && !projectForm.open" class="dash-empty">No projects yet — add your previous work to showcase to viewers.</div>
+                <ul class="project-list" *ngIf="projects.length">
+                    <li *ngFor="let p of projects" class="project-card">
+                        <div class="project-thumb" [class.placeholder]="!projectImage(p)">
+                            <img *ngIf="projectImage(p)" [src]="projectImage(p)" [alt]="p.title">
+                        </div>
+                        <div class="project-body">
+                            <div class="project-title">{{ p.title }}</div>
+                            <div class="project-sub">
+                                <span *ngIf="p.role">{{ p.role }}</span>
+                                <span *ngIf="p.role && p.year"> · </span>
+                                <span *ngIf="p.year">{{ p.year }}</span>
+                            </div>
+                            <div class="project-desc" *ngIf="p.description">{{ p.description }}</div>
+                            <a *ngIf="p.url" [href]="p.url" target="_blank" rel="noopener" class="project-link">Visit ↗</a>
+                        </div>
+                        <div class="project-actions">
+                            <button mat-icon-button (click)="openEditProject(p)" [matTooltip]="'Edit' | trans"><mat-icon svgIcon="edit"></mat-icon></button>
+                            <button mat-icon-button color="warn" (click)="deleteProject(p)" [matTooltip]="'Delete' | trans"><mat-icon svgIcon="delete"></mat-icon></button>
+                        </div>
+                    </li>
+                </ul>
 
                 <h2 class="dash-section-title">Recent posts</h2>
                 <div *ngIf="posts.length === 0" class="dash-empty">You haven't posted anything yet.</div>
