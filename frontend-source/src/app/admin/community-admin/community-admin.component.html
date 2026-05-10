@@ -27,7 +27,7 @@
             <tr *ngFor="let p of posts$ | async">
                 <td data-label="Post">
                     <div style="font-weight:500">
-                        <mat-icon *ngIf="p.pinned" svgIcon="bookmark" class="pin-mark" [matTooltip]="'Pinned' | trans"></mat-icon>
+                        <mat-icon *ngIf="p.pinned" svgIcon="star" class="pin-mark" [matTooltip]="'Pinned' | trans"></mat-icon>
                         {{ p.title }}
                     </div>
                     <div class="muted ellipsis">{{ p.body }}</div>
@@ -44,7 +44,7 @@
                 <td class="edit-column">
                     <button mat-icon-button (click)="togglePin(p)"
                             [matTooltip]="(p.pinned ? 'Unpin' : 'Pin to top') | trans">
-                        <mat-icon [svgIcon]="p.pinned ? 'bookmark' : 'bookmark-border'"></mat-icon>
+                        <mat-icon [svgIcon]="p.pinned ? 'star' : 'star-border'"></mat-icon>
                     </button>
                     <button mat-icon-button (click)="openEdit(p)" [matTooltip]="'Edit post' | trans">
                         <mat-icon svgIcon="edit"></mat-icon>

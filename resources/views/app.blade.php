@@ -152,11 +152,11 @@
 
 @section('angular-scripts')
     {{--angular scripts begin — bundle hashes auto-rewritten by CI --}}
-		<script src="client/runtime-es2015.18583495e3b446838f7a.js" type="module"></script>
-		<script src="client/runtime-es5.18583495e3b446838f7a.js" nomodule defer></script>
+		<script src="client/runtime-es2015.7ed15a6ec1b09a2c3133.js" type="module"></script>
+		<script src="client/runtime-es5.7ed15a6ec1b09a2c3133.js" nomodule defer></script>
 		<script src="client/polyfills-es2015.efb9d3bbd257407bb0da.js" type="module"></script>
 		<script src="client/polyfills-es5.6f7ddfe1967d03b32b3b.js" nomodule defer></script>
-		<script src="client/main-es2015.b2c41a11a56bf9f91049.js" type="module"></script>
-		<script src="client/main-es5.b2c41a11a56bf9f91049.js" nomodule defer></script>
+		<script src="client/main-es2015.122751fd39309df38419.js" type="module"></script>
+		<script src="client/main-es5.122751fd39309df38419.js" nomodule defer></script>
 	{{--angular scripts end--}}
 @endsection
