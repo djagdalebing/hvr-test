@@ -135,8 +135,13 @@ jobs:
 
       - name: Rsync to Hostinger
         run: |
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.HOSTINGER_PORT || 22 }} -o StrictHostKeyChecking=no" \
+          # Retry rsync up to 4 times with exponential backoff so a transient
+          # SSH timeout doesn't kill the whole deploy. Hostinger's SSH endpoint
+          # occasionally drops connections; --partial keeps progress so the
+          # retry resumes instead of restarting from zero.
+          attempt=1
+          until rsync -avz --delete --partial --timeout=60 \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.HOSTINGER_PORT || 22 }} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4" \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='frontend-source' \
@@ -152,10 +157,22 @@ jobs:
             --exclude='new_dir' \
             --exclude='newdirectory' \
             ./ ${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${{ steps.path.outputs.remote }}/
+          do
+            code=$?
+            if [ $attempt -ge 4 ]; then
+              echo "rsync failed after $attempt attempts (last exit: $code)"; exit $code
+            fi
+            wait_s=$((10 * attempt))
+            echo "rsync attempt $attempt failed (exit $code) — retrying in ${wait_s}s…"
+            sleep $wait_s
+            attempt=$((attempt + 1))
+          done
 
       - name: Post-deploy (clear caches, link storage, run migrations)
         run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.HOSTINGER_PORT || 22 }} \
+          attempt=1
+          until ssh -i ~/.ssh/deploy_key -p ${{ secrets.HOSTINGER_PORT || 22 }} \
+              -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
               ${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }} \
               "cd ${{ steps.path.outputs.remote }} && \
                php artisan view:clear || true && \
@@ -169,6 +186,16 @@ jobs:
                # returns 422 for non-admin requests; rm it first.
                (test -L public/storage || rm -rf public/storage) && \
                (php artisan storage:link || true)"
+          do
+            code=$?
+            if [ $attempt -ge 4 ]; then
+              echo "post-deploy SSH failed after $attempt attempts (last exit: $code)"; exit $code
+            fi
+            wait_s=$((10 * attempt))
+            echo "post-deploy attempt $attempt failed (exit $code) — retrying in ${wait_s}s…"
+            sleep $wait_s
+            attempt=$((attempt + 1))
+          done
 
       - name: Deploy summary
         run: |
