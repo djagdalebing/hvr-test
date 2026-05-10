@@ -212,6 +212,35 @@ Route::group(['prefix' => 'secure/admin'], function () {
 // SESSION LOGOUT for server-rendered pages
 Route::post('logout', [HvnController::class, 'logout']);
 
+// DEV diagnostic — returns the sha1 of every interesting PHP file, plus
+// opcache stats. Invokes opcache_reset() if ?reset=1 is passed AND the
+// request came from the same machine (loopback / fronted by Hostinger).
+// This is a defence against opcache holding stale bytecode after a deploy.
+Route::get('dev/version-probe', function (\Illuminate\Http\Request $r) {
+    $files = [
+        'middleware/ServeHvnPages'  => app_path('Http/Middleware/ServeHvnPages.php'),
+        'controller/HvnController'  => app_path('Http/Controllers/Web/HvnController.php'),
+        'routes/web'                => base_path('routes/web.php'),
+    ];
+    $out = [];
+    foreach ($files as $k => $p) {
+        $out[$k] = is_file($p) ? ['sha1' => sha1_file($p), 'mtime' => filemtime($p)] : ['missing' => true];
+    }
+    if ($r->query('reset') === '1' && function_exists('opcache_reset')) {
+        @opcache_reset();
+        $out['opcache_reset'] = true;
+    }
+    if (function_exists('opcache_get_status')) {
+        $s = @opcache_get_status(false);
+        $out['opcache'] = $s ? [
+            'enabled'      => $s['opcache_enabled'] ?? null,
+            'cached_files' => count($s['scripts'] ?? []),
+            'memory_used'  => $s['memory_usage']['used_memory'] ?? null,
+        ] : 'disabled';
+    }
+    return response()->json($out);
+});
+
 // Static-file fallback for /storage/* — when Hostinger's storage:link is
 // missing, broken, or shadowed by a real directory the Apache rewrite
 // punts these requests to PHP; without this route Laravel returns 422
