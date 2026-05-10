@@ -451,6 +451,15 @@ class HvnAdminController extends Controller
         return ['status' => 'success', 'post' => $post->fresh()];
     }
 
+    public function apiPinPost(Request $request, int $postId)
+    {
+        $this->apiAdminOrAbort();
+        $post = CommunityPost::findOrFail($postId);
+        $post->pinned = !$post->pinned;
+        $post->save();
+        return ['status' => 'success', 'pinned' => (bool) $post->pinned];
+    }
+
     public function apiDeletePost(Request $request, int $postId)
     {
         $this->apiAdminOrAbort();

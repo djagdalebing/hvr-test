@@ -226,6 +226,7 @@ class HvnController extends Controller
         $q = CommunityPost::with(['user:id,username'])
             ->published()
             ->withCount(['comments', 'likes'])
+            ->orderByDesc('pinned')
             ->orderByDesc('created_at');
 
         if ($query !== '') {

@@ -15,7 +15,12 @@
             <header class="post-header">
                 <div class="post-avatar">{{ initial(post.user?.username) }}</div>
                 <div class="post-header-meta">
-                    <h1 *ngIf="!editingPost">{{ post.title }}</h1>
+                    <h1 *ngIf="!editingPost">
+                        <span class="pinned-badge" *ngIf="post.pinned">
+                            <mat-icon svgIcon="bookmark"></mat-icon>Pinned
+                        </span>
+                        {{ post.title }}
+                    </h1>
                     <input *ngIf="editingPost" type="text" class="edit-title" [(ngModel)]="editTitle" maxlength="255" placeholder="Title">
                     <div class="post-meta">
                         <span>by {{ post.user?.username || 'unknown' }}</span>

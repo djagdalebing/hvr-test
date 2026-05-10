@@ -56,6 +56,16 @@ export class CommunityAdminComponent implements OnInit {
         );
     }
 
+    public togglePin(p: any) {
+        this.http.post('admin/community/' + p.id + '/pin', {}).subscribe(
+            (res: any) => {
+                this.datatable.reset();
+                this.toast.open(res?.pinned ? 'Pinned to top.' : 'Unpinned.');
+            },
+            () => this.toast.open('Failed to update pin'),
+        );
+    }
+
     public deletePost(p: any) {
         if (!confirm('Permanently delete this post and all its comments?')) return;
         this.http.delete('admin/community/' + p.id).subscribe(

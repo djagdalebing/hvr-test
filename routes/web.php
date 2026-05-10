@@ -187,6 +187,7 @@ Route::group(['prefix' => 'secure/admin'], function () {
     Route::get('community',         [HvnAdminController::class, 'apiCommunity']);
     Route::put('community/{id}',    [HvnAdminController::class, 'apiUpdatePost']);
     Route::post('community/{id}/hide', [HvnAdminController::class, 'apiHidePost']);
+    Route::post('community/{id}/pin',  [HvnAdminController::class, 'apiPinPost']);
     Route::delete('community/{id}', [HvnAdminController::class, 'apiDeletePost']);
     Route::get('community/{id}/comments', [HvnAdminController::class, 'apiPostComments']);
     Route::delete('community/comments/{id}', [HvnAdminController::class, 'apiDeleteComment']);

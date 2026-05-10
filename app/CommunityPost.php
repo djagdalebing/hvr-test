@@ -8,9 +8,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CommunityPost extends Model
 {
-    protected $fillable = ['user_id', 'title', 'body', 'status'];
+    protected $fillable = ['user_id', 'title', 'body', 'status', 'pinned'];
 
-    protected $casts = ['id' => 'integer', 'user_id' => 'integer'];
+    protected $casts = [
+        'id'      => 'integer',
+        'user_id' => 'integer',
+        'pinned'  => 'boolean',
+    ];
 
     public function user(): BelongsTo
     {

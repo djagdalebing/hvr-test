@@ -16,6 +16,15 @@ community-admin {
 
     .edit-column { white-space: nowrap; text-align: right; }
 
+    .pin-mark {
+        width: 16px;
+        height: 16px;
+        font-size: 16px;
+        vertical-align: text-bottom;
+        margin-right: 4px;
+        color: var(--be-accent, #F65F54);
+    }
+
     .edit-overlay {
         position: fixed;
         inset: 0;

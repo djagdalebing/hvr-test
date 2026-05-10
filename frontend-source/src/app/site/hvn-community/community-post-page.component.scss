@@ -28,6 +28,22 @@
     padding: 24px;
 }
 
+.pinned-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    background: rgba(246, 95, 84, 0.18);
+    color: var(--be-accent, #F65F54);
+    border-radius: 10px;
+    padding: 2px 8px;
+    margin-right: 6px;
+    vertical-align: middle;
+    mat-icon { width: 12px; height: 12px; font-size: 12px; }
+}
+
 .post-header {
     display: flex;
     gap: 14px;

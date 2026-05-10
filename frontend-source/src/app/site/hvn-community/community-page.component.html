@@ -39,7 +39,12 @@
             <a [routerLink]="['/community', p.id]" class="post-link">
                 <div class="post-avatar">{{ ((p.user?.username || '?') + '').charAt(0).toUpperCase() }}</div>
                 <div class="post-body">
-                    <div class="post-title">{{ p.title }}</div>
+                    <div class="post-title">
+                        <span class="pinned-badge" *ngIf="p.pinned">
+                            <mat-icon svgIcon="bookmark"></mat-icon>Pinned
+                        </span>
+                        {{ p.title }}
+                    </div>
                     <div class="post-snippet">{{ p.body }}</div>
                     <div class="post-meta">
                         <span class="author">by {{ p.user?.username || 'unknown' }}</span>
