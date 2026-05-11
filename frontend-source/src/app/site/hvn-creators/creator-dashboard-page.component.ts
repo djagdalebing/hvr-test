@@ -112,8 +112,7 @@ export class CreatorDashboardPageComponent implements OnInit {
             },
             (err: any) => {
                 this.uploading = false;
-                const msg = err?.error?.message || (err?.error?.errors ? Object.values(err.error.errors).flat()[0] : 'Upload failed.');
-                this.toast.open(String(msg));
+                this.toast.open(this.firstError(err) || 'Upload failed.');
             },
         );
     }
@@ -165,8 +164,7 @@ export class CreatorDashboardPageComponent implements OnInit {
             },
             (err: any) => {
                 this.savingProfile = false;
-                const msg = err?.error?.message || (err?.error?.errors ? Object.values(err.error.errors).flat()[0] : 'Failed to save.');
-                this.toast.open(String(msg));
+                this.toast.open(this.firstError(err) || 'Failed to save.');
             },
         );
     }
@@ -205,8 +203,21 @@ export class CreatorDashboardPageComponent implements OnInit {
         const uri = f.id ? 'creator/projects/' + f.id : 'creator/projects';
         this.http.post(uri, fd).subscribe(
             () => { this.closeProject(); this.toast.open(f.id ? 'Project updated.' : 'Project added.'); this.load(); },
-            (err: any) => this.toast.open(err?.error?.message || 'Failed to save project.'),
+            (err: any) => this.toast.open(this.firstError(err) || 'Failed to save project.'),
         );
+    }
+
+    private firstError(err: any): string | null {
+        // Laravel validation 422 returns {message, errors: {field: [msg, ...]}}.
+        // Surface the first field error instead of the generic "given data
+        // was invalid" message so the user knows what to fix.
+        const errs = err?.error?.errors;
+        if (errs && typeof errs === 'object') {
+            for (const k of Object.keys(errs)) {
+                if (Array.isArray(errs[k]) && errs[k].length) return errs[k][0];
+            }
+        }
+        return err?.error?.message || null;
     }
 
     public deleteProject(p: any) {

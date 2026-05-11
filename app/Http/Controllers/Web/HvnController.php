@@ -210,6 +210,12 @@ class HvnController extends Controller
         if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
         if ($user->role !== 'creator') return response()->json(['message' => 'Forbidden.'], 403);
 
+        // Be forgiving: if the user typed "youtube.com/x" without a protocol,
+        // prepend https:// so Laravel's url validator passes.
+        if ($request->filled('url') && !preg_match('#^https?://#i', $request->input('url'))) {
+            $request->merge(['url' => 'https://' . ltrim($request->input('url'))]);
+        }
+
         $request->validate([
             'title'       => 'required|string|max:200',
             'role'        => 'nullable|string|max:200',
@@ -241,6 +247,10 @@ class HvnController extends Controller
         $project = \App\CreatorProject::findOrFail($id);
         if ((int) $project->user_id !== (int) $user->id) {
             return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($request->filled('url') && !preg_match('#^https?://#i', $request->input('url'))) {
+            $request->merge(['url' => 'https://' . ltrim($request->input('url'))]);
         }
 
         $request->validate([
