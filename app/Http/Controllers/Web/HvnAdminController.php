@@ -418,12 +418,14 @@ class HvnAdminController extends Controller
         $u->blocked = !$u->blocked;
         $u->save();
 
-        if ($u->blocked) {
-            try {
+        try {
+            if ($u->blocked) {
                 $u->notify(new \App\Notifications\HvnAccountBlocked());
-            } catch (\Throwable $e) {
-                \Log::warning('HvnAccountBlocked notify failed: ' . $e->getMessage());
+            } else {
+                $u->notify(new \App\Notifications\HvnAccountUnblocked());
             }
+        } catch (\Throwable $e) {
+            \Log::warning('Account block/unblock notify failed: ' . $e->getMessage());
         }
 
         return ['status' => 'success', 'blocked' => (bool) $u->blocked];
