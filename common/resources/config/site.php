@@ -15,7 +15,11 @@ return [
     'workspaces_integrated' => env('WORKSPACES_ENABLED', false),
     // TODO: refactor bedrive and remove
     'new_workspace_filter' => env('NEW_WORKSPACE_FILTER', false),
-    'notifications_integrated' => env('NOTIFICATIONS_ENABLED', false),
+    // HVN: bell badge + /notifications page in the SPA are gated by this
+    // flag. Hard-coded to true (was env('NOTIFICATIONS_ENABLED', false)) so
+    // notifications work on every host regardless of .env contents. If you
+    // ever want to disable globally, set this to false.
+    'notifications_integrated' => true,
     'notif_subs_integrated' => env('NOTIF_SUBS_ENABLED', false),
     'api_integrated' => env('API_INTEGRATED', false),
     'enable_custom_domains' => env('ENABLE_CUSTOM_DOMAINS', false),
