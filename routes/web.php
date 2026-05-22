@@ -232,6 +232,44 @@ Route::get('dev/version-probe', function (\Illuminate\Http\Request $r) {
         @opcache_reset();
         $out['opcache_reset'] = true;
     }
+
+    // Surface the raw DB value of notifications.integrated and the cached
+    // value so we can tell whether the migration applied vs whether the
+    // bootstrap cache is just stale.
+    try {
+        $row = \Illuminate\Support\Facades\DB::table('settings')
+            ->where('name', 'notifications.integrated')->first();
+        $out['notif_integrated_db'] = $row ? $row->value : '(missing row)';
+        $cached = \Illuminate\Support\Facades\Cache::get('settings.public');
+        if ($cached) {
+            $found = null;
+            foreach ($cached as $s) {
+                if (($s['name'] ?? null) === 'notifications.integrated') { $found = $s; break; }
+            }
+            $out['notif_integrated_cached'] = $found ?: '(not in cache)';
+        }
+    } catch (\Throwable $e) {
+        $out['db_err'] = $e->getMessage();
+    }
+
+    // ?clearSettings=1 — force-update + clear settings cache + bust opcache.
+    if ($r->query('clearSettings') === '1') {
+        try {
+            \Illuminate\Support\Facades\DB::table('settings')->updateOrInsert(
+                ['name' => 'notifications.integrated'],
+                ['name' => 'notifications.integrated', 'value' => 'true', 'private' => 0]
+            );
+            foreach (['settings.public', 'settings', 'settings.all'] as $k) {
+                \Illuminate\Support\Facades\Cache::forget($k);
+            }
+            // some Vebto installs use file cache — wipe the whole bootstrap
+            // cache dir too as a last resort
+            \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            $out['settings_force_set'] = true;
+        } catch (\Throwable $e) {
+            $out['settings_err'] = $e->getMessage();
+        }
+    }
     if (function_exists('opcache_get_status')) {
         $s = @opcache_get_status(false);
         $out['opcache'] = $s ? [
