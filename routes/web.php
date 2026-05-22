@@ -233,6 +233,19 @@ Route::get('dev/version-probe', function (\Illuminate\Http\Request $r) {
         $out['opcache_reset'] = true;
     }
 
+    // Count notifications by type so we can see whether pin rows are being
+    // written at all vs. a display/testing issue.
+    try {
+        if (\Illuminate\Support\Facades\Schema::hasTable('notifications')) {
+            $out['notif_counts'] = \Illuminate\Support\Facades\DB::table('notifications')
+                ->selectRaw('type, count(*) as c')
+                ->groupBy('type')
+                ->pluck('c', 'type');
+        }
+    } catch (\Throwable $e) {
+        $out['notif_count_err'] = $e->getMessage();
+    }
+
     // Surface the raw DB value of notifications.integrated and the cached
     // value so we can tell whether the migration applied vs whether the
     // bootstrap cache is just stale.
