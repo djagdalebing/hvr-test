@@ -99,6 +99,19 @@ class HvnController extends Controller
             'created_at' => now(),
         ]);
 
+        // Notify the post owner — unless they're the one commenting.
+        if ((int) $post->user_id !== (int) $user->id) {
+            $owner = \App\User::find($post->user_id);
+            if ($owner) {
+                try {
+                    $owner->notify(new \App\Notifications\HvnNewCommentOnPost($comment, $post));
+                } catch (\Throwable $e) {
+                    // never let a notification failure block the response
+                    \Log::warning('HvnNewCommentOnPost notify failed: ' . $e->getMessage());
+                }
+            }
+        }
+
         return response()->json(['comment' => $comment->load('user:id,username')], 201);
     }
 

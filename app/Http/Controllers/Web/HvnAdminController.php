@@ -417,6 +417,15 @@ class HvnAdminController extends Controller
         $u = User::findOrFail($userId);
         $u->blocked = !$u->blocked;
         $u->save();
+
+        if ($u->blocked) {
+            try {
+                $u->notify(new \App\Notifications\HvnAccountBlocked());
+            } catch (\Throwable $e) {
+                \Log::warning('HvnAccountBlocked notify failed: ' . $e->getMessage());
+            }
+        }
+
         return ['status' => 'success', 'blocked' => (bool) $u->blocked];
     }
 
@@ -487,6 +496,19 @@ class HvnAdminController extends Controller
         $post = CommunityPost::findOrFail($postId);
         $post->pinned = !$post->pinned;
         $post->save();
+
+        // Only notify when newly pinned (positive signal); silent on unpin.
+        if ($post->pinned && $post->user_id) {
+            $owner = User::find($post->user_id);
+            if ($owner) {
+                try {
+                    $owner->notify(new \App\Notifications\HvnPostPinned($post));
+                } catch (\Throwable $e) {
+                    \Log::warning('HvnPostPinned notify failed: ' . $e->getMessage());
+                }
+            }
+        }
+
         return ['status' => 'success', 'pinned' => (bool) $post->pinned];
     }
 
