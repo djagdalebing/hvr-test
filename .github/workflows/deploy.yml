@@ -191,11 +191,8 @@ jobs:
                # stale real directory it shadows the symlink and Apache
                # returns 422 for non-admin requests; rm it first.
                (test -L public/storage || rm -rf public/storage) && \
-               (php artisan storage:link || true)"
-          # After files + caches are settled, hit the dev/version-probe URL
-          # so opcache_reset() runs in the *web* process (CLI opcache is a
-          # separate cache). Best-effort; ignore failures.
-          curl -fsS -o /dev/null "https://aqua-narwhal-640720.hostingersite.com/dev/version-probe?reset=1" || true
+               (php artisan storage:link || true) && \
+               (php -r 'function_exists(\"opcache_reset\") && opcache_reset();' || true)"
           do
             code=$?
             if [ $attempt -ge 4 ]; then
