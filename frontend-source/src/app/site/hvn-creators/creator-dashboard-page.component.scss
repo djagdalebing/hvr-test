@@ -208,6 +208,26 @@ creator-dashboard-page {
     }
 }
 
+.upload-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    font-size: 12px;
+    .bar {
+        flex: 1;
+        height: 6px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 3px;
+        overflow: hidden;
+        .fill {
+            height: 100%;
+            background: var(--be-accent, #F65F54);
+            transition: width .2s ease;
+        }
+    }
+}
+
 .dash-empty {
     padding: 24px;
     text-align: center;

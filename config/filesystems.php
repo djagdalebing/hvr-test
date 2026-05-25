@@ -56,6 +56,23 @@ return [
             'url' => 'storage',
             'visibility' => 'public',
         ],
+
+        // Cloudflare R2 — S3-compatible object storage for creator video.
+        // Uploads go browser → R2 directly via a presigned PUT URL (so PHP
+        // never touches the file and the 413 limit no longer applies).
+        // Delivery is via R2's public URL (free egress); Plyr plays the MP4.
+        'r2' => [
+            'driver'                  => 's3',
+            'key'                     => env('R2_ACCESS_KEY_ID'),
+            'secret'                  => env('R2_SECRET_ACCESS_KEY'),
+            'region'                  => 'auto',
+            'bucket'                  => env('R2_BUCKET'),
+            'endpoint'                => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            // Public base URL for serving objects (R2.dev subdomain or a
+            // custom domain bound to the bucket).
+            'url'                     => env('R2_PUBLIC_URL'),
+        ],
     ],
 
     /*

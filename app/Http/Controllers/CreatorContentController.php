@@ -55,13 +55,17 @@ class CreatorContentController extends BaseController
             'year'        => 'nullable|integer|min:1900|max:2099',
             'description' => 'nullable|string|max:5000',
             'video_url'   => 'nullable|string|max:1000',
+            // r2_video_url is the public URL of a file the browser already
+            // uploaded straight to Cloudflare R2 via a presigned PUT — no
+            // file passes through PHP, so the 413 limit doesn't apply.
+            'r2_video_url' => 'nullable|string|max:1000',
             'video_file'  => 'nullable|file|mimetypes:video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo|max:512000',
             'cover'       => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
-        if (!$request->filled('video_url') && !$request->hasFile('video_file')) {
+        if (!$request->filled('video_url') && !$request->filled('r2_video_url') && !$request->hasFile('video_file')) {
             return response()->json([
-                'errors' => ['video_url' => ['Provide a video URL or upload a video file.']],
+                'errors' => ['video_url' => ['Provide a video URL, upload a file, or upload to cloud storage.']],
             ], 422);
         }
 
@@ -87,7 +91,12 @@ class CreatorContentController extends BaseController
         $record->allow_update = false;
         $record->save();
 
-        if ($request->hasFile('video_file')) {
+        if ($request->filled('r2_video_url')) {
+            // Browser uploaded straight to Cloudflare R2; we just store the URL.
+            $videoUrl  = $request->input('r2_video_url');
+            $source    = 'r2';
+            $videoType = Video::VIDEO_TYPE_DIRECT;
+        } else if ($request->hasFile('video_file')) {
             $videoPath = $request->file('video_file')->store('creator_content/videos', 'public');
             $videoUrl  = '/storage/' . $videoPath;
             $source    = 'local';
@@ -114,6 +123,66 @@ class CreatorContentController extends BaseController
         ]);
 
         return response()->json(['title' => $record], 201);
+    }
+
+    /**
+     * POST /secure/creator/content/presign
+     * Returns a presigned PUT URL so the browser can upload a large
+     * video straight to Cloudflare R2, plus the public URL the file
+     * will be reachable at afterwards. Nothing about the file passes
+     * through PHP, so the server upload-size limit never applies.
+     */
+    public function presign(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+        if (method_exists($user, 'isBlocked') && $user->isBlocked()) {
+            return response()->json(['message' => 'Your account is blocked.'], 403);
+        }
+        if ($user->role !== 'creator') {
+            return response()->json(['message' => 'Forbidden — creators only.'], 403);
+        }
+
+        if (!config('filesystems.disks.r2.bucket') || !config('filesystems.disks.r2.endpoint')) {
+            return response()->json(['message' => 'Cloud storage is not configured.'], 503);
+        }
+
+        $this->validate($request, [
+            'filename'     => 'required|string|max:255',
+            'content_type' => 'required|string|max:120|starts_with:video/',
+        ]);
+
+        $ext = pathinfo($request->input('filename'), PATHINFO_EXTENSION);
+        $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext) ?: 'mp4';
+        $key = 'creator_content/videos/' . $user->id . '/' . \Str::random(40) . '.' . strtolower($ext);
+
+        try {
+            /** @var \League\Flysystem\AwsS3v3\AwsS3Adapter $adapter */
+            $adapter = Storage::disk('r2')->getAdapter();
+            $client  = $adapter->getClient();
+            $bucket  = config('filesystems.disks.r2.bucket');
+
+            $cmd = $client->getCommand('PutObject', [
+                'Bucket'      => $bucket,
+                'Key'         => $key,
+                'ContentType' => $request->input('content_type'),
+            ]);
+            $presigned = $client->createPresignedRequest($cmd, '+30 minutes');
+
+            $base = rtrim((string) config('filesystems.disks.r2.url'), '/');
+
+            return response()->json([
+                'upload_url'   => (string) $presigned->getUri(),
+                'public_url'   => $base . '/' . $key,
+                'key'          => $key,
+                'content_type' => $request->input('content_type'),
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('R2 presign failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Could not prepare upload.'], 500);
+        }
     }
 
     /**

@@ -190,10 +190,14 @@
                             <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFile('cover', $event)">
                         </div>
                     </div>
+                    <div class="upload-progress" *ngIf="uploading && uploadProgress > 0">
+                        <div class="bar"><div class="fill" [style.width.%]="uploadProgress"></div></div>
+                        <span>{{ uploadProgress }}%</span>
+                    </div>
                     <div class="upload-actions">
                         <button mat-button (click)="toggleUpload()" [disabled]="uploading">Cancel</button>
                         <button mat-flat-button color="accent" (click)="submitUpload()" [disabled]="uploading">
-                            {{ uploading ? 'Uploading…' : 'Upload' }}
+                            {{ uploading ? (uploadProgress > 0 && uploadProgress < 100 ? 'Uploading ' + uploadProgress + '%…' : 'Uploading…') : 'Upload' }}
                         </button>
                     </div>
                 </div>

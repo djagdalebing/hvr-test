@@ -83,6 +83,8 @@ export class CreatorDashboardPageComponent implements OnInit {
         this.form[field] = input.files && input.files.length ? input.files[0] : null;
     }
 
+    public uploadProgress = 0;
+
     public submitUpload() {
         if (this.uploading) return;
         const f = this.form;
@@ -92,19 +94,76 @@ export class CreatorDashboardPageComponent implements OnInit {
             this.toast.open('Provide a video URL or upload a video file.'); return;
         }
 
+        // If a file was chosen, upload it straight to Cloudflare R2 first
+        // (bypasses the PHP request-size limit), then save metadata with
+        // the resulting public URL. A pasted URL skips straight to save.
+        if (f.video_file) {
+            this.uploading = true;
+            this.uploadProgress = 0;
+            this.http.post('creator/content/presign', {
+                filename: f.video_file.name,
+                content_type: f.video_file.type || 'video/mp4',
+            }).subscribe(
+                (res: any) => this.putToR2(res, f),
+                (err: any) => {
+                    this.uploading = false;
+                    // 503 = cloud storage not configured → fall back to direct POST
+                    if (err?.status === 503) {
+                        this.toast.open('Cloud storage not set up; trying direct upload…');
+                        this.saveContent(f, null);
+                    } else {
+                        this.toast.open(this.firstError(err) || 'Could not start upload.');
+                    }
+                },
+            );
+        } else {
+            this.uploading = true;
+            this.saveContent(f, null);
+        }
+    }
+
+    private putToR2(presign: any, f: any) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', presign.upload_url, true);
+        xhr.setRequestHeader('Content-Type', presign.content_type || 'video/mp4');
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                this.uploadProgress = Math.round((e.loaded / e.total) * 100);
+                this.cd.markForCheck();
+            }
+        };
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                this.saveContent(f, presign.public_url);
+            } else {
+                this.uploading = false;
+                this.toast.open('Video upload to storage failed (' + xhr.status + ').');
+                this.cd.markForCheck();
+            }
+        };
+        xhr.onerror = () => {
+            this.uploading = false;
+            this.toast.open('Network error while uploading video.');
+            this.cd.markForCheck();
+        };
+        xhr.send(f.video_file);
+    }
+
+    private saveContent(f: any, r2Url: string | null) {
         const fd = new FormData();
         fd.append('title', f.title.trim());
         fd.append('type', f.type || 'movie');
         if (f.year) fd.append('year', String(f.year));
         if (f.description) fd.append('description', f.description);
         if (f.video_url) fd.append('video_url', f.video_url);
-        if (f.video_file) fd.append('video_file', f.video_file);
+        if (r2Url) fd.append('r2_video_url', r2Url);
+        else if (f.video_file) fd.append('video_file', f.video_file);
         fd.append('cover', f.cover);
 
-        this.uploading = true;
         this.http.post('creator/content', fd).subscribe(
             () => {
                 this.uploading = false;
+                this.uploadProgress = 0;
                 this.toast.open('Title uploaded.');
                 this.form = {title: '', type: 'movie', year: null, description: '', video_url: '', video_file: null, cover: null};
                 this.showUpload = false;
@@ -112,6 +171,7 @@ export class CreatorDashboardPageComponent implements OnInit {
             },
             (err: any) => {
                 this.uploading = false;
+                this.uploadProgress = 0;
                 this.toast.open(this.firstError(err) || 'Upload failed.');
             },
         );

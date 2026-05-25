@@ -175,9 +175,10 @@ Route::group(['prefix' => 'secure'], function () {
     Route::delete('creator/projects/{id}',[HvnController::class, 'apiDeleteProject'])->where('id', '[0-9]+');
     // Creator content uploads — same controller as the /api/v1 routes,
     // mounted under /secure so session-cookie auth (the SPA) reaches it.
-    Route::get('creator/content',         [\App\Http\Controllers\CreatorContentController::class, 'index']);
-    Route::post('creator/content',        [\App\Http\Controllers\CreatorContentController::class, 'store']);
-    Route::delete('creator/content/{id}', [\App\Http\Controllers\CreatorContentController::class, 'destroy'])->where('id', '[0-9]+');
+    Route::get('creator/content',          [\App\Http\Controllers\CreatorContentController::class, 'index']);
+    Route::post('creator/content/presign', [\App\Http\Controllers\CreatorContentController::class, 'presign']);
+    Route::post('creator/content',         [\App\Http\Controllers\CreatorContentController::class, 'store']);
+    Route::delete('creator/content/{id}',  [\App\Http\Controllers\CreatorContentController::class, 'destroy'])->where('id', '[0-9]+');
 
     // Owner edit/delete (controller checks ownership; admin uses /secure/admin/*).
     Route::put('community/{id}',          [HvnController::class, 'apiUpdateOwnPost'])->where('id', '[0-9]+');
