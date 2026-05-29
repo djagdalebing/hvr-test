@@ -88,21 +88,47 @@ class Title extends Model
     ];
 
     /**
-     * Creator-uploaded titles default to status='pending'. Everything else
-     * (TMDB imports etc.) stays 'approved'. Hide pending+rejected from public
-     * discovery via a global scope; admin queries and the creator's own
-     * dashboard can disable it with withoutGlobalScope('approved').
+     * Creator-uploaded titles default to status='pending'. Hide pending +
+     * rejected from public discovery via a global scope, BUT let the
+     * owning creator (any user with a video on the title) and admins see
+     * them — so a creator can preview their own pending upload, and admins
+     * can browse to anything from links anywhere.
      *
-     * The scope only adds a WHERE clause — it does NOT touch the schema
-     * — so it's safe to register unconditionally (no DB query at boot time,
-     * which would break composer install on the CI runner).
+     * Admin moderation list and creator-own dashboard queries that need to
+     * see ALL rows use withoutGlobalScope('approved').
+     *
+     * The scope only adds a WHERE clause — no DB queries at boot time, so
+     * composer install on the CI runner won't try to talk to the DB.
      */
     protected static function booted()
     {
         static::addGlobalScope('approved', function ($q) {
-            $q->where(function ($w) {
+            $userId = null;
+            $isAdmin = false;
+            try {
+                if (auth()->check()) {
+                    $u = auth()->user();
+                    $userId  = $u->id ?? null;
+                    $isAdmin = method_exists($u, 'hasPermission') && $u->hasPermission('admin');
+                }
+            } catch (\Throwable $e) {
+                // running in CLI bootstrap (no session) — fall through
+            }
+            if ($isAdmin) return; // admins see everything
+
+            $q->where(function ($w) use ($userId) {
                 $w->where('titles.status', 'approved')
                   ->orWhereNull('titles.status');
+                if ($userId) {
+                    // Owner of any video on this title can see their own
+                    // pending/rejected uploads.
+                    $w->orWhereExists(function ($sub) use ($userId) {
+                        $sub->selectRaw('1')
+                            ->from('videos')
+                            ->whereColumn('videos.title_id', 'titles.id')
+                            ->where('videos.user_id', $userId);
+                    });
+                }
             });
         });
     }
