@@ -64,6 +64,11 @@ class CreatorContentController extends BaseController
             'certification'  => 'nullable|string|max:20',
             'original_title' => 'nullable|string|max:250',
             'trailer'        => 'nullable|string|max:1000',
+            // cast is a JSON array of {name, character?}; we parse + attach
+            // Person records via the creditables polymorphic table.
+            'cast'           => 'nullable|string|max:8000',
+            'director'       => 'nullable|string|max:255',
+            'writer'         => 'nullable|string|max:255',
             'video_url'      => 'nullable|string|max:1000',
             // r2_video_url is the public URL of a file the browser already
             // uploaded straight to Cloudflare R2 via a presigned PUT.
@@ -117,6 +122,9 @@ class CreatorContentController extends BaseController
         $record->allow_update = false;
         $record->status       = $initialStatus;
         $record->save();
+
+        // ---- Cast & crew (find_or_create Person, attach as credit) ----
+        $this->attachCredits($record, $request);
 
         if ($request->filled('r2_video_url')) {
             // Browser uploaded straight to Cloudflare R2; we just store the URL.
@@ -225,6 +233,76 @@ class CreatorContentController extends BaseController
      * Choose the right video type for an external URL so the player
      * picks the correct renderer (iframe embed vs <video> tag).
      */
+    /**
+     * Parse the cast JSON + director/writer strings into Person rows and
+     * attach them to the title via the morphMany creditables pivot.
+     * Best-effort — failures are logged but never bubble up to the user.
+     */
+    private function attachCredits(\App\Title $title, Request $request): void
+    {
+        try {
+            // CAST
+            $castRaw = $request->input('cast');
+            $cast = [];
+            if (is_string($castRaw) && $castRaw !== '') {
+                $decoded = json_decode($castRaw, true);
+                if (is_array($decoded)) $cast = $decoded;
+            } elseif (is_array($castRaw)) {
+                $cast = $castRaw;
+            }
+            $order = 0;
+            foreach ($cast as $row) {
+                $name = trim((string) ($row['name'] ?? ''));
+                if ($name === '') continue;
+                $character = trim((string) ($row['character'] ?? ''));
+                $person = \App\Person::firstOrCreate(['name' => $name], [
+                    'allow_update' => false,
+                    'fully_synced' => true,
+                ]);
+                $title->credits()->attach($person->id, [
+                    'department' => 'cast',
+                    'job'        => 'Actor',
+                    'character'  => $character ?: null,
+                    'order'      => $order++,
+                ]);
+            }
+
+            // DIRECTOR
+            if ($request->filled('director')) {
+                $name = trim((string) $request->input('director'));
+                if ($name !== '') {
+                    $person = \App\Person::firstOrCreate(['name' => $name], [
+                        'allow_update' => false,
+                        'fully_synced' => true,
+                    ]);
+                    $title->credits()->attach($person->id, [
+                        'department' => 'directing',
+                        'job'        => 'Director',
+                        'order'      => 0,
+                    ]);
+                }
+            }
+
+            // WRITER
+            if ($request->filled('writer')) {
+                $name = trim((string) $request->input('writer'));
+                if ($name !== '') {
+                    $person = \App\Person::firstOrCreate(['name' => $name], [
+                        'allow_update' => false,
+                        'fully_synced' => true,
+                    ]);
+                    $title->credits()->attach($person->id, [
+                        'department' => 'writing',
+                        'job'        => 'Writer',
+                        'order'      => 0,
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('attachCredits failed: ' . $e->getMessage());
+        }
+    }
+
     private function detectExternalType(string $url): string
     {
         $host = parse_url($url, PHP_URL_HOST) ?: '';

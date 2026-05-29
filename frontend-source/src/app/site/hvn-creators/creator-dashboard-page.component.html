@@ -224,6 +224,34 @@
                             <label>Trailer URL <span class="hint">(YouTube / Vimeo embed for the trailer)</span></label>
                             <input type="url" [(ngModel)]="form.trailer" placeholder="https://youtube.com/watch?v=…">
                         </div>
+
+                        <div class="field full crew-row">
+                            <label class="section-label">People</label>
+                        </div>
+                        <div class="field">
+                            <label>Director</label>
+                            <input type="text" maxlength="255" [(ngModel)]="form.director" placeholder="Director's name">
+                        </div>
+                        <div class="field">
+                            <label>Writer</label>
+                            <input type="text" maxlength="255" [(ngModel)]="form.writer" placeholder="Writer's name">
+                        </div>
+                        <div class="field full">
+                            <label>Cast <span class="hint">(actor + character, optional)</span></label>
+                            <div class="cast-list">
+                                <div *ngFor="let row of form.cast; let i = index" class="cast-row">
+                                    <input type="text" maxlength="200" [(ngModel)]="row.name" placeholder="Actor name">
+                                    <input type="text" maxlength="200" [(ngModel)]="row.character" placeholder="Character (optional)">
+                                    <button mat-icon-button color="warn" (click)="removeCast(i)" type="button"
+                                            [matTooltip]="'Remove' | trans">
+                                        <mat-icon svgIcon="delete"></mat-icon>
+                                    </button>
+                                </div>
+                                <button type="button" mat-stroked-button (click)="addCast()" class="add-cast-btn">
+                                    <mat-icon svgIcon="add"></mat-icon><span>Add cast member</span>
+                                </button>
+                            </div>
+                        </div>
                         <div class="field full">
                             <label>Video URL <span class="hint">— or upload a file below</span></label>
                             <input type="url" [(ngModel)]="form.video_url" placeholder="https://youtube.com/... or https://vimeo.com/...">

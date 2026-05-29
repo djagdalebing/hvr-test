@@ -75,8 +75,13 @@ export class CreatorDashboardPageComponent implements OnInit {
         title: '', type: 'movie', year: null, description: '',
         tagline: '', runtime: null, genre: '', language: '', country: '',
         release_date: '', certification: '', original_title: '', trailer: '',
+        director: '', writer: '',
+        cast: [] as Array<{name: string, character: string}>,
         video_url: '', video_file: null, cover: null, backdrop_image: null,
     };
+
+    public addCast() { this.form.cast.push({name: '', character: ''}); }
+    public removeCast(i: number) { this.form.cast.splice(i, 1); }
 
     public toggleUpload() { this.showUpload = !this.showUpload; }
 
@@ -159,13 +164,18 @@ export class CreatorDashboardPageComponent implements OnInit {
         const textFields = [
             'year', 'description', 'tagline', 'runtime', 'genre',
             'language', 'country', 'release_date', 'certification',
-            'original_title', 'trailer', 'video_url',
+            'original_title', 'trailer', 'video_url', 'director', 'writer',
         ];
         for (const k of textFields) {
             if (f[k] !== null && f[k] !== undefined && f[k] !== '') {
                 fd.append(k, String(f[k]));
             }
         }
+        // Cast: send as JSON. Drop empty rows.
+        const cast = (f.cast || [])
+            .map((c: any) => ({name: (c?.name || '').trim(), character: (c?.character || '').trim()}))
+            .filter((c: any) => c.name !== '');
+        if (cast.length) fd.append('cast', JSON.stringify(cast));
         if (r2Url) fd.append('r2_video_url', r2Url);
         else if (f.video_file) fd.append('video_file', f.video_file);
         fd.append('cover', f.cover);
@@ -180,6 +190,7 @@ export class CreatorDashboardPageComponent implements OnInit {
                     title: '', type: 'movie', year: null, description: '',
                     tagline: '', runtime: null, genre: '', language: '', country: '',
                     release_date: '', certification: '', original_title: '', trailer: '',
+                    director: '', writer: '', cast: [],
                     video_url: '', video_file: null, cover: null, backdrop_image: null,
                 };
                 this.showUpload = false;

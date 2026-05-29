@@ -156,7 +156,7 @@
 		<script src="client/runtime-es5.4e0350b3d8ab2e4399b2.js" nomodule defer></script>
 		<script src="client/polyfills-es2015.efb9d3bbd257407bb0da.js" type="module"></script>
 		<script src="client/polyfills-es5.6f7ddfe1967d03b32b3b.js" nomodule defer></script>
-		<script src="client/main-es2015.ac0e480cd5c77f62176d.js" type="module"></script>
-		<script src="client/main-es5.ac0e480cd5c77f62176d.js" nomodule defer></script>
+		<script src="client/main-es2015.350b78856a86e3a261a0.js" type="module"></script>
+		<script src="client/main-es5.350b78856a86e3a261a0.js" nomodule defer></script>
 	{{--angular scripts end--}}
 @endsection

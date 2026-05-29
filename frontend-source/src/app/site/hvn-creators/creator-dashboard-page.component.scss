@@ -206,6 +206,39 @@ creator-dashboard-page {
         gap: 8px;
         margin-top: 14px;
     }
+
+    .crew-row .section-label {
+        font-weight: 500;
+        opacity: .85;
+        margin-top: 8px;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        font-size: 11px;
+    }
+
+    .cast-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .cast-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 8px;
+        align-items: center;
+        input {
+            background: var(--be-background, #1a1a1a);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 4px;
+            color: inherit; font: inherit;
+            padding: 8px 10px;
+            outline: none;
+            &:focus { border-color: rgba(255,255,255,0.35); }
+        }
+        button { width: 32px; height: 32px; line-height: 32px; }
+    }
+    .add-cast-btn { align-self: flex-start; margin-top: 4px; }
+    .add-cast-btn mat-icon { vertical-align: middle; margin-right: 4px; width: 18px; height: 18px; font-size: 18px; }
 }
 
 .upload-progress {
