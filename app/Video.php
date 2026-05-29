@@ -65,6 +65,16 @@ class Video extends Model
         return $this->belongsTo(Title::class);
     }
 
+    /**
+     * Creator who uploaded this video (creator_content uploads only —
+     * TMDB/imported videos have user_id NULL).
+     * @return BelongsTo
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function ratings()
     {
         return $this->hasMany(VideoRating::class);

@@ -33,15 +33,30 @@ class User extends BaseUser
 
     /**
      * Send a notification to every admin (best effort — failures are
-     * logged but never thrown). Caps at 20 recipients to avoid blowing
-     * up large installs.
+     * logged but never thrown). Caps at 20 recipients.
+     *
+     * Vebto grants the 'admin' permission three different ways depending
+     * on the install: directly on the user (permissionables polymorphic
+     * to App\User), via a role the user belongs to (permissionables ->
+     * roles), or by a literal 'admin' value in the users.role column.
+     * SQL-filter on the union of all three, then PHP-filter the result
+     * through hasPermission('admin') as a safety check.
      */
     public static function notifyAdmins($notification): void
     {
         try {
-            $admins = self::whereHas('permissions', function ($q) {
-                $q->where('name', 'admin');
-            })->orWhere('role', 'admin')->limit(20)->get();
+            $candidates = self::where(function ($q) {
+                    $q->whereHas('permissions', function ($p) { $p->where('name', 'admin'); })
+                      ->orWhereHas('roles.permissions', function ($p) { $p->where('name', 'admin'); })
+                      ->orWhere('role', 'admin');
+                })
+                ->limit(50)
+                ->get();
+
+            $admins = $candidates->filter(function ($u) {
+                return method_exists($u, 'hasPermission') && $u->hasPermission('admin');
+            })->take(20);
+
             foreach ($admins as $admin) {
                 try {
                     $admin->notify($notification);
