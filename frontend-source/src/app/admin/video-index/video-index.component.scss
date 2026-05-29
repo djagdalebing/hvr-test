@@ -1,3 +1,21 @@
 /* extracted from production bundle */
 .video-name, .title-name{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}.approved:hover   .warn-icon{display:inline-block}.approved:hover   .success-icon{display:none}.approved   .success-icon{display:inline-block}.disapproved:hover   .success-icon{display:inline-block}.disapproved:hover   .warn-icon{display:none}.disapproved   .warn-icon{display:inline-block}.success-icon{display:none;color:#43a047}.warn-icon{display:none;color:#f44336}
 .video-name, .title-name{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}.approved:hover   .warn-icon{display:inline-block}.approved:hover   .success-icon{display:none}.approved   .success-icon{display:inline-block}.disapproved:hover   .success-icon{display:inline-block}.disapproved:hover   .warn-icon{display:none}.disapproved   .warn-icon{display:inline-block}.success-icon{display:none;color:#43a047}.warn-icon{display:none;color:#f44336}
+
+video-index {
+    .mod-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        padding: 3px 9px;
+        border-radius: 10px;
+        white-space: nowrap;
+        mat-icon { width: 14px; height: 14px; font-size: 14px; }
+        &.approved { background: rgba(76,175,80,0.18);  color: #4ade80; }
+        &.pending  { background: rgba(255,193,7,0.18);  color: #fbbf24; }
+        &.rejected { background: rgba(244,67,54,0.18);  color: #f87171; }
+    }
+}

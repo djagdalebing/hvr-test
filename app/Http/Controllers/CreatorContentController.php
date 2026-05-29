@@ -124,7 +124,10 @@ class CreatorContentController extends BaseController
             'category' => 'full',
             'language' => 'en',
             'source'   => $source,
-            'approved' => 1,
+            // Track moderation state on the video too so /admin/videos
+            // reflects pending (cross) vs approved (tick) instead of
+            // always showing a tick.
+            'approved' => ($initialStatus === 'approved') ? 1 : 0,
             'order'    => 1,
         ]);
 

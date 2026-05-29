@@ -28,7 +28,24 @@ class Video extends Model
     const MODEL_TYPE = 'video';
 
     protected $guarded = ['id'];
-    protected $appends = ['score', 'model_type'];
+    protected $appends = ['score', 'model_type', 'moderation_status'];
+
+    /**
+     * 3-state moderation status sourced from the parent title:
+     * 'approved' | 'pending' | 'rejected'. Non-creator uploads
+     * (TMDB imports etc. — no user_id on the video) always 'approved'.
+     */
+    public function getModerationStatusAttribute(): string
+    {
+        if (empty($this->attributes['user_id'])) return 'approved';
+        // bypass Title's "approved" global scope so the lookup works
+        // for pending/rejected titles too.
+        $status = Title::withoutGlobalScope('approved')
+            ->where('id', $this->attributes['title_id'] ?? 0)
+            ->value('status');
+        return $status ?: 'approved';
+    }
+
     protected $casts = [
         'negative_votes' => 'integer',
         'positive_votes' => 'integer',

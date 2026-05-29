@@ -450,6 +450,12 @@ class HvnAdminController extends Controller
         $title->rejection_reason = null;
         $title->save();
 
+        // Flip the linked creator video(s) to approved so /admin/videos
+        // shows a tick and the title-page video player will load.
+        \App\Video::where('title_id', $title->id)
+            ->whereNotNull('user_id')
+            ->update(['approved' => 1]);
+
         // Notify the uploading creator.
         try {
             $video = \App\Video::where('title_id', $title->id)->whereNotNull('user_id')->first();
@@ -471,6 +477,12 @@ class HvnAdminController extends Controller
         $title->status = 'rejected';
         $title->rejection_reason = $request->input('reason');
         $title->save();
+
+        // Keep the linked video(s) unapproved so /admin/videos reflects
+        // rejection (cross) and the public player won't pick them up.
+        \App\Video::where('title_id', $title->id)
+            ->whereNotNull('user_id')
+            ->update(['approved' => 0]);
 
         try {
             $video = \App\Video::where('title_id', $title->id)->whereNotNull('user_id')->first();

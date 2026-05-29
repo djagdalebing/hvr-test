@@ -86,17 +86,16 @@
         <td data-label="Type" class="capitalize">{{ video.type }}</td>
         <td data-label="Category" class="capitalize">{{ video.category }}</td>
         <td data-label="Approved">
-          <button
-            mat-icon-button
-            (click)="toggleApprovedState(video)"
-            class="approve-button"
-            [class.disapproved]="!video.approved"
-            [class.approved]="video.approved"
-            [disabled]="modifying$ | async"
-          >
-            <mat-icon svgIcon="check" class="success-icon"></mat-icon>
-            <mat-icon svgIcon="close" class="warn-icon"></mat-icon>
-          </button>
+          <span class="mod-chip"
+                [class.approved]="(video.moderation_status || (video.approved ? 'approved' : 'rejected')) === 'approved'"
+                [class.pending]="video.moderation_status === 'pending'"
+                [class.rejected]="(video.moderation_status === 'rejected') || (!video.moderation_status && !video.approved)">
+            <mat-icon *ngIf="(video.moderation_status || (video.approved ? 'approved' : 'rejected')) === 'approved'" svgIcon="check"></mat-icon>
+            <mat-icon *ngIf="video.moderation_status === 'pending'" svgIcon="warning"></mat-icon>
+            <mat-icon *ngIf="video.moderation_status === 'rejected' || (!video.moderation_status && !video.approved)" svgIcon="close"></mat-icon>
+            {{ video.moderation_status === 'pending' ? 'Pending'
+               : ((video.moderation_status === 'rejected' || (!video.moderation_status && !video.approved)) ? 'Rejected' : 'Approved') }}
+          </span>
         </td>
         <td data-label="Plays">{{ video.plays_count }}</td>
         <td data-label="Quality">
