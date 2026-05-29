@@ -90,16 +90,16 @@
                legacy tick/cross look. Click opens the Approve / Reject menu. -->
           <ng-container *ngIf="video.user_id; else legacyToggle">
             <button mat-icon-button class="mod-icon"
-                    [class.approved]="video.moderation_status === 'approved'"
-                    [class.pending]="video.moderation_status === 'pending'"
-                    [class.rejected]="video.moderation_status === 'rejected'"
                     [matMenuTriggerFor]="modMenu"
                     [matTooltip]="((video.moderation_status === 'pending' ? 'Pending' :
                                     (video.moderation_status === 'rejected' ? 'Rejected' : 'Approved'))
                                     + ' — click to change') | trans">
-              <mat-icon *ngIf="video.moderation_status === 'approved'" svgIcon="check"></mat-icon>
-              <mat-icon *ngIf="video.moderation_status === 'pending'" svgIcon="warning"></mat-icon>
-              <mat-icon *ngIf="video.moderation_status === 'rejected'" svgIcon="close"></mat-icon>
+              <mat-icon *ngIf="video.moderation_status === 'approved'" svgIcon="check"
+                        [style.color]="modColor(video)" [style.fill]="modColor(video)"></mat-icon>
+              <mat-icon *ngIf="video.moderation_status === 'pending'"  svgIcon="warning"
+                        [style.color]="modColor(video)" [style.fill]="modColor(video)"></mat-icon>
+              <mat-icon *ngIf="video.moderation_status === 'rejected'" svgIcon="close"
+                        [style.color]="modColor(video)" [style.fill]="modColor(video)"></mat-icon>
             </button>
             <mat-menu #modMenu="matMenu">
               <button mat-menu-item (click)="approveTitle(video)"

@@ -46,6 +46,16 @@ export class VideoIndexComponent implements OnInit {
         );
     }
 
+    /** Inline colour for the moderation icon — beats any CSS/encapsulation. */
+    public modColor(video: any): string {
+        switch (video?.moderation_status) {
+            case 'approved': return '#43a047';
+            case 'pending':  return '#f9a825';
+            case 'rejected': return '#f44336';
+            default: return 'inherit';
+        }
+    }
+
     /** Reject a creator-uploaded title from the videos table. */
     public rejectTitle(video: any) {
         if (!video || !video.title_id) return;
