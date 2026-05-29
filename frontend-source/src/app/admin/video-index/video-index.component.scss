@@ -2,13 +2,17 @@
 .video-name, .title-name{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}.approved:hover   .warn-icon{display:inline-block}.approved:hover   .success-icon{display:none}.approved   .success-icon{display:inline-block}.disapproved:hover   .success-icon{display:inline-block}.disapproved:hover   .warn-icon{display:none}.disapproved   .warn-icon{display:inline-block}.success-icon{display:none;color:#43a047}.warn-icon{display:none;color:#f44336}
 
 video-index {
-    /* Creator moderation icon — same visual weight as the legacy single
-       tick/cross button so both row types feel consistent. Colour comes
-       from the moderation state. */
-    .mod-icon {
-        mat-icon { transition: color .15s ease; }
-        &.approved mat-icon { color: #43a047; }   // green
-        &.pending  mat-icon { color: #f9a825; }   // amber
-        &.rejected mat-icon { color: #f44336; }   // red
+    /* Creator moderation icon — colour-by-state. Use ::ng-deep so the
+       inherited colour also reaches the svg fill (mat-icon's <svg> picks
+       up currentColor only if no parent rule outranks it), and !important
+       to beat mat-icon-button's default text-colour rule. */
+    .mod-icon.mat-icon-button {
+        mat-icon, ::ng-deep svg { transition: color .15s ease, fill .15s ease; }
+        &.approved mat-icon,
+        &.approved ::ng-deep svg { color: #43a047 !important; fill: #43a047 !important; }
+        &.pending  mat-icon,
+        &.pending  ::ng-deep svg { color: #f9a825 !important; fill: #f9a825 !important; }
+        &.rejected mat-icon,
+        &.rejected ::ng-deep svg { color: #f44336 !important; fill: #f44336 !important; }
     }
 }
