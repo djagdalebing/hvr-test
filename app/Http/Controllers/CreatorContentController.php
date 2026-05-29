@@ -20,9 +20,10 @@ class CreatorContentController extends BaseController
         if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
         $userId = $user->id;
 
-        $titles = Title::whereHas('videos', function ($q) use ($userId) {
-            $q->where('user_id', $userId);
-        })
+        $titles = Title::withoutGlobalScope('approved')
+            ->whereHas('videos', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
             ->with(['videos' => function ($q) use ($userId) {
                 $q->where('user_id', $userId)->select('id', 'title_id', 'url', 'type', 'category', 'source');
             }])
@@ -73,6 +74,10 @@ class CreatorContentController extends BaseController
 
         $type = $request->input('type');
 
+        // Trusted creators (Phase 2) skip the queue. Phase 1: everyone pending.
+        $isTrusted = (bool) ($user->trusted_creator ?? false);
+        $initialStatus = $isTrusted ? 'approved' : 'pending';
+
         $record = new Title();
         $record->name         = $request->input('title');
         $record->type         = $type;
@@ -89,6 +94,7 @@ class CreatorContentController extends BaseController
         $record->popularity   = 1;
         $record->fully_synced = true;
         $record->allow_update = false;
+        $record->status       = $initialStatus;
         $record->save();
 
         if ($request->filled('r2_video_url')) {
@@ -121,6 +127,21 @@ class CreatorContentController extends BaseController
             'approved' => 1,
             'order'    => 1,
         ]);
+
+        // Notify admins when a fresh upload is awaiting review. Trusted
+        // creators (auto-approved) skip the alert.
+        if ($initialStatus === 'pending') {
+            try {
+                $admins = \App\User::whereHas('permissions', function ($q) {
+                    $q->where('name', 'admin');
+                })->orWhere('role', 'admin')->limit(20)->get();
+                foreach ($admins as $admin) {
+                    $admin->notify(new \App\Notifications\HvnContentSubmitted($record, $user));
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('HvnContentSubmitted notify failed: ' . $e->getMessage());
+            }
+        }
 
         return response()->json(['title' => $record], 201);
     }

@@ -450,14 +450,18 @@ class HvnController extends Controller
             ->take(20)
             ->get();
 
-        $content = Title::whereHas('videos', function ($q) use ($user) {
+        // Creators see their own content regardless of moderation state, so
+        // pending and rejected titles still show up in their dashboard with
+        // the right status badge.
+        $content = Title::withoutGlobalScope('approved')
+            ->whereHas('videos', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
             ->with(['videos' => function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             }])
             ->orderByDesc('created_at')
-            ->get();
+            ->get(['*']);
 
         $projects = \App\CreatorProject::where('user_id', $user->id)
             ->orderBy('position')

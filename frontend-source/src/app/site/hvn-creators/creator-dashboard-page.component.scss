@@ -291,5 +291,15 @@ creator-dashboard-page {
             padding: 2px 8px;
             border-radius: 10px;
         }
+        .status-chip {
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            &.approved { background: rgba(76,175,80,0.18); color: #4ade80; }
+            &.pending  { background: rgba(255,193,7,0.18); color: #fbbf24; }
+            &.rejected { background: rgba(244,67,54,0.18); color: #f87171; }
+        }
     }
 }

@@ -87,6 +87,24 @@ class Title extends Model
         'stream_videos_count' => 'integer',
     ];
 
+    /**
+     * Creator-uploaded titles default to status='pending'. Everything else
+     * (TMDB imports etc.) stays 'approved'. Hide pending+rejected from public
+     * discovery via a global scope; admin queries and the creator's own
+     * dashboard can disable it with withoutGlobalScope(ApprovedTitleScope::class).
+     */
+    protected static function booted()
+    {
+        if (\Schema::hasColumn('titles', 'status')) {
+            static::addGlobalScope('approved', function ($q) {
+                $q->where(function ($w) {
+                    $w->where('titles.status', 'approved')
+                      ->orWhereNull('titles.status');
+                });
+            });
+        }
+    }
+
     public function needsUpdating($forceAutomation = false)
     {
         // auto update disabled in settings

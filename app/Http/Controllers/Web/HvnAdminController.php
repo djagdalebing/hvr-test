@@ -411,6 +411,79 @@ class HvnAdminController extends Controller
         return ['status' => 'success', 'role' => $creator->role];
     }
 
+    /**
+     * GET /secure/admin/moderation
+     * List creator-uploaded titles filtered by status (default: pending).
+     */
+    public function apiModerationList(Request $request)
+    {
+        $this->apiAdminOrAbort();
+        $status  = $request->input('status', 'pending');
+        if (!in_array($status, ['pending', 'approved', 'rejected'])) $status = 'pending';
+        $perPage = min((int) $request->input('perPage', 15), 100);
+        $search  = trim((string) $request->input('query', ''));
+
+        $q = \App\Title::withoutGlobalScope('approved')
+            ->where('status', $status)
+            // Only show creator-uploaded titles — anything with a video that
+            // has a user_id (TMDB imports have no user_id on their videos).
+            ->whereHas('videos', function ($vq) {
+                $vq->whereNotNull('user_id');
+            })
+            ->with(['videos' => function ($vq) {
+                $vq->whereNotNull('user_id')->with('user:id,username,email');
+            }])
+            ->orderByDesc('created_at');
+
+        if ($search !== '') {
+            $q->where('name', 'like', '%' . $search . '%');
+        }
+
+        return ['pagination' => $q->paginate($perPage)];
+    }
+
+    public function apiApproveContent(Request $request, int $titleId)
+    {
+        $this->apiAdminOrAbort();
+        $title = \App\Title::withoutGlobalScope('approved')->findOrFail($titleId);
+        $title->status = 'approved';
+        $title->rejection_reason = null;
+        $title->save();
+
+        // Notify the uploading creator.
+        try {
+            $video = \App\Video::where('title_id', $title->id)->whereNotNull('user_id')->first();
+            if ($video && $video->user) {
+                $video->user->notify(new \App\Notifications\HvnContentApproved($title));
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('HvnContentApproved notify failed: ' . $e->getMessage());
+        }
+
+        return ['status' => 'success', 'title' => $title];
+    }
+
+    public function apiRejectContent(Request $request, int $titleId)
+    {
+        $this->apiAdminOrAbort();
+        $request->validate(['reason' => 'nullable|string|max:1000']);
+        $title = \App\Title::withoutGlobalScope('approved')->findOrFail($titleId);
+        $title->status = 'rejected';
+        $title->rejection_reason = $request->input('reason');
+        $title->save();
+
+        try {
+            $video = \App\Video::where('title_id', $title->id)->whereNotNull('user_id')->first();
+            if ($video && $video->user) {
+                $video->user->notify(new \App\Notifications\HvnContentRejected($title, $request->input('reason')));
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('HvnContentRejected notify failed: ' . $e->getMessage());
+        }
+
+        return ['status' => 'success', 'title' => $title];
+    }
+
     public function apiToggleBlock(Request $request, int $userId)
     {
         $this->apiAdminOrAbort();

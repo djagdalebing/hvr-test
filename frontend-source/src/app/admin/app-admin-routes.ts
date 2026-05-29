@@ -10,6 +10,7 @@ import {StreamingSettingsComponent} from './settings/streaming-settings/streamin
 import {ReviewsIndexComponent} from './reviews-index/reviews-index.component';
 import {CreatorsAdminComponent} from './creators-admin/creators-admin.component';
 import {CommunityAdminComponent} from './community-admin/community-admin.component';
+import {ModerationAdminComponent} from './moderation-admin/moderation-admin.component';
 
 // TODO: maybe add "primary_credit" id on person table and remove lazy loading of all credits
 
@@ -24,6 +25,12 @@ export const APP_ADMIN_ROUTES: Routes = [
     {
         path: 'community',
         component: CommunityAdminComponent,
+        data: {permissions: ['admin']},
+    },
+    // moderation (HVN admin — pending creator uploads)
+    {
+        path: 'moderation',
+        component: ModerationAdminComponent,
         data: {permissions: ['admin']},
     },
     // videos

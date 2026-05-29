@@ -207,6 +207,14 @@
                     <li *ngFor="let t of content" class="dash-list-row">
                         <a [routerLink]="['/titles', t.id, t.name || '-']" class="dash-list-title">{{ t.name }}</a>
                         <div class="dash-list-meta">
+                            <span class="status-chip"
+                                  [class.pending]="t.status === 'pending'"
+                                  [class.rejected]="t.status === 'rejected'"
+                                  [class.approved]="!t.status || t.status === 'approved'"
+                                  [matTooltip]="t.status === 'rejected' && t.rejection_reason ? t.rejection_reason : null">
+                                {{ t.status === 'pending' ? 'Pending review'
+                                   : (t.status === 'rejected' ? 'Rejected' : 'Approved') }}
+                            </span>
                             <span class="dash-list-type">{{ t.type || 'movie' }}</span>
                             <span class="dash-list-date">{{ t.created_at | date:'mediumDate' }}</span>
                             <button mat-icon-button color="warn" (click)="deleteTitle(t)" [matTooltip]="'Delete title' | trans">

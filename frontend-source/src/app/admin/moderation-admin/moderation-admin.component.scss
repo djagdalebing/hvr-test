@@ -1,0 +1,52 @@
+moderation-admin {
+    display: block;
+
+    .muted { font-size: 12px; opacity: .6; }
+    .ellipsis { max-width: 380px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .mod-tabs {
+        display: flex;
+        gap: 4px;
+        margin: 8px 0 16px;
+        button {
+            opacity: .6;
+            border-radius: 4px;
+            &.active { opacity: 1; background: rgba(255,255,255,0.06); }
+        }
+    }
+
+    .mod-title-cell {
+        display: flex;
+        gap: 12px;
+        img {
+            width: 56px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.04);
+        }
+        .mod-title-meta { min-width: 0; }
+        .mod-title-link { font-weight: 500; color: inherit; text-decoration: none; }
+        .mod-title-link:hover { color: var(--be-accent, #F65F54); }
+        .rejection { margin-top: 4px; color: rgba(244,67,54,0.85); white-space: pre-wrap; }
+    }
+
+    .edit-column { white-space: nowrap; min-width: 220px; }
+
+    .reject-form {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 280px;
+        input {
+            background: var(--be-background, #1a1a1a);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 4px;
+            color: inherit; font: inherit;
+            padding: 6px 10px;
+            outline: none;
+            &:focus { border-color: rgba(255,255,255,0.35); }
+        }
+        .reject-actions { display: flex; justify-content: flex-end; gap: 6px; }
+    }
+}

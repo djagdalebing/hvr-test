@@ -201,6 +201,9 @@ Route::group(['prefix' => 'secure/admin'], function () {
     Route::get('creators',          [HvnAdminController::class, 'apiCreators']);
     Route::put('creators/{id}',     [HvnAdminController::class, 'apiUpdateCreator']);
     Route::post('creators/{id}/toggle', [HvnAdminController::class, 'apiToggleCreator']);
+    Route::get('moderation',               [HvnAdminController::class, 'apiModerationList']);
+    Route::post('moderation/{id}/approve', [HvnAdminController::class, 'apiApproveContent'])->where('id', '[0-9]+');
+    Route::post('moderation/{id}/reject',  [HvnAdminController::class, 'apiRejectContent'])->where('id', '[0-9]+');
     Route::post('creators/{id}/block',  [HvnAdminController::class, 'apiToggleBlock']);
     Route::delete('creators/{id}',  [HvnAdminController::class, 'apiDeleteCreator']);
     Route::get('community',         [HvnAdminController::class, 'apiCommunity']);
