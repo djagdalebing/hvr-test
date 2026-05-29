@@ -91,18 +91,20 @@ class Title extends Model
      * Creator-uploaded titles default to status='pending'. Everything else
      * (TMDB imports etc.) stays 'approved'. Hide pending+rejected from public
      * discovery via a global scope; admin queries and the creator's own
-     * dashboard can disable it with withoutGlobalScope(ApprovedTitleScope::class).
+     * dashboard can disable it with withoutGlobalScope('approved').
+     *
+     * The scope only adds a WHERE clause — it does NOT touch the schema
+     * — so it's safe to register unconditionally (no DB query at boot time,
+     * which would break composer install on the CI runner).
      */
     protected static function booted()
     {
-        if (\Schema::hasColumn('titles', 'status')) {
-            static::addGlobalScope('approved', function ($q) {
-                $q->where(function ($w) {
-                    $w->where('titles.status', 'approved')
-                      ->orWhereNull('titles.status');
-                });
+        static::addGlobalScope('approved', function ($q) {
+            $q->where(function ($w) {
+                $w->where('titles.status', 'approved')
+                  ->orWhereNull('titles.status');
             });
-        }
+        });
     }
 
     public function needsUpdating($forceAutomation = false)
