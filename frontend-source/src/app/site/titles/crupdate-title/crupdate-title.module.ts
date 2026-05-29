@@ -12,6 +12,7 @@ import {VideoIndexComponent} from '../../../admin/video-index/video-index.compon
 import {CrupdateTitleRoutingModule} from './crupdate-title-routing.module';
 import {TranslationsModule} from '../../../../common/core/translations/translations.module';
 import {MatButtonModule} from '@angular/material/button';
+import {MatMenuModule} from '@angular/material/menu';
 import {MatIconModule} from '@angular/material/icon';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatDialogModule} from '@angular/material/dialog';
@@ -66,6 +67,7 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
 
         // material
         MatButtonModule,
+        MatMenuModule,
         MatIconModule,
         MatTooltipModule,
         MatDialogModule,
