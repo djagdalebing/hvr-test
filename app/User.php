@@ -31,6 +31,29 @@ class User extends BaseUser
         return (bool) ($this->blocked ?? false);
     }
 
+    /**
+     * Send a notification to every admin (best effort — failures are
+     * logged but never thrown). Caps at 20 recipients to avoid blowing
+     * up large installs.
+     */
+    public static function notifyAdmins($notification): void
+    {
+        try {
+            $admins = self::whereHas('permissions', function ($q) {
+                $q->where('name', 'admin');
+            })->orWhere('role', 'admin')->limit(20)->get();
+            foreach ($admins as $admin) {
+                try {
+                    $admin->notify($notification);
+                } catch (\Throwable $inner) {
+                    \Log::warning('notifyAdmins inner failed: ' . $inner->getMessage());
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('notifyAdmins outer failed: ' . $e->getMessage());
+        }
+    }
+
     public function watchlist(): HasOne
     {
         return $this->hasOne(ListModel::class)

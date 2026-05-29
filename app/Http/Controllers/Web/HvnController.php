@@ -564,6 +564,13 @@ class HvnController extends Controller
         $post->body  = $request->input('body');
         $post->save();
 
+        // Owners editing their own posts may have changed substance — let
+        // admins see it in the bell. Admin edits skip the alert (an admin
+        // doesn't need to be alerted to their own change).
+        if ((int) $post->user_id === (int) $user->id) {
+            \App\User::notifyAdmins(new \App\Notifications\HvnPostEdited($post, $user));
+        }
+
         return response()->json(['post' => $post]);
     }
 
@@ -578,9 +585,18 @@ class HvnController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
+        // Snapshot before deletion so the notification still has the title.
+        $postSnapshot = clone $post;
+
         // Cascade-delete comments alongside the post so we don't orphan rows.
         CommunityComment::where('post_id', $post->id)->delete();
         $post->delete();
+
+        // Notify admins only when the deletion came from the owner (admins
+        // already know about their own deletes via the /admin/community UI).
+        if ((int) $postSnapshot->user_id === (int) $user->id) {
+            \App\User::notifyAdmins(new \App\Notifications\HvnPostDeleted($postSnapshot, $user));
+        }
 
         return response()->json(['message' => 'Deleted.']);
     }

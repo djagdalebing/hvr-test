@@ -134,16 +134,7 @@ class CreatorContentController extends BaseController
         // Notify admins when a fresh upload is awaiting review. Trusted
         // creators (auto-approved) skip the alert.
         if ($initialStatus === 'pending') {
-            try {
-                $admins = \App\User::whereHas('permissions', function ($q) {
-                    $q->where('name', 'admin');
-                })->orWhere('role', 'admin')->limit(20)->get();
-                foreach ($admins as $admin) {
-                    $admin->notify(new \App\Notifications\HvnContentSubmitted($record, $user));
-                }
-            } catch (\Throwable $e) {
-                \Log::warning('HvnContentSubmitted notify failed: ' . $e->getMessage());
-            }
+            \App\User::notifyAdmins(new \App\Notifications\HvnContentSubmitted($record, $user));
         }
 
         return response()->json(['title' => $record], 201);
@@ -265,13 +256,21 @@ class CreatorContentController extends BaseController
             $video->delete();
         }
 
-        $title = Title::find($titleId);
+        // Title lookup needs to bypass the approved global scope so we can
+        // resolve pending/rejected titles too.
+        $title = Title::withoutGlobalScope('approved')->find($titleId);
+        $titleSnapshotForNotif = $title ? clone $title : null;
+
         if ($title && !Video::where('title_id', $titleId)->exists()) {
             if ($title->poster && strpos($title->poster, '/storage/creator_content') === 0) {
                 $rel = ltrim(str_replace('/storage/', '', $title->poster), '/');
                 Storage::disk('public')->delete($rel);
             }
             $title->delete();
+        }
+
+        if ($titleSnapshotForNotif) {
+            \App\User::notifyAdmins(new \App\Notifications\HvnContentDeleted($titleSnapshotForNotif, $user));
         }
 
         return response()->json(['deleted' => true]);
