@@ -73,7 +73,9 @@ export class CreatorDashboardPageComponent implements OnInit {
     public uploading = false;
     public form: any = {
         title: '', type: 'movie', year: null, description: '',
-        video_url: '', video_file: null, cover: null,
+        tagline: '', runtime: null, genre: '', language: '', country: '',
+        release_date: '', certification: '', original_title: '', trailer: '',
+        video_url: '', video_file: null, cover: null, backdrop_image: null,
     };
 
     public toggleUpload() { this.showUpload = !this.showUpload; }
@@ -153,19 +155,33 @@ export class CreatorDashboardPageComponent implements OnInit {
         const fd = new FormData();
         fd.append('title', f.title.trim());
         fd.append('type', f.type || 'movie');
-        if (f.year) fd.append('year', String(f.year));
-        if (f.description) fd.append('description', f.description);
-        if (f.video_url) fd.append('video_url', f.video_url);
+        // Optional metadata — only append when the user filled it in.
+        const textFields = [
+            'year', 'description', 'tagline', 'runtime', 'genre',
+            'language', 'country', 'release_date', 'certification',
+            'original_title', 'trailer', 'video_url',
+        ];
+        for (const k of textFields) {
+            if (f[k] !== null && f[k] !== undefined && f[k] !== '') {
+                fd.append(k, String(f[k]));
+            }
+        }
         if (r2Url) fd.append('r2_video_url', r2Url);
         else if (f.video_file) fd.append('video_file', f.video_file);
         fd.append('cover', f.cover);
+        if (f.backdrop_image) fd.append('backdrop_image', f.backdrop_image);
 
         this.http.post('creator/content', fd).subscribe(
             () => {
                 this.uploading = false;
                 this.uploadProgress = 0;
                 this.toast.open('Title uploaded.');
-                this.form = {title: '', type: 'movie', year: null, description: '', video_url: '', video_file: null, cover: null};
+                this.form = {
+                    title: '', type: 'movie', year: null, description: '',
+                    tagline: '', runtime: null, genre: '', language: '', country: '',
+                    release_date: '', certification: '', original_title: '', trailer: '',
+                    video_url: '', video_file: null, cover: null, backdrop_image: null,
+                };
                 this.showUpload = false;
                 this.load();
             },

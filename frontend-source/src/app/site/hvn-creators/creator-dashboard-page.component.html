@@ -173,8 +173,56 @@
                             <input type="number" min="1900" max="2099" [(ngModel)]="form.year">
                         </div>
                         <div class="field full">
-                            <label>Description</label>
+                            <label>Tagline <span class="hint">(short one-line hook)</span></label>
+                            <input type="text" maxlength="250" [(ngModel)]="form.tagline" placeholder="A short, catchy tagline…">
+                        </div>
+                        <div class="field full">
+                            <label>Description / synopsis</label>
                             <textarea rows="3" [(ngModel)]="form.description" maxlength="5000"></textarea>
+                        </div>
+                        <div class="field">
+                            <label>Runtime <span class="hint">(minutes)</span></label>
+                            <input type="number" min="1" max="1440" [(ngModel)]="form.runtime">
+                        </div>
+                        <div class="field">
+                            <label>Release date</label>
+                            <input type="date" [(ngModel)]="form.release_date">
+                        </div>
+                        <div class="field full">
+                            <label>Genre <span class="hint">(comma-separated — e.g. Drama, Romance)</span></label>
+                            <input type="text" maxlength="255" [(ngModel)]="form.genre" placeholder="Drama, Romance">
+                        </div>
+                        <div class="field">
+                            <label>Language</label>
+                            <input type="text" maxlength="50" [(ngModel)]="form.language" placeholder="English">
+                        </div>
+                        <div class="field">
+                            <label>Country</label>
+                            <input type="text" maxlength="80" [(ngModel)]="form.country" placeholder="United States">
+                        </div>
+                        <div class="field">
+                            <label>Certification <span class="hint">(rating)</span></label>
+                            <select [(ngModel)]="form.certification">
+                                <option value="">— none —</option>
+                                <option value="G">G</option>
+                                <option value="PG">PG</option>
+                                <option value="PG-13">PG-13</option>
+                                <option value="R">R</option>
+                                <option value="NC-17">NC-17</option>
+                                <option value="TV-Y">TV-Y</option>
+                                <option value="TV-G">TV-G</option>
+                                <option value="TV-PG">TV-PG</option>
+                                <option value="TV-14">TV-14</option>
+                                <option value="TV-MA">TV-MA</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Original title <span class="hint">(if different)</span></label>
+                            <input type="text" maxlength="250" [(ngModel)]="form.original_title">
+                        </div>
+                        <div class="field full">
+                            <label>Trailer URL <span class="hint">(YouTube / Vimeo embed for the trailer)</span></label>
+                            <input type="url" [(ngModel)]="form.trailer" placeholder="https://youtube.com/watch?v=…">
                         </div>
                         <div class="field full">
                             <label>Video URL <span class="hint">— or upload a file below</span></label>
@@ -186,8 +234,12 @@
                                    (change)="onFile('video_file', $event)">
                         </div>
                         <div class="field">
-                            <label>Cover image <span class="req">*</span> <span class="hint">(jpg/png/webp, max 5MB)</span></label>
+                            <label>Cover / poster <span class="req">*</span> <span class="hint">(jpg/png/webp, max 5MB — portrait)</span></label>
                             <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFile('cover', $event)">
+                        </div>
+                        <div class="field">
+                            <label>Backdrop / hero image <span class="hint">(jpg/png/webp, max 8MB — landscape, optional)</span></label>
+                            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFile('backdrop_image', $event)">
                         </div>
                     </div>
                     <div class="upload-progress" *ngIf="uploading && uploadProgress > 0">

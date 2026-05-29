@@ -51,17 +51,26 @@ class CreatorContentController extends BaseController
         }
 
         $this->validate($request, [
-            'title'       => 'required|string|min:2|max:250',
-            'type'        => 'required|in:movie,short,series,documentary',
-            'year'        => 'nullable|integer|min:1900|max:2099',
-            'description' => 'nullable|string|max:5000',
-            'video_url'   => 'nullable|string|max:1000',
+            'title'          => 'required|string|min:2|max:250',
+            'type'           => 'required|in:movie,short,series,documentary',
+            'year'           => 'nullable|integer|min:1900|max:2099',
+            'description'    => 'nullable|string|max:5000',
+            'tagline'        => 'nullable|string|max:250',
+            'runtime'        => 'nullable|integer|min:1|max:1440',
+            'genre'          => 'nullable|string|max:255',
+            'language'       => 'nullable|string|max:50',
+            'country'        => 'nullable|string|max:80',
+            'release_date'   => 'nullable|date',
+            'certification'  => 'nullable|string|max:20',
+            'original_title' => 'nullable|string|max:250',
+            'trailer'        => 'nullable|string|max:1000',
+            'video_url'      => 'nullable|string|max:1000',
             // r2_video_url is the public URL of a file the browser already
-            // uploaded straight to Cloudflare R2 via a presigned PUT — no
-            // file passes through PHP, so the 413 limit doesn't apply.
-            'r2_video_url' => 'nullable|string|max:1000',
-            'video_file'  => 'nullable|file|mimetypes:video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo|max:512000',
-            'cover'       => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
+            // uploaded straight to Cloudflare R2 via a presigned PUT.
+            'r2_video_url'   => 'nullable|string|max:1000',
+            'video_file'     => 'nullable|file|mimetypes:video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo|max:512000',
+            'cover'          => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'backdrop_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:8192',
         ]);
 
         if (!$request->filled('video_url') && !$request->filled('r2_video_url') && !$request->hasFile('video_file')) {
@@ -71,6 +80,11 @@ class CreatorContentController extends BaseController
         }
 
         $posterPath = $request->file('cover')->store('creator_content/covers', 'public');
+        $backdropUrl = '/storage/' . $posterPath; // mirror poster if no separate hero image
+        if ($request->hasFile('backdrop_image')) {
+            $backdropPath = $request->file('backdrop_image')->store('creator_content/backdrops', 'public');
+            $backdropUrl  = '/storage/' . $backdropPath;
+        }
 
         $type = $request->input('type');
 
@@ -79,16 +93,23 @@ class CreatorContentController extends BaseController
         $initialStatus = $isTrusted ? 'approved' : 'pending';
 
         $record = new Title();
-        $record->name         = $request->input('title');
-        $record->type         = $type;
-        $record->year         = $request->input('year');
-        $record->description  = $request->input('description');
+        $record->name           = $request->input('title');
+        $record->type           = $type;
+        $record->year           = $request->input('year');
+        $record->description    = $request->input('description');
+        $record->tagline        = $request->input('tagline');
+        $record->runtime        = $request->input('runtime');
+        $record->genre          = $request->input('genre');
+        $record->language       = $request->input('language');
+        $record->country        = $request->input('country');
+        $record->release_date   = $request->input('release_date');
+        $record->certification  = $request->input('certification');
+        $record->original_title = $request->input('original_title');
+        if ($request->filled('trailer')) {
+            $record->trailer = $request->input('trailer');
+        }
         $record->poster       = '/storage/' . $posterPath;
-        // Player's setCoverImage() falls back through video.thumbnail → episode.poster
-        // → title.images[last] → title.backdrop. It does NOT consult title.poster, so
-        // creator titles without a backdrop render as a gray placeholder. Mirror the
-        // poster into backdrop so the title-page header has an image to display.
-        $record->backdrop     = '/storage/' . $posterPath;
+        $record->backdrop     = $backdropUrl;
         $record->adult        = false;
         $record->is_series    = ($type === 'series') ? true : false;
         $record->popularity   = 1;
