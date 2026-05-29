@@ -86,16 +86,50 @@
         <td data-label="Type" class="capitalize">{{ video.type }}</td>
         <td data-label="Category" class="capitalize">{{ video.category }}</td>
         <td data-label="Approved">
-          <span class="mod-chip"
-                [class.approved]="(video.moderation_status || (video.approved ? 'approved' : 'rejected')) === 'approved'"
-                [class.pending]="video.moderation_status === 'pending'"
-                [class.rejected]="(video.moderation_status === 'rejected') || (!video.moderation_status && !video.approved)">
-            <mat-icon *ngIf="(video.moderation_status || (video.approved ? 'approved' : 'rejected')) === 'approved'" svgIcon="check"></mat-icon>
-            <mat-icon *ngIf="video.moderation_status === 'pending'" svgIcon="warning"></mat-icon>
-            <mat-icon *ngIf="video.moderation_status === 'rejected' || (!video.moderation_status && !video.approved)" svgIcon="close"></mat-icon>
-            {{ video.moderation_status === 'pending' ? 'Pending'
-               : ((video.moderation_status === 'rejected' || (!video.moderation_status && !video.approved)) ? 'Rejected' : 'Approved') }}
-          </span>
+          <!-- Creator-uploaded video — show 3-state chip + per-state action buttons.
+               video.moderation_status is appended by the Video model only for
+               videos where user_id is set. -->
+          <ng-container *ngIf="video.user_id; else legacyToggle">
+            <div class="mod-cell">
+              <span class="mod-chip"
+                    [class.approved]="video.moderation_status === 'approved'"
+                    [class.pending]="video.moderation_status === 'pending'"
+                    [class.rejected]="video.moderation_status === 'rejected'">
+                <mat-icon *ngIf="video.moderation_status === 'approved'" svgIcon="check"></mat-icon>
+                <mat-icon *ngIf="video.moderation_status === 'pending'" svgIcon="warning"></mat-icon>
+                <mat-icon *ngIf="video.moderation_status === 'rejected'" svgIcon="close"></mat-icon>
+                {{ video.moderation_status === 'pending' ? 'Pending'
+                   : (video.moderation_status === 'rejected' ? 'Rejected' : 'Approved') }}
+              </span>
+              <div class="mod-actions">
+                <button mat-icon-button color="accent" (click)="approveTitle(video)"
+                        *ngIf="video.moderation_status !== 'approved'"
+                        [matTooltip]="'Approve' | trans">
+                  <mat-icon svgIcon="check"></mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="rejectTitle(video)"
+                        *ngIf="video.moderation_status !== 'rejected'"
+                        [matTooltip]="'Reject' | trans">
+                  <mat-icon svgIcon="close"></mat-icon>
+                </button>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Legacy (TMDB/imported) video — Vebto's original tick/cross toggle. -->
+          <ng-template #legacyToggle>
+            <button
+              mat-icon-button
+              (click)="toggleApprovedState(video)"
+              class="approve-button"
+              [class.disapproved]="!video.approved"
+              [class.approved]="video.approved"
+              [disabled]="modifying$ | async"
+            >
+              <mat-icon svgIcon="check" class="success-icon"></mat-icon>
+              <mat-icon svgIcon="close" class="warn-icon"></mat-icon>
+            </button>
+          </ng-template>
         </td>
         <td data-label="Plays">{{ video.plays_count }}</td>
         <td data-label="Quality">

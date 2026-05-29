@@ -19,3 +19,10 @@ video-index {
         &.rejected { background: rgba(244,67,54,0.18);  color: #f87171; }
     }
 }
+
+video-index {
+    .mod-cell { display: flex; align-items: center; gap: 6px; }
+    .mod-actions { display: inline-flex; gap: 2px; }
+    .mod-actions button { width: 30px; height: 30px; line-height: 30px; }
+    .mod-actions mat-icon { width: 18px; height: 18px; font-size: 18px; }
+}

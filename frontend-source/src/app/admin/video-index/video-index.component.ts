@@ -8,6 +8,7 @@ import {Settings} from '@common/core/config/settings.service';
 import {finalize} from 'rxjs/operators';
 import {BehaviorSubject, Observable} from 'rxjs';
 import {Toast} from '@common/core/ui/toast.service';
+import {AppHttpClient} from '@common/core/http/app-http-client.service';
 import {HttpErrors} from '@common/core/http/errors/http-errors.enum';
 import {Title} from '../../models/title';
 import {DatatableService} from '@common/datatable/datatable.service';
@@ -32,8 +33,28 @@ export class VideoIndexComponent implements OnInit {
         private modal: Modal,
         public currentUser: CurrentUser,
         public settings: Settings,
-        private toast: Toast
+        private toast: Toast,
+        private http: AppHttpClient,
     ) {}
+
+    /** Approve a creator-uploaded title from the videos table. */
+    public approveTitle(video: any) {
+        if (!video || !video.title_id) return;
+        this.http.post('admin/moderation/' + video.title_id + '/approve', {}).subscribe(
+            () => { video.moderation_status = 'approved'; video.approved = true; this.toast.open('Approved.'); },
+            () => this.toast.open('Failed to approve'),
+        );
+    }
+
+    /** Reject a creator-uploaded title from the videos table. */
+    public rejectTitle(video: any) {
+        if (!video || !video.title_id) return;
+        const reason = (prompt('Optional reason (visible to the creator):') || '').trim();
+        this.http.post('admin/moderation/' + video.title_id + '/reject', {reason}).subscribe(
+            () => { video.moderation_status = 'rejected'; video.approved = false; this.toast.open('Rejected.'); },
+            () => this.toast.open('Failed to reject'),
+        );
+    }
 
     ngOnInit() {
         // will be paginating inside parent component, so should not update query
