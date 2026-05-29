@@ -37,6 +37,7 @@
                         {{ c.role === 'creator' ? 'Active' : 'Revoked' }}
                     </span>
                     <span class="badge red" *ngIf="c.blocked">Blocked</span>
+                    <span class="badge trusted" *ngIf="c.trusted_creator">Trusted</span>
                 </td>
                 <td class="edit-column">
                     <button mat-icon-button (click)="openEdit(c)" [matTooltip]="'Edit creator' | trans">
@@ -49,6 +50,10 @@
                     <button mat-icon-button [color]="c.blocked ? 'accent' : 'warn'" (click)="toggleBlock(c)"
                             [matTooltip]="(c.blocked ? 'Unblock' : 'Block') | trans">
                         <mat-icon [svgIcon]="c.blocked ? 'lock-open' : 'lock'"></mat-icon>
+                    </button>
+                    <button mat-icon-button [color]="c.trusted_creator ? 'accent' : ''" (click)="toggleTrusted(c)"
+                            [matTooltip]="(c.trusted_creator ? 'Revoke Trusted status' : 'Mark as Trusted Creator (skip moderation)') | trans">
+                        <mat-icon [svgIcon]="c.trusted_creator ? 'star' : 'star-border'"></mat-icon>
                     </button>
                     <button mat-icon-button color="warn" (click)="deleteCreator(c)"
                             [matTooltip]="'Delete user' | trans">

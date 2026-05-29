@@ -23,6 +23,7 @@ class User extends BaseUser
         'email_verified_at' => 'datetime',
         'role'              => 'string',
         'blocked'           => 'boolean',
+        'trusted_creator'   => 'boolean',
     ];
 
     public function isBlocked(): bool

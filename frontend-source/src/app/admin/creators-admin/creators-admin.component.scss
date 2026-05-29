@@ -10,8 +10,10 @@ creators-admin {
         border-radius: 10px;
         font-size: 11px;
         background: #444;
-        &.green { background: rgba(76, 175, 80, 0.18); color: #4ade80; }
-        &.red   { background: rgba(244, 67, 54, 0.18); color: #f87171; }
+        margin-right: 4px;
+        &.green   { background: rgba(76, 175, 80, 0.18); color: #4ade80; }
+        &.red     { background: rgba(244, 67, 54, 0.18); color: #f87171; }
+        &.trusted { background: rgba(246, 95, 84, 0.18); color: #F65F54; }
     }
 
     .edit-column { white-space: nowrap; text-align: right; }

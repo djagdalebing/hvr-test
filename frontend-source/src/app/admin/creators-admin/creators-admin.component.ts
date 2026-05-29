@@ -55,6 +55,19 @@ export class CreatorsAdminComponent implements OnInit {
         );
     }
 
+    public toggleTrusted(c: any) {
+        const verb = c.trusted_creator ? 'Revoke Trusted status from' : 'Mark';
+        const tail = c.trusted_creator ? '?' : ' as Trusted? Their uploads will go live immediately without admin review.';
+        if (!confirm(verb + ' ' + c.username + tail)) return;
+        this.http.post('admin/creators/' + c.id + '/trusted', {}).subscribe(
+            (res: any) => {
+                c.trusted_creator = !!res?.trusted_creator;
+                this.toast.open(c.trusted_creator ? 'Promoted to Trusted Creator.' : 'Trusted status revoked.');
+            },
+            () => this.toast.open('Failed to update'),
+        );
+    }
+
     public toggleBlock(c: any) {
         const verb = c.blocked ? 'Unblock' : 'Block';
         if (!confirm(verb + ' ' + c.username + '? Blocked users cannot post, comment, or upload content.')) return;

@@ -204,8 +204,9 @@ Route::group(['prefix' => 'secure/admin'], function () {
     Route::get('moderation',               [HvnAdminController::class, 'apiModerationList']);
     Route::post('moderation/{id}/approve', [HvnAdminController::class, 'apiApproveContent'])->where('id', '[0-9]+');
     Route::post('moderation/{id}/reject',  [HvnAdminController::class, 'apiRejectContent'])->where('id', '[0-9]+');
-    Route::post('creators/{id}/block',  [HvnAdminController::class, 'apiToggleBlock']);
-    Route::delete('creators/{id}',  [HvnAdminController::class, 'apiDeleteCreator']);
+    Route::post('creators/{id}/block',   [HvnAdminController::class, 'apiToggleBlock']);
+    Route::post('creators/{id}/trusted', [HvnAdminController::class, 'apiToggleTrusted']);
+    Route::delete('creators/{id}',       [HvnAdminController::class, 'apiDeleteCreator']);
     Route::get('community',         [HvnAdminController::class, 'apiCommunity']);
     Route::put('community/{id}',    [HvnAdminController::class, 'apiUpdatePost']);
     Route::post('community/{id}/hide', [HvnAdminController::class, 'apiHidePost']);

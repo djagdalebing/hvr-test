@@ -484,6 +484,25 @@ class HvnAdminController extends Controller
         return ['status' => 'success', 'title' => $title];
     }
 
+    public function apiToggleTrusted(Request $request, int $userId)
+    {
+        $this->apiAdminOrAbort();
+        $u = User::findOrFail($userId);
+        $u->trusted_creator = !$u->trusted_creator;
+        $u->save();
+
+        // Notify the creator when they're promoted (silent on revoke).
+        if ($u->trusted_creator) {
+            try {
+                $u->notify(new \App\Notifications\HvnTrustedPromoted());
+            } catch (\Throwable $e) {
+                \Log::warning('HvnTrustedPromoted notify failed: ' . $e->getMessage());
+            }
+        }
+
+        return ['status' => 'success', 'trusted_creator' => (bool) $u->trusted_creator];
+    }
+
     public function apiToggleBlock(Request $request, int $userId)
     {
         $this->apiAdminOrAbort();
