@@ -134,25 +134,6 @@
                     <textarea rows="4" maxlength="2000" formControlName="bio"
                               placeholder="Tell viewers about yourself, your style, experience…"></textarea>
                 </div>
-                <div class="input-container input-inline avatar-input-container">
-                    <label trans>Profile photo</label>
-                    <div class="avatar-input">
-                        <img *ngIf="hvnProfileForm.value?.profile_photo_url" [src]="hvnProfileForm.value.profile_photo_url" alt="Profile photo">
-                        <div class="avatar-actions-container">
-                            <div class="info" trans>jpg / png / webp, max 5MB.</div>
-                            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onHvnPhoto($event)">
-                            <div *ngIf="hvnPhoto" class="info">Selected: {{ hvnPhoto.name }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-container input-inline">
-                    <label trans>Contact email</label>
-                    <input type="email" formControlName="contact_email" placeholder="hello@example.com">
-                </div>
-                <div class="input-container input-inline">
-                    <label trans>Website</label>
-                    <input type="url" formControlName="website_url" placeholder="https://your-site.com">
-                </div>
                 <div class="input-container input-inline">
                     <label trans>YouTube</label>
                     <input type="url" formControlName="youtube_url" placeholder="https://youtube.com/@you">

@@ -112,50 +112,34 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
 
     // ---- HVN: creator profile editor ----
     public hvnSaving = false;
-    public hvnPhoto: File | null = null;
     public hvnProfileForm = this.fb.group({
-        display_name:       [''],
-        bio:                [''],
-        contact_email:      [''],
-        website_url:        [''],
-        youtube_url:        [''],
-        twitter_url:        [''],
-        instagram_url:      [''],
-        facebook_url:       [''],
-        profile_photo_url:  [''],   // computed: '/storage/' + photo path, for the preview
+        display_name:  [''],
+        bio:           [''],
+        youtube_url:   [''],
+        twitter_url:   [''],
+        instagram_url: [''],
+        facebook_url:  [''],
     });
-
-    public onHvnPhoto(ev: Event) {
-        const input = ev.target as HTMLInputElement;
-        this.hvnPhoto = input.files && input.files.length ? input.files[0] : null;
-    }
 
     public saveHvnProfile() {
         if (this.hvnSaving) return;
         const fd = new FormData();
         const v = this.hvnProfileForm.value as Record<string, any>;
-        // Send only the fields the backend actually persists; skip our
-        // local-only profile_photo_url preview key.
-        const fields = ['display_name', 'bio', 'contact_email', 'website_url',
+        const fields = ['display_name', 'bio',
             'youtube_url', 'twitter_url', 'instagram_url', 'facebook_url'];
         fields.forEach(k => { if (v[k] !== null && v[k] !== undefined) fd.append(k, v[k]); });
-        if (this.hvnPhoto) fd.append('profile_photo', this.hvnPhoto);
         this.hvnSaving = true;
         this.http.post('creator/profile', fd).subscribe(
             (res: any) => {
                 this.hvnSaving = false;
-                this.hvnPhoto = null;
                 const p = res?.profile || {};
                 this.hvnProfileForm.patchValue({
-                    display_name:      p.display_name  || '',
-                    bio:               p.bio           || '',
-                    contact_email:     p.contact_email || '',
-                    website_url:       p.website_url   || '',
-                    youtube_url:       p.youtube_url   || '',
-                    twitter_url:       p.twitter_url   || '',
-                    instagram_url:     p.instagram_url || '',
-                    facebook_url:      p.facebook_url  || '',
-                    profile_photo_url: p.profile_photo ? ('/storage/' + p.profile_photo) : '',
+                    display_name:  p.display_name  || '',
+                    bio:           p.bio           || '',
+                    youtube_url:   p.youtube_url   || '',
+                    twitter_url:   p.twitter_url   || '',
+                    instagram_url: p.instagram_url || '',
+                    facebook_url:  p.facebook_url  || '',
                 });
                 this.toast.open('Profile updated');
             },
@@ -184,15 +168,12 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
             res => {
                 const p = res?.profile || {};
                 this.hvnProfileForm.patchValue({
-                    display_name:      p.display_name  || '',
-                    bio:               p.bio           || '',
-                    contact_email:     p.contact_email || '',
-                    website_url:       p.website_url   || '',
-                    youtube_url:       p.youtube_url   || '',
-                    twitter_url:       p.twitter_url   || '',
-                    instagram_url:     p.instagram_url || '',
-                    facebook_url:      p.facebook_url  || '',
-                    profile_photo_url: p.profile_photo ? ('/storage/' + p.profile_photo) : '',
+                    display_name:  p.display_name  || '',
+                    bio:           p.bio           || '',
+                    youtube_url:   p.youtube_url   || '',
+                    twitter_url:   p.twitter_url   || '',
+                    instagram_url: p.instagram_url || '',
+                    facebook_url:  p.facebook_url  || '',
                 });
             },
             () => {/* silent — not a creator, or no profile yet */},
