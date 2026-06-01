@@ -373,38 +373,62 @@ class HvnController extends Controller
         if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
         if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
 
-        // 1) Always ensure a creator_profiles row — this is the authoritative
-        //    "is_creator" signal in apiMe(). Whatever happens to the role
-        //    column below, the user will be recognized as a creator after this.
-        try {
-            \App\CreatorProfile::firstOrCreate(['user_id' => $user->id]);
-        } catch (\Throwable $e) {
-            \Log::warning('become-creator: profile create failed', ['uid' => $user->id, 'err' => $e->getMessage()]);
-        }
+        $debug = ['uid' => $user->id, 'role_before' => $user->role];
 
-        // 2) Best-effort role upgrade. The `users.role` column is an ENUM
-        //    added by a later migration; on older installs it may not exist,
-        //    in which case the UPDATE silently fails. We don't want that to
-        //    block creator status — the profile row above already covers it.
+        // 1) Always ensure a creator_profiles row via RAW SQL — sidesteps any
+        //    Eloquent model events / fillable filters / DI quirks that could
+        //    silently swallow the write. firstOrCreate has historically
+        //    failed here for reasons we couldn't pin down.
         try {
-            if (\Schema::hasColumn('users', 'role') && $user->role !== 'creator') {
-                $user->role = 'creator';
-                $user->save();
+            if (!\Schema::hasTable('creator_profiles')) {
+                $debug['profile_err'] = 'table missing';
+            } else {
+                $exists = \DB::table('creator_profiles')
+                    ->where('user_id', $user->id)->exists();
+                if (!$exists) {
+                    \DB::table('creator_profiles')->insert([
+                        'user_id'      => $user->id,
+                        'display_name' => '',
+                        'created_at'   => now(),
+                        'updated_at'   => now(),
+                    ]);
+                }
+                $debug['profile_existed'] = $exists;
             }
         } catch (\Throwable $e) {
-            \Log::warning('become-creator: role update failed', ['uid' => $user->id, 'err' => $e->getMessage()]);
+            $debug['profile_err'] = $e->getMessage();
+            \Log::warning('become-creator: profile insert failed', $debug);
         }
 
-        // 3) Re-resolve the user and recompute is_creator so the client can
-        //    flip the panel without needing a second /secure/me round-trip.
-        $user = $user->fresh() ?: $user;
+        // 2) Best-effort role upgrade via raw UPDATE (avoid model save events).
+        try {
+            if (\Schema::hasColumn('users', 'role')) {
+                $affected = \DB::table('users')
+                    ->where('id', $user->id)
+                    ->update(['role' => 'creator']);
+                $debug['role_rows'] = $affected;
+            } else {
+                $debug['role_err'] = 'column missing';
+            }
+        } catch (\Throwable $e) {
+            $debug['role_err'] = $e->getMessage();
+            \Log::warning('become-creator: role update failed', $debug);
+        }
+
+        // 3) Re-resolve straight from DB and recompute is_creator.
+        $row = \DB::table('users')->where('id', $user->id)->first();
         $hasProfile = \DB::table('creator_profiles')->where('user_id', $user->id)->exists();
-        $isCreator  = $hasProfile || $user->role === 'creator';
+        $isCreator  = $hasProfile || (isset($row->role) && $row->role === 'creator');
+        $debug['role_after']  = $row->role ?? null;
+        $debug['has_profile'] = $hasProfile;
+        \Log::info('become-creator: result', $debug);
+        $user = (object) ['role' => $row->role ?? $user->role];
 
         return response()->json([
             'status'     => 'success',
             'role'       => $user->role,
             'is_creator' => (bool) $isCreator,
+            'debug'      => $debug,
         ]);
     }
 
