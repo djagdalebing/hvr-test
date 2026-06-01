@@ -24,10 +24,11 @@
     <span trans>Notifications</span>
   </a>
 
-  <a mat-menu-item [routerLink]="profileUrl" *ngIf="profileUrl" (click)="onItemClick()">
-    <mat-icon svgIcon="account-circle"></mat-icon>
-    <span trans>Profile</span>
-  </a>
+  <!-- HVN: Profile menu item removed. Vebto's /users/{id} page only shows
+       watchlist/ratings/reviews tabs and felt empty for most users —
+       Account Settings + Creator Dashboard cover what's actually useful
+       and are still in the menu below. -->
+
 
   <ng-content></ng-content>
 
