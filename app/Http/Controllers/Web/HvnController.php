@@ -332,12 +332,26 @@ class HvnController extends Controller
     {
         $user = $this->resolveUser();
         if (!$user) return response()->json(['authenticated' => false], 200);
+
+        // "Is this user a creator?" — true if either:
+        //   - role column is explicitly 'creator' (or any non-'viewer' value
+        //     that grants creator-tier access: admin, owner, etc.), OR
+        //   - they already have a creator_profiles row (legacy / migrated).
+        // This is intentionally lenient so users who were grandfathered in
+        // before the role column existed still see the editor, not the
+        // 'Become a Creator' upsell.
+        $hasProfile = \DB::table('creator_profiles')
+            ->where('user_id', $user->id)->exists();
+        $isCreator = $hasProfile
+            || in_array($user->role, ['creator', 'admin', 'owner'], true);
+
         return response()->json([
             'authenticated'   => true,
             'id'              => (int) $user->id,
             'username'        => $user->username,
             'email'           => $user->email,
             'role'            => $user->role,
+            'is_creator'      => (bool) $isCreator,
             'blocked'         => (bool) ($user->blocked ?? false),
             'trusted_creator' => (bool) ($user->trusted_creator ?? false),
             // raw avatar value (full URL via HasAvatarAttribute accessor)
