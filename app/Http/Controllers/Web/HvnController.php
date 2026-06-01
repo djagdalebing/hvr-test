@@ -331,7 +331,10 @@ class HvnController extends Controller
     public function apiMe(): JsonResponse
     {
         $user = $this->resolveUser();
-        if (!$user) return response()->json(['authenticated' => false], 200);
+        if (!$user) {
+            return response()->json(['authenticated' => false], 200)
+                ->header('Cache-Control', 'no-store, private');
+        }
 
         // "Is this user a creator?" — true if either:
         //   - role column is explicitly 'creator' (or any non-'viewer' value
@@ -357,11 +360,12 @@ class HvnController extends Controller
             'email'           => $user->email,
             'role'            => $user->role,
             'is_creator'      => (bool) $isCreator,
+            'has_profile'     => (bool) $hasProfile,
             'blocked'         => (bool) ($user->blocked ?? false),
             'trusted_creator' => (bool) ($user->trusted_creator ?? false),
             // raw avatar value (full URL via HasAvatarAttribute accessor)
             'avatar'          => $user->avatar,
-        ]);
+        ])->header('Cache-Control', 'no-store, private');
     }
 
     // Self-service: viewer → creator. One click from Account Settings;
