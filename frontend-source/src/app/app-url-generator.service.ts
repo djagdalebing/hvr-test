@@ -32,7 +32,9 @@ export class AppUrlGeneratorService extends UrlGeneratorService {
         return `/news/${n.id}`;
     }
 
-    user(user: User): string {
-        return `/users/${user.id}`;
+    // HVN: Vebto's /users/{id} page was removed; return null so any caller
+    // that uses it ends up rendering plain text rather than a dead link.
+    user(_user: User): string | null {
+        return null;
     }
 }

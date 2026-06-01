@@ -15,7 +15,8 @@
       </div>
       <div class="header-link" *ngIf="review.user as author">
         <img [src]="author.avatar" alt="">
-        <a [routerLink]="['/users', author.id, 'reviews']">{{ author.display_name }}</a>
+        <!-- HVN: was a link to /users/{id} — page removed; plain text now. -->
+        <span>{{ author.display_name }}</span>
       </div>
       <div class="date">{{ review.created_at | formattedDate }}</div>
     </div>

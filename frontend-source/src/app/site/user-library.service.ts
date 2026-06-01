@@ -8,7 +8,10 @@ import {ListItem} from './lists/types/list-item';
 import {Toast} from '@common/core/ui/toast.service';
 import {MinimalWatchlist} from './lists/types/minimal-watchlist';
 import {Review} from '../models/review';
-import {UserProfileService} from './user-profile/user-profile.service';
+// HVN: UserProfileService removed alongside the /users/{id} page. The
+// single endpoint it provided (/user-profile/{userId}/lists) is still
+// useful for loading the current user's lists, so call it directly.
+import {AppHttpClient} from '@common/core/http/app-http-client.service';
 import {ListsService} from './lists/lists.service';
 
 @Injectable({
@@ -21,9 +24,9 @@ export class UserLibraryService {
 
     constructor(
         private currentUser: CurrentUser,
-        private profile: UserProfileService,
         private listApi: ListsService,
-        private toast: Toast
+        private toast: Toast,
+        private http: AppHttpClient,
     ) {}
 
     public loadLists(): Promise<void> {
@@ -31,8 +34,8 @@ export class UserLibraryService {
             if (this.lists$.value) {
                 return resolve();
             }
-            return this.profile
-                .loadLists(this.currentUser.get('id'), {perPage: 30})
+            return this.http
+                .get<any>(`user-profile/${this.currentUser.get('id')}/lists`, {perPage: 30})
                 .pipe(finalize(() => resolve()))
                 .subscribe(response => {
                     this.lists$.next(response.pagination.data);

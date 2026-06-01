@@ -15,6 +15,10 @@ export class UserColumnComponent {
     haveUrl: boolean;
 
     constructor(public url: UrlGeneratorService) {
-        this.haveUrl = !!url['user'];
+        // HVN: AppUrlGeneratorService.user() now returns null since the
+        // /users/{id} page was removed. The previous check (function
+        // exists?) is no longer meaningful — test the generated URL.
+        // Falsy → render plain text via the *ngIf="!haveUrl" branch.
+        this.haveUrl = false;
     }
 }

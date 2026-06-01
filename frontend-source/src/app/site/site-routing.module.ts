@@ -19,11 +19,9 @@ import {PeopleIndexComponent} from './people/people-index/people-index.component
 import {CheckPermissionsGuard} from '@common/guards/check-permissions-guard.service';
 import {AuthGuard} from '@common/guards/auth-guard.service';
 import {DefaultPageWrapperComponent} from './shared/default-page-wrapper/default-page-wrapper.component';
-import {UserProfileComponent} from './user-profile/user-profile.component';
-import {ProfileListTabComponent} from './user-profile/tabs/profile-list-tab/profile-list-tab.component';
-import {ProfileRatingsTabComponent} from './user-profile/tabs/profile-ratings-tab/profile-ratings-tab.component';
-import {ProfileReviewTabComponent} from './user-profile/tabs/profile-review-tab/profile-review-tab.component';
-import {ProfileCommentsTabComponent} from './user-profile/tabs/profile-comments-tab/profile-comments-tab.component';
+// HVN: Vebto's /users/{id} UserProfile page removed — its 4 tabs (lists,
+// ratings, reviews, comments) felt sparse for HVN's audience. Usernames
+// are now plain text wherever they used to deep-link.
 import {CreatorsPageComponent} from './hvn-creators/creators-page.component';
 import {CreatorProfilePageComponent} from './hvn-creators/creator-profile-page.component';
 import {CreatorDashboardPageComponent} from './hvn-creators/creator-dashboard-page.component';
@@ -36,18 +34,7 @@ const routes: Routes = [
         canActivate: [CheckPermissionsGuard],
         canActivateChild: [CheckPermissionsGuard],
         children: [
-            // user profile
-            {
-                path: 'users/:userId',
-                component: UserProfileComponent,
-                children: [
-                    {path: '', component: ProfileListTabComponent},
-                    {path: 'lists', component: ProfileListTabComponent},
-                    {path: 'ratings', component: ProfileRatingsTabComponent},
-                    {path: 'reviews', component: ProfileReviewTabComponent},
-                    {path: 'comments', component: ProfileCommentsTabComponent},
-                ],
-            },
+            // HVN: /users/{id} route removed — see comment above the imports.
 
             // browse
             {

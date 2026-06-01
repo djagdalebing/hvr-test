@@ -13,9 +13,8 @@
           <div class="owner-container" *ngIf="list.user">
             <span trans>By</span>
             <img class="owner-img" [src]="list.user.avatar" alt="" />
-            <a [routerLink]="['/users', list.user.id]" class="owner-name">{{
-              list.user.display_name
-            }}</a>
+            <!-- HVN: was a link to /users/{id} — page removed; plain text now. -->
+            <span class="owner-name">{{ list.user.display_name }}</span>
           </div>
           <div class="dates-container">
             <span class="separator">|</span>

@@ -95,13 +95,9 @@ import {TitleLandscapeItemComponent} from './shared/media-view/title/title-lands
 import {PersonPortraitItemComponent} from './shared/media-view/person/person-portrait-item/person-portrait-item.component';
 import {PersonLandscapeItemComponent} from './shared/media-view/person/person-landscape-item/person-landscape-item.component';
 import {PersonDetailItemComponent} from './shared/media-view/person/person-detail-item/person-detail-item.component';
-import {UserProfileComponent} from './user-profile/user-profile.component';
-import {ProfileListTabComponent} from './user-profile/tabs/profile-list-tab/profile-list-tab.component';
+// HVN: UserProfile + tabs removed.
 import {SkeletonModule} from '@common/core/ui/skeleton/skeleton.module';
-import {ProfileRatingsTabComponent} from './user-profile/tabs/profile-ratings-tab/profile-ratings-tab.component';
-import {ProfileReviewTabComponent} from './user-profile/tabs/profile-review-tab/profile-review-tab.component';
 import {ReviewItemComponent} from './reviews/review-tab/review-item/review-item.component';
-import {ProfileCommentsTabComponent} from './user-profile/tabs/profile-comments-tab/profile-comments-tab.component';
 import {CommentsModule} from '@common/comments/comments.module';
 import { MediaViewModeSwitcherComponent } from './shared/media-view/media-view-mode-switcher/media-view-mode-switcher.component';
 import {AppFooterModule} from '@common/shared/app-footer/app-footer.module';
@@ -223,12 +219,7 @@ import {CommunityPostPageComponent} from './hvn-community/community-post-page.co
         PersonPortraitItemComponent,
         PersonLandscapeItemComponent,
         PersonDetailItemComponent,
-        UserProfileComponent,
-        ProfileListTabComponent,
-        ProfileRatingsTabComponent,
-        ProfileReviewTabComponent,
         ReviewItemComponent,
-        ProfileCommentsTabComponent,
         MediaViewModeSwitcherComponent,
     ],
     exports: [MediaImageModule, MoreLessTextDirective],
