@@ -5,24 +5,6 @@
         </div>
 
         <div class="many-inputs">
-            <!-- Role selector first — sets the tone of the form. Hidden on the
-                 /workspace/join/register variant where role isn't applicable. -->
-            <div class="input-container hvn-role-picker">
-                <label trans>I'm joining as</label>
-                <div class="hvn-role-options">
-                    <label class="hvn-role-option" [class.selected]="form.value.role === 'viewer'">
-                        <input type="radio" formControlName="role" value="viewer">
-                        <span class="hvn-role-title">👁  Viewer</span>
-                        <span class="hvn-role-sub">Browse, comment & like content.</span>
-                    </label>
-                    <label class="hvn-role-option" [class.selected]="form.value.role === 'creator'">
-                        <input type="radio" formControlName="role" value="creator">
-                        <span class="hvn-role-title">🎬  Creator</span>
-                        <span class="hvn-role-sub">Upload titles, build a public profile, get discovered.</span>
-                    </label>
-                </div>
-            </div>
-
             <div class="input-container">
                 <label for="reg_username" trans>Username</label>
                 <input type="text" formControlName="username" id="reg_username" required

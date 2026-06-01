@@ -146,7 +146,6 @@ Route::get('lists/{id}', 'ListController@show')->middleware('prerenderIfCrawler'
 // HVN STANDALONE PAGES — Blade routes for /creators and /community removed.
 // These are now native Angular SPA pages served by the catch-all below; the
 // SPA hits the JSON API endpoints in the secure group further down.
-Route::get('creator-signup', [HvnController::class, 'creatorSignup']);
 Route::post('community/posts', [HvnController::class, 'communityStore']);
 Route::post('community/{id}/comments', [HvnController::class, 'commentStore'])->where('id', '[0-9]+');
 // /creator/dashboard is the native SPA route now — let the catch-all serve

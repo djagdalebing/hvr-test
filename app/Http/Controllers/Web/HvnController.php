@@ -12,14 +12,8 @@ use Illuminate\Http\Request;
 
 class HvnController extends Controller
 {
-    public function creatorSignup()
-    {
-        if (auth()->check()) {
-            return redirect('/');
-        }
-
-        return view('hvn.creator-signup');
-    }
+    // HVN: creatorSignup() removed — /creator-signup is now served by the
+    // SPA's RegisterComponent (catch-all → app.blade.php).
 
     public function community(Request $request)
     {

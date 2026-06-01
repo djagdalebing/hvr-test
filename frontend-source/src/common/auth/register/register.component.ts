@@ -30,7 +30,9 @@ export class RegisterComponent implements OnInit {
         email: [''],
         password: [''],
         password_confirmation: [''],
-        role: ['viewer'],
+        // HVN: every signup is a creator now — viewer option removed from the
+        // UI. Hard-coded into the form so server still gets the role field.
+        role: ['creator'],
         purchase_code: [''],
     });
     public errors$ = new BehaviorSubject<{
@@ -73,12 +75,8 @@ export class RegisterComponent implements OnInit {
                 this.form.get('email').disable();
             });
 
-        // HVN: /creator-signup sets defaultRole=creator via route data;
-        // ?role=creator on /register also pre-selects creator.
-        const dataRole = this.route.snapshot.data?.defaultRole;
-        const queryRole = this.route.snapshot.queryParamMap.get('role');
-        const role = (dataRole === 'creator' || queryRole === 'creator') ? 'creator' : 'viewer';
-        this.form.patchValue({role});
+        // HVN: role is always 'creator' (viewer option removed from signup).
+        this.form.patchValue({role: 'creator'});
     }
 
     /**

@@ -10,9 +10,11 @@ import {ResetPasswordComponent} from './reset-password/reset-password.component'
 const routes: Routes = [
     {path: 'login', component: LoginComponent, canActivate: [GuestGuard]},
     {path: 'register', component: RegisterComponent, canActivate: [GuestGuard, DisableRouteGuard]},
-    // HVN: /creator-signup renders the same register form pre-set to role=creator.
+    // HVN: /creator-signup kept as an alias of /register so any existing
+    // bookmark/link still works. Every signup is a creator now — the
+    // viewer option has been removed everywhere.
     {path: 'creator-signup', component: RegisterComponent, canActivate: [GuestGuard, DisableRouteGuard],
-        data: {message: 'Join Her Vision Network as a Creator', defaultRole: 'creator'}},
+        data: {message: 'Join Her Vision Network'}},
     {path: 'forgot-password', component: ForgotPasswordComponent, canActivate: [GuestGuard]},
     {path: 'password/reset/:token', component: ResetPasswordComponent, canActivate: [GuestGuard]},
 

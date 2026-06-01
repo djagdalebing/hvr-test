@@ -25,8 +25,9 @@
         'community': '/community',
         'creators':  '/creators',
     };
-    // Paths that must always be a hard browser navigation (Blade pages)
-    var HVN_PREFIXES = ['/community', '/creators', '/creator-signup'];
+    // Paths that must always be a hard browser navigation (Blade pages).
+    // /creator-signup removed — it's a regular SPA route now.
+    var HVN_PREFIXES = ['/community', '/creators'];
 
     function isHvnPath(path) {
         return HVN_PREFIXES.some(function(p) {
@@ -36,9 +37,6 @@
 
     function hvnPathForText(text) {
         var t = (text || '').trim().toLowerCase();
-        if (t.indexOf('join') !== -1 && t.indexOf('creator') !== -1) {
-            return '/creator-signup';
-        }
         for (var key in HVN_TEXT_MAP) {
             if (t === key || new RegExp('\\b' + key + '\\b').test(t)) {
                 return HVN_TEXT_MAP[key];
@@ -113,32 +111,8 @@
         window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
     }, true);
 
-    // "Join as a Creator" CTA on auth page
-    (function injectCreatorLink() {
-        var LINK_ID = 'hvn-creator-link';
-        function inject() {
-            if (document.getElementById(LINK_ID)) return;
-            if (!document.querySelector('auth-page')) return;
-            var infoRow   = document.querySelector('auth-page .info-row');
-            var authPanel = document.querySelector('auth-page .auth-panel');
-            var target    = infoRow || authPanel || document.querySelector('auth-page');
-            if (!target) return;
-            var div = document.createElement('div');
-            div.id = LINK_ID;
-            div.style.cssText = 'margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08);text-align:center;font-size:13px;color:rgba(255,255,255,0.6);font-family:Roboto,sans-serif';
-            div.innerHTML = 'Want to share your content? <a href="/creator-signup" onclick="event.stopPropagation();window.location.href=\'/creator-signup\';return false;" style="color:#F65F54;font-weight:500;text-decoration:none;">Join as a Creator →</a>';
-            if (infoRow && infoRow.parentNode) infoRow.parentNode.insertBefore(div, infoRow.nextSibling);
-            else target.appendChild(div);
-        }
-        function cleanup() {
-            if (!document.querySelector('auth-page')) {
-                var el = document.getElementById(LINK_ID);
-                if (el) el.remove();
-            }
-        }
-        new MutationObserver(function() { inject(); cleanup(); })
-            .observe(document.body, { childList: true, subtree: true });
-    }());
+    // HVN: 'Want to share your content? Join as a Creator →' CTA removed —
+    // every signup is a creator now, so the separate prompt is meaningless.
 }());
 </script>
 @endsection
@@ -152,11 +126,11 @@
 
 @section('angular-scripts')
     {{--angular scripts begin — bundle hashes auto-rewritten by CI --}}
-		<script src="client/runtime-es2015.c93d2580473dc836cfd0.js" type="module"></script>
-		<script src="client/runtime-es5.c93d2580473dc836cfd0.js" nomodule defer></script>
+		<script src="client/runtime-es2015.99e448decfab06770d11.js" type="module"></script>
+		<script src="client/runtime-es5.99e448decfab06770d11.js" nomodule defer></script>
 		<script src="client/polyfills-es2015.efb9d3bbd257407bb0da.js" type="module"></script>
 		<script src="client/polyfills-es5.6f7ddfe1967d03b32b3b.js" nomodule defer></script>
-		<script src="client/main-es2015.6c025029e3eb9d37520d.js" type="module"></script>
-		<script src="client/main-es5.6c025029e3eb9d37520d.js" nomodule defer></script>
+		<script src="client/main-es2015.e98f4c1bcf3a9238dcd2.js" type="module"></script>
+		<script src="client/main-es5.e98f4c1bcf3a9238dcd2.js" nomodule defer></script>
 	{{--angular scripts end--}}
 @endsection
