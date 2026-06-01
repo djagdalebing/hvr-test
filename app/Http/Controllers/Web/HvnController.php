@@ -325,6 +325,26 @@ class HvnController extends Controller
         return $user;
     }
 
+    // Lightweight identity probe — used by Account Settings to decide
+    // whether to show the 'Become a Creator' card or the Public Profile
+    // editor, without 403-ing viewers on the heavier /creator/dashboard.
+    public function apiMe(): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['authenticated' => false], 200);
+        return response()->json([
+            'authenticated'   => true,
+            'id'              => (int) $user->id,
+            'username'        => $user->username,
+            'email'           => $user->email,
+            'role'            => $user->role,
+            'blocked'         => (bool) ($user->blocked ?? false),
+            'trusted_creator' => (bool) ($user->trusted_creator ?? false),
+            // raw avatar value (full URL via HasAvatarAttribute accessor)
+            'avatar'          => $user->avatar,
+        ]);
+    }
+
     // Self-service: viewer → creator. One click from Account Settings;
     // POST /secure/me/become-creator. No moderation step — admins can
     // demote / block from /admin/creators if needed.

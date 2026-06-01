@@ -166,6 +166,9 @@ Route::group(['prefix' => 'secure'], function () {
     Route::post('community/{id}/like',    [HvnController::class, 'apiToggleLike'])->where('id', '[0-9]+');
     Route::post('community/comments/{id}/like', [HvnController::class, 'apiToggleCommentLike'])->where('id', '[0-9]+');
     Route::get('creator/dashboard',       [HvnController::class, 'apiCreatorDashboard']);
+    // Lightweight identity probe — Account Settings uses this to decide
+    // which panel to show without triggering a 403 toast from /creator/dashboard.
+    Route::get('me',                      [HvnController::class, 'apiMe']);
     Route::post('me/become-creator',      [HvnController::class, 'apiBecomeCreator']);
     // Creator profile + projects (portfolio)
     Route::post('creator/profile',        [HvnController::class, 'profileUpdate']);
