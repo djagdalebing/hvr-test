@@ -59,6 +59,55 @@ creator-dashboard-page {
         width: 100%;
         margin-top: 8px;
     }
+
+    .dash-profile-details {
+        text-align: left;
+        margin-top: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .dash-detail-row {
+        font-size: 13px;
+        .dash-detail-label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            opacity: .55;
+            margin-bottom: 4px;
+        }
+        .dash-detail-value {
+            color: inherit;
+            text-decoration: none;
+            opacity: .85;
+            &:hover { text-decoration: underline; }
+        }
+    }
+    .dash-social-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        .dash-social-chip {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 4px 10px;
+            font-size: 12px;
+            color: inherit;
+            text-decoration: none;
+            transition: background .15s ease, border-color .15s ease;
+            &:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.18); }
+        }
+    }
+    .dash-edit-hint {
+        margin-top: 16px;
+        font-size: 12px;
+        opacity: .65;
+        text-align: left;
+        a { color: var(--be-accent, #F65F54); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    }
 }
 
 .project-list {

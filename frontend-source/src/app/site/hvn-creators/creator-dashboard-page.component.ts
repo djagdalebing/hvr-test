@@ -204,56 +204,17 @@ export class CreatorDashboardPageComponent implements OnInit {
         );
     }
 
-    // ----- profile edit -----
-    public showProfileEdit = false;
-    public savingProfile = false;
-    public pForm: any = {};
-    public pPhoto: File | null = null;
-
-    public toggleProfileEdit() {
-        this.showProfileEdit = !this.showProfileEdit;
-        if (this.showProfileEdit) {
-            const p = this.profile || {};
-            this.pForm = {
-                display_name:  p.display_name  || '',
-                bio:           p.bio           || '',
-                contact_email: p.contact_email || '',
-                website_url:   p.website_url   || '',
-                youtube_url:   p.youtube_url   || '',
-                twitter_url:   p.twitter_url   || '',
-                instagram_url: p.instagram_url || '',
-                facebook_url:  p.facebook_url  || '',
-            };
-            this.pPhoto = null;
-        }
-    }
-
-    public onProfilePhoto(ev: Event) {
-        const input = ev.target as HTMLInputElement;
-        this.pPhoto = input.files && input.files.length ? input.files[0] : null;
-    }
-
-    public saveProfile() {
-        if (this.savingProfile) return;
-        const fd = new FormData();
-        Object.keys(this.pForm).forEach(k => {
-            if (this.pForm[k] != null) fd.append(k, this.pForm[k]);
-        });
-        if (this.pPhoto) fd.append('profile_photo', this.pPhoto);
-
-        this.savingProfile = true;
-        this.http.post('creator/profile', fd).subscribe(
-            (res: any) => {
-                this.savingProfile = false;
-                if (res?.profile) this.profile = res.profile;
-                this.showProfileEdit = false;
-                this.toast.open('Profile updated.');
-            },
-            (err: any) => {
-                this.savingProfile = false;
-                this.toast.open(this.firstError(err) || 'Failed to save.');
-            },
-        );
+    // ----- view-only profile display helpers -----
+    // (Profile editing now lives at /account/settings.)
+    public socialLinks(): Array<{label: string, url: string}> {
+        const p = this.profile || {};
+        const out: Array<{label: string, url: string}> = [];
+        if (p.website_url)   out.push({label: 'Website',   url: p.website_url});
+        if (p.youtube_url)   out.push({label: 'YouTube',   url: p.youtube_url});
+        if (p.twitter_url)   out.push({label: 'Twitter',   url: p.twitter_url});
+        if (p.instagram_url) out.push({label: 'Instagram', url: p.instagram_url});
+        if (p.facebook_url)  out.push({label: 'Facebook',  url: p.facebook_url});
+        return out;
     }
 
     // ----- projects -----

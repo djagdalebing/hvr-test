@@ -19,10 +19,20 @@
                 <div class="dash-name">{{ displayName() }}</div>
                 <div class="dash-handle">{{ user.username }}</div>
                 <div class="dash-bio" *ngIf="profile?.bio">{{ profile.bio }}</div>
-                <a [routerLink]="['/creators', user.username]" mat-stroked-button class="dash-action">View public profile</a>
-                <button mat-flat-button color="accent" class="dash-action" (click)="toggleProfileEdit()">
-                    {{ showProfileEdit ? 'Close' : 'Edit profile' }}
-                </button>
+                <div class="dash-profile-details">
+                    <div class="dash-detail-row" *ngIf="profile?.contact_email">
+                        <span class="dash-detail-label">Contact</span>
+                        <a [href]="'mailto:' + profile.contact_email" class="dash-detail-value">{{ profile.contact_email }}</a>
+                    </div>
+                    <div class="dash-detail-row" *ngIf="socialLinks().length">
+                        <span class="dash-detail-label">Links</span>
+                        <div class="dash-social-chips">
+                            <a *ngFor="let s of socialLinks()" [href]="s.url" target="_blank" rel="noopener"
+                               class="dash-social-chip">{{ s.label }} ↗</a>
+                        </div>
+                    </div>
+                </div>
+                <p class="dash-edit-hint">Edit your profile under <a routerLink="/account/settings">Account Settings</a>.</p>
             </aside>
 
             <div class="dash-main">
@@ -41,41 +51,7 @@
                     </div>
                 </div>
 
-                <div class="upload-panel" *ngIf="showProfileEdit">
-                    <div class="upload-grid">
-                        <div class="field full">
-                            <label>Display name</label>
-                            <input type="text" maxlength="100" [(ngModel)]="pForm.display_name">
-                        </div>
-                        <div class="field full">
-                            <label>Bio / About</label>
-                            <textarea rows="4" maxlength="2000" [(ngModel)]="pForm.bio"
-                                      placeholder="Tell viewers about yourself, your style, experience…"></textarea>
-                        </div>
-                        <div class="field full">
-                            <label>Profile photo <span class="hint">(jpg/png/webp, max 5MB)</span></label>
-                            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onProfilePhoto($event)">
-                        </div>
-                        <div class="field">
-                            <label>Contact email</label>
-                            <input type="email" [(ngModel)]="pForm.contact_email">
-                        </div>
-                        <div class="field">
-                            <label>Website</label>
-                            <input type="url" [(ngModel)]="pForm.website_url" placeholder="https://...">
-                        </div>
-                        <div class="field"><label>YouTube</label><input type="url" [(ngModel)]="pForm.youtube_url"></div>
-                        <div class="field"><label>Twitter / X</label><input type="url" [(ngModel)]="pForm.twitter_url"></div>
-                        <div class="field"><label>Instagram</label><input type="url" [(ngModel)]="pForm.instagram_url"></div>
-                        <div class="field"><label>Facebook</label><input type="url" [(ngModel)]="pForm.facebook_url"></div>
-                    </div>
-                    <div class="upload-actions">
-                        <button mat-button (click)="toggleProfileEdit()" [disabled]="savingProfile">Cancel</button>
-                        <button mat-flat-button color="accent" (click)="saveProfile()" [disabled]="savingProfile">
-                            {{ savingProfile ? 'Saving…' : 'Save profile' }}
-                        </button>
-                    </div>
-                </div>
+                <!-- HVN: in-page profile edit form removed — moved to /account/settings. -->
 
                 <div class="dash-section-head">
                     <h2 class="dash-section-title">Previous work / projects</h2>

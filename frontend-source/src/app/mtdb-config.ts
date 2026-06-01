@@ -19,7 +19,7 @@ export const MTDB_CONFIG: AppConfig = {
                  return m.role === 'creator';
              }} as any,
             {route: '/watchlist', name: 'Watchlist', icon: 'playlist-add-check'},
-            {route: '/lists', name: 'Your Lists', icon: 'list'},
+            // HVN: 'Your Lists' removed from the dropdown.
         ]
     },
     auth: {
