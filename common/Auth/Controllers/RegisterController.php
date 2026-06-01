@@ -41,11 +41,28 @@ class RegisterController extends BaseController
 
     public function register(Request $request)
     {
+        // HVN: harder validation than the Vebto default — usernames are
+        // exposed on /creators/{username} so they must be unique and url-safe,
+        // names get a length cap, and passwords are 8+ with a letter+digit
+        // to prevent throwaway 'password' / '12345' signups.
         $this->validate($request, [
             'email'      => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password'   => ['required', 'string', 'min:5', 'confirmed'],
+            'password'   => [
+                'required', 'string', 'min:8', 'confirmed',
+                'regex:/^(?=.*[A-Za-z])(?=.*\d).+$/',
+            ],
+            'username'   => [
+                'required', 'string', 'min:3', 'max:30',
+                'alpha_dash', 'unique:users,username',
+            ],
+            'first_name' => ['nullable', 'string', 'max:50'],
+            'last_name'  => ['nullable', 'string', 'max:50'],
             'token_name' => 'string|min:3|max:50',
             'role'       => 'nullable|string|in:viewer,creator',
+        ], [
+            'password.regex' => 'Password must contain at least one letter and one number.',
+            'username.alpha_dash' => 'Username may only contain letters, numbers, dashes and underscores.',
+            'username.unique' => 'That username is already taken.',
         ]);
 
         $params = $request->all();

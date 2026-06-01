@@ -1,2 +1,39 @@
 /* extracted from production bundle */
 .policies{margin-top:32px}.policy-checkbox{display:block;margin-bottom:3px}
+
+/* HVN registration form additions */
+.hvn-role-picker { margin-bottom: 12px; }
+.hvn-role-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 6px;
+}
+.hvn-role-option {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 14px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+    input[type=radio] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .hvn-role-title { font-weight: 500; font-size: 14px; }
+    .hvn-role-sub   { font-size: 12px; opacity: .65; margin-top: 4px; }
+    &.selected { border-color: var(--be-accent, #F65F54); background: rgba(246,95,84,0.06); }
+    &:hover    { border-color: rgba(255,255,255,0.3); }
+}
+.input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.hvn-pw-hint { display: block; font-size: 11px; opacity: .6; margin-top: 4px; }
+
+@media (max-width: 480px) {
+    .hvn-role-options, .input-row { grid-template-columns: 1fr; }
+}
