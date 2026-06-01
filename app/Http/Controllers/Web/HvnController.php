@@ -373,10 +373,31 @@ class HvnController extends Controller
             ->orderByDesc('id')
             ->get();
 
+        // Public titles this creator uploaded (already filtered to approved
+        // via the Title global scope). Pull a tidy subset so the SPA can
+        // render a "Titles" grid without an extra round-trip.
+        $titles = Title::whereHas('videos', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->orderByDesc('created_at')
+            ->take(40)
+            ->get(['id', 'name', 'type', 'year', 'poster', 'tagline', 'runtime', 'genre', 'created_at']);
+
+        // Recent community posts by this creator (also a way of "showing
+        // what they're up to" on the public profile).
+        $posts = CommunityPost::where('user_id', $user->id)
+            ->published()
+            ->withCount(['comments', 'likes'])
+            ->orderByDesc('created_at')
+            ->take(10)
+            ->get(['id', 'title', 'body', 'created_at', 'user_id']);
+
         return response()->json([
             'user'     => $user,
             'profile'  => $user->creatorProfile,
             'projects' => $projects,
+            'titles'   => $titles,
+            'posts'    => $posts,
         ]);
     }
 

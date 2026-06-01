@@ -29,6 +29,27 @@
             </div>
         </header>
 
+        <section class="profile-section" *ngIf="titles.length">
+            <h2>Titles by {{ displayName() }}</h2>
+            <ul class="title-grid">
+                <li *ngFor="let t of titles" class="title-card">
+                    <a [routerLink]="['/titles', t.id, t.name || '-']" class="title-link">
+                        <div class="title-poster" [class.placeholder]="!t.poster">
+                            <img *ngIf="t.poster" [src]="t.poster" [alt]="t.name">
+                        </div>
+                        <div class="title-meta">
+                            <div class="title-name">{{ t.name }}</div>
+                            <div class="title-sub">
+                                <span class="title-type">{{ t.type || 'movie' }}</span>
+                                <span *ngIf="t.year"> · {{ t.year }}</span>
+                                <span *ngIf="t.runtime"> · {{ t.runtime }} min</span>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </section>
+
         <section class="profile-section" *ngIf="projects.length">
             <h2>Previous work</h2>
             <ul class="project-grid">
@@ -48,6 +69,30 @@
                     </div>
                 </li>
             </ul>
+        </section>
+
+        <section class="profile-section" *ngIf="posts.length">
+            <h2>Community posts</h2>
+            <ul class="post-list">
+                <li *ngFor="let p of posts" class="post-item">
+                    <a [routerLink]="['/community', p.id]" class="post-link">
+                        <div class="post-title">{{ p.title }}</div>
+                        <div class="post-snippet">{{ p.body }}</div>
+                        <div class="post-meta">
+                            {{ p.created_at | date:'mediumDate' }}
+                            · {{ p.comments_count || 0 }} comments
+                            · {{ p.likes_count || 0 }} likes
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </section>
+
+        <section class="profile-section" *ngIf="!titles.length && !projects.length && !posts.length && !profile?.bio && socialLinks().length === 0">
+            <div class="empty-profile">
+                <h3>This creator hasn't filled in their profile yet</h3>
+                <p>Check back later — they may upload titles, write posts, or fill in their bio over time.</p>
+            </div>
         </section>
     </ng-container>
 </div>

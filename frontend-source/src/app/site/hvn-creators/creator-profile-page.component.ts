@@ -16,6 +16,8 @@ export class CreatorProfilePageComponent implements OnInit {
     public user: any = null;
     public profile: any = null;
     public projects: any[] = [];
+    public titles: any[] = [];
+    public posts: any[] = [];
 
     constructor(
         private route: ActivatedRoute,
@@ -36,6 +38,8 @@ export class CreatorProfilePageComponent implements OnInit {
                 this.user = res.user;
                 this.profile = res.profile;
                 this.projects = res.projects || [];
+                this.titles = res.titles || [];
+                this.posts = res.posts || [];
                 this.loading = false;
                 this.cd.markForCheck();
             },
