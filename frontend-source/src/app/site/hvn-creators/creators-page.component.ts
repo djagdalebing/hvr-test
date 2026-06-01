@@ -47,7 +47,11 @@ export class CreatorsPageComponent implements OnInit {
     }
 
     public photoUrl(c: any): string | null {
-        const p = c.creator_profile && c.creator_profile.profile_photo;
+        // Prefer the standard user.avatar (set via Account Settings); fall
+        // back to the legacy creator_profile.profile_photo column.
+        const a = c?.avatar;
+        if (a) return /^https?:\/\/|^\//.test(a) ? a : '/storage/' + a;
+        const p = c?.creator_profile?.profile_photo;
         return p ? '/storage/' + p : null;
     }
 
