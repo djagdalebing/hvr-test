@@ -418,7 +418,13 @@ class HvnController extends Controller
         $perPage = min(48, max(1, (int) $request->input('perPage', 24)));
         $query   = trim((string) $request->input('query', ''));
 
-        $q = \App\User::where('role', 'creator')
+        // "Creator" = either role='creator' OR has a creator_profiles row.
+        // The role column can lag behind the profile row (best-effort writes
+        // in apiBecomeCreator), so we union the two signals.
+        $q = \App\User::where(function ($w) {
+                $w->where('role', 'creator')
+                  ->orWhereHas('creatorProfile');
+            })
             ->whereNotNull('username')
             ->with('creatorProfile')
             ->orderBy('username');
@@ -440,8 +446,13 @@ class HvnController extends Controller
 
     public function apiCreatorProfile(string $username): JsonResponse
     {
+        // Same union as the list endpoint — role column may lag behind the
+        // creator_profiles row, so accept either signal.
         $user = \App\User::where('username', $username)
-            ->where('role', 'creator')
+            ->where(function ($w) {
+                $w->where('role', 'creator')
+                  ->orWhereHas('creatorProfile');
+            })
             ->with('creatorProfile')
             ->firstOrFail();
 
