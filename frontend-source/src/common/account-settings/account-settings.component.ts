@@ -114,20 +114,16 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
     public hvnSaving = false;
     public hvnPhoto: File | null = null;
     public hvnProfileForm = this.fb.group({
-        display_name:  [''],
-        bio:           [''],
-        contact_email: [''],
-        website_url:   [''],
-        youtube_url:   [''],
-        twitter_url:   [''],
-        instagram_url: [''],
-        facebook_url:  [''],
+        display_name:       [''],
+        bio:                [''],
+        contact_email:      [''],
+        website_url:        [''],
+        youtube_url:        [''],
+        twitter_url:        [''],
+        instagram_url:      [''],
+        facebook_url:       [''],
+        profile_photo_url:  [''],   // computed: '/storage/' + photo path, for the preview
     });
-
-    public isCreator(): boolean {
-        const m = (this.currentUser as any)?.model$?.value || {};
-        return m.role === 'creator';
-    }
 
     public onHvnPhoto(ev: Event) {
         const input = ev.target as HTMLInputElement;
@@ -138,16 +134,29 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
         if (this.hvnSaving) return;
         const fd = new FormData();
         const v = this.hvnProfileForm.value as Record<string, any>;
-        Object.keys(v).forEach(k => {
-            if (v[k] !== null && v[k] !== undefined) fd.append(k, v[k]);
-        });
+        // Send only the fields the backend actually persists; skip our
+        // local-only profile_photo_url preview key.
+        const fields = ['display_name', 'bio', 'contact_email', 'website_url',
+            'youtube_url', 'twitter_url', 'instagram_url', 'facebook_url'];
+        fields.forEach(k => { if (v[k] !== null && v[k] !== undefined) fd.append(k, v[k]); });
         if (this.hvnPhoto) fd.append('profile_photo', this.hvnPhoto);
         this.hvnSaving = true;
         this.http.post('creator/profile', fd).subscribe(
             (res: any) => {
                 this.hvnSaving = false;
                 this.hvnPhoto = null;
-                if (res?.profile) this.hvnProfileForm.patchValue(res.profile);
+                const p = res?.profile || {};
+                this.hvnProfileForm.patchValue({
+                    display_name:      p.display_name  || '',
+                    bio:               p.bio           || '',
+                    contact_email:     p.contact_email || '',
+                    website_url:       p.website_url   || '',
+                    youtube_url:       p.youtube_url   || '',
+                    twitter_url:       p.twitter_url   || '',
+                    instagram_url:     p.instagram_url || '',
+                    facebook_url:      p.facebook_url  || '',
+                    profile_photo_url: p.profile_photo ? ('/storage/' + p.profile_photo) : '',
+                });
                 this.toast.open('Profile updated');
             },
             (err: any) => {
@@ -165,24 +174,28 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
         );
     }
 
-    /** Load existing creator profile on init so the form starts pre-filled. */
+    /**
+     * Load existing creator profile so the form starts pre-filled with any
+     * values already saved. Non-creators get a 403 from the endpoint, which
+     * is silently swallowed — the fields just stay empty for them.
+     */
     private loadHvnProfile() {
-        if (!this.isCreator()) return;
         this.http.get<any>('creator/dashboard').subscribe(
             res => {
                 const p = res?.profile || {};
                 this.hvnProfileForm.patchValue({
-                    display_name:  p.display_name  || '',
-                    bio:           p.bio           || '',
-                    contact_email: p.contact_email || '',
-                    website_url:   p.website_url   || '',
-                    youtube_url:   p.youtube_url   || '',
-                    twitter_url:   p.twitter_url   || '',
-                    instagram_url: p.instagram_url || '',
-                    facebook_url:  p.facebook_url  || '',
+                    display_name:      p.display_name  || '',
+                    bio:               p.bio           || '',
+                    contact_email:     p.contact_email || '',
+                    website_url:       p.website_url   || '',
+                    youtube_url:       p.youtube_url   || '',
+                    twitter_url:       p.twitter_url   || '',
+                    instagram_url:     p.instagram_url || '',
+                    facebook_url:      p.facebook_url  || '',
+                    profile_photo_url: p.profile_photo ? ('/storage/' + p.profile_photo) : '',
                 });
             },
-            () => {/* silent — non-creators won't reach here, others tolerate empty */},
+            () => {/* silent — not a creator, or no profile yet */},
         );
     }
 
