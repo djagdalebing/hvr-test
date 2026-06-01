@@ -340,8 +340,13 @@ class HvnController extends Controller
         // This is intentionally lenient so users who were grandfathered in
         // before the role column existed still see the editor, not the
         // 'Become a Creator' upsell.
-        $hasProfile = \DB::table('creator_profiles')
-            ->where('user_id', $user->id)->exists();
+        $hasProfile = false;
+        try {
+            $hasProfile = \DB::table('creator_profiles')
+                ->where('user_id', $user->id)->exists();
+        } catch (\Throwable $e) {
+            \Log::warning('apiMe: creator_profiles probe failed', ['err' => $e->getMessage()]);
+        }
         $isCreator = $hasProfile
             || in_array($user->role, ['creator', 'admin', 'owner'], true);
 
@@ -368,14 +373,39 @@ class HvnController extends Controller
         if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
         if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
 
-        if ($user->role !== 'creator') {
-            $user->role = 'creator';
-            $user->save();
-            // make sure their creator_profiles row exists so the dashboard
-            // doesn't 404 on first visit
+        // 1) Always ensure a creator_profiles row — this is the authoritative
+        //    "is_creator" signal in apiMe(). Whatever happens to the role
+        //    column below, the user will be recognized as a creator after this.
+        try {
             \App\CreatorProfile::firstOrCreate(['user_id' => $user->id]);
+        } catch (\Throwable $e) {
+            \Log::warning('become-creator: profile create failed', ['uid' => $user->id, 'err' => $e->getMessage()]);
         }
-        return response()->json(['status' => 'success', 'role' => $user->role]);
+
+        // 2) Best-effort role upgrade. The `users.role` column is an ENUM
+        //    added by a later migration; on older installs it may not exist,
+        //    in which case the UPDATE silently fails. We don't want that to
+        //    block creator status — the profile row above already covers it.
+        try {
+            if (\Schema::hasColumn('users', 'role') && $user->role !== 'creator') {
+                $user->role = 'creator';
+                $user->save();
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('become-creator: role update failed', ['uid' => $user->id, 'err' => $e->getMessage()]);
+        }
+
+        // 3) Re-resolve the user and recompute is_creator so the client can
+        //    flip the panel without needing a second /secure/me round-trip.
+        $user = $user->fresh() ?: $user;
+        $hasProfile = \DB::table('creator_profiles')->where('user_id', $user->id)->exists();
+        $isCreator  = $hasProfile || $user->role === 'creator';
+
+        return response()->json([
+            'status'     => 'success',
+            'role'       => $user->role,
+            'is_creator' => (bool) $isCreator,
+        ]);
     }
 
     // -----------------------------------------------------------------

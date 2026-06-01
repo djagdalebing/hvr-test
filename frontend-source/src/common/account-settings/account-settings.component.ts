@@ -196,12 +196,19 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
     public becomeCreator() {
         if (this.hvnBecoming) return;
         this.hvnBecoming = true;
-        this.http.post('me/become-creator', {}).subscribe(
-            () => {
+        this.http.post<any>('me/become-creator', {}).subscribe(
+            (res: any) => {
                 this.hvnBecoming = false;
-                this.hvnIsCreator = true;
-                this.toast.open('Welcome — you are now a Creator. Refresh to see your Creator Dashboard menu.');
-                this.loadHvnProfile();
+                // Trust the server's verdict over an optimistic assumption — if
+                // the backend couldn't persist the role/profile we shouldn't
+                // pretend it did, otherwise the panel flips back on refresh.
+                this.hvnIsCreator = !!(res?.is_creator);
+                if (this.hvnIsCreator) {
+                    this.toast.open('Welcome — you are now a Creator. Refresh to see your Creator Dashboard menu.');
+                    this.loadHvnProfile();
+                } else {
+                    this.toast.open('Could not upgrade your account. Please contact support.');
+                }
             },
             (err: any) => {
                 this.hvnBecoming = false;
