@@ -166,23 +166,30 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
      * is silently swallowed — the fields just stay empty for them.
      */
     private loadHvnProfile() {
-        this.http.get<any>('creator/dashboard').subscribe(
-            res => {
-                this.hvnIsCreator = true;
-                const p = res?.profile || {};
-                this.hvnProfileForm.patchValue({
-                    display_name:  p.display_name  || '',
-                    bio:           p.bio           || '',
-                    youtube_url:   p.youtube_url   || '',
-                    twitter_url:   p.twitter_url   || '',
-                    instagram_url: p.instagram_url || '',
-                    facebook_url:  p.facebook_url  || '',
-                });
+        // First check role via /secure/me (doesn't 403 — avoids a misleading
+        // auth-error toast for viewers). Only creators load the dashboard.
+        this.http.get<any>('me').subscribe(
+            (me: any) => {
+                // Backend computes is_creator (role OR existing creator_profiles row).
+                // Fall back to role check for older builds.
+                this.hvnIsCreator = !!(me?.is_creator) || me?.role === 'creator';
+                if (!this.hvnIsCreator) return;
+                this.http.get<any>('creator/dashboard').subscribe(
+                    res => {
+                        const p = res?.profile || {};
+                        this.hvnProfileForm.patchValue({
+                            display_name:  p.display_name  || '',
+                            bio:           p.bio           || '',
+                            youtube_url:   p.youtube_url   || '',
+                            twitter_url:   p.twitter_url   || '',
+                            instagram_url: p.instagram_url || '',
+                            facebook_url:  p.facebook_url  || '',
+                        });
+                    },
+                    () => { /* shouldn't happen — role already confirmed */ },
+                );
             },
-            () => {
-                // 403 => current user isn't a creator yet; show the upgrade panel.
-                this.hvnIsCreator = false;
-            },
+            () => { this.hvnIsCreator = false; },
         );
     }
 

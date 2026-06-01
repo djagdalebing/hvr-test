@@ -49,8 +49,18 @@ export class CreatorsPageComponent implements OnInit {
     public photoUrl(c: any): string | null {
         // Prefer the standard user.avatar (set via Account Settings); fall
         // back to the legacy creator_profile.profile_photo column.
+        // The backend accessor may return:
+        //   - an absolute URL (gravatar / social)        — use as-is
+        //   - a leading-slash path '/storage/...'        — use as-is
+        //   - a relative 'storage/...' (filesystem url)  — just prepend '/'
+        //   - a bare 'avatars/...'                       — prepend '/storage/'
         const a = c?.avatar;
-        if (a) return /^https?:\/\/|^\//.test(a) ? a : '/storage/' + a;
+        if (a) {
+            if (/^https?:\/\//.test(a)) return a;
+            if (a.charAt(0) === '/') return a;
+            if (a.indexOf('storage/') === 0) return '/' + a;
+            return '/storage/' + a;
+        }
         const p = c?.creator_profile?.profile_photo;
         return p ? '/storage/' + p : null;
     }

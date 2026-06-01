@@ -60,10 +60,16 @@ export class CreatorDashboardPageComponent implements OnInit {
     }
 
     public photoUrl(): string | null {
-        // Prefer the standard user.avatar (set via Account Settings); fall
-        // back to the legacy creator_profile.profile_photo column.
+        // See creators-page.component.ts: filesystem url is 'storage' (no
+        // leading slash), so accessor returns 'storage/avatars/...' which
+        // must NOT get a second '/storage/' prefix.
         const a = this.user?.avatar;
-        if (a) return /^https?:\/\/|^\//.test(a) ? a : '/storage/' + a;
+        if (a) {
+            if (/^https?:\/\//.test(a)) return a;
+            if (a.charAt(0) === '/') return a;
+            if (a.indexOf('storage/') === 0) return '/' + a;
+            return '/storage/' + a;
+        }
         const p = this.profile?.profile_photo;
         return p ? '/storage/' + p : null;
     }
