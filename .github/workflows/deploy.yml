@@ -156,6 +156,8 @@ jobs:
             --exclude='*.DS_Store' \
             --exclude='new_dir' \
             --exclude='newdirectory' \
+            --exclude='public/storage/' \
+            --exclude='storage/app/public/' \
             ./ ${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${{ steps.path.outputs.remote }}/
           do
             code=$?

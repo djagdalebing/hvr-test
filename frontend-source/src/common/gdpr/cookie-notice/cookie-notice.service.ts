@@ -49,10 +49,11 @@ export class CookieNoticeService {
     }
 
     public userIsFromEu(): Promise<boolean> {
-        return this.http.get<{country_code: string}>('https://freegeoip.app/json/')
-            .pipe(
-                map(response => COOKIE_LAW_COUNTRIES.includes(response.country_code)),
-                catchError(() => of(true))
-            ).toPromise();
+        // freegeoip.app is dead (project moved to ipstack) and CORS-blocks
+        // from third-party origins, so this used to spam a noisy CORS error
+        // into every page load. Assume EU (conservative default) — the
+        // banner only shows anyway when cookie_notice.enable is on, so
+        // skipping the geo round-trip is a no-op for sites that have it off.
+        return Promise.resolve(true);
     }
 }
