@@ -29,6 +29,8 @@ import {FormBuilder} from '@angular/forms';
 import {finalize} from 'rxjs/operators';
 import {AccountSettingsResolverData} from '@common/account-settings/account-settings-resolve.service';
 import {SelectOptionLists} from '@common/core/services/value-lists.service';
+// HVN: extra creator-profile editor below the standard panels.
+import {AppHttpClient} from '@common/core/http/app-http-client.service';
 import {User} from '@common/core/types/models/User';
 import {BreakpointsService} from '@common/core/ui/breakpoints.service';
 import {BackendErrorResponse} from '@common/core/types/backend-error-response';
@@ -101,10 +103,88 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
         public breakpoints: BreakpointsService,
         private cd: ChangeDetectorRef,
         private dialog: Modal,
+        // HVN
+        private http: AppHttpClient,
         @Optional()
         @Inject(ACCOUNT_SETTINGS_PANELS)
         public extraPanels: {component: ComponentType<any>}[]
     ) {}
+
+    // ---- HVN: creator profile editor ----
+    public hvnSaving = false;
+    public hvnPhoto: File | null = null;
+    public hvnProfileForm = this.fb.group({
+        display_name:  [''],
+        bio:           [''],
+        contact_email: [''],
+        website_url:   [''],
+        youtube_url:   [''],
+        twitter_url:   [''],
+        instagram_url: [''],
+        facebook_url:  [''],
+    });
+
+    public isCreator(): boolean {
+        const m = (this.currentUser as any)?.model$?.value || {};
+        return m.role === 'creator';
+    }
+
+    public onHvnPhoto(ev: Event) {
+        const input = ev.target as HTMLInputElement;
+        this.hvnPhoto = input.files && input.files.length ? input.files[0] : null;
+    }
+
+    public saveHvnProfile() {
+        if (this.hvnSaving) return;
+        const fd = new FormData();
+        const v = this.hvnProfileForm.value as Record<string, any>;
+        Object.keys(v).forEach(k => {
+            if (v[k] !== null && v[k] !== undefined) fd.append(k, v[k]);
+        });
+        if (this.hvnPhoto) fd.append('profile_photo', this.hvnPhoto);
+        this.hvnSaving = true;
+        this.http.post('creator/profile', fd).subscribe(
+            (res: any) => {
+                this.hvnSaving = false;
+                this.hvnPhoto = null;
+                if (res?.profile) this.hvnProfileForm.patchValue(res.profile);
+                this.toast.open('Profile updated');
+            },
+            (err: any) => {
+                this.hvnSaving = false;
+                let firstErr: any = null;
+                const e = err?.error?.errors;
+                if (e && typeof e === 'object') {
+                    for (const k of Object.keys(e)) {
+                        if (Array.isArray(e[k]) && e[k].length) { firstErr = e[k][0]; break; }
+                    }
+                }
+                const msg = err?.error?.message || firstErr || 'Failed to save profile';
+                this.toast.open(String(msg));
+            },
+        );
+    }
+
+    /** Load existing creator profile on init so the form starts pre-filled. */
+    private loadHvnProfile() {
+        if (!this.isCreator()) return;
+        this.http.get<any>('creator/dashboard').subscribe(
+            res => {
+                const p = res?.profile || {};
+                this.hvnProfileForm.patchValue({
+                    display_name:  p.display_name  || '',
+                    bio:           p.bio           || '',
+                    contact_email: p.contact_email || '',
+                    website_url:   p.website_url   || '',
+                    youtube_url:   p.youtube_url   || '',
+                    twitter_url:   p.twitter_url   || '',
+                    instagram_url: p.instagram_url || '',
+                    facebook_url:  p.facebook_url  || '',
+                });
+            },
+            () => {/* silent — non-creators won't reach here, others tolerate empty */},
+        );
+    }
 
     ngOnInit() {
         this.route.data.subscribe(
@@ -115,6 +195,8 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
                 this.selects = data.api.selects;
             }
         );
+        // HVN: pre-fill the creator profile form (no-op for non-creators).
+        this.loadHvnProfile();
     }
 
     ngAfterViewInit() {

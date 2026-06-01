@@ -108,18 +108,63 @@
             </div>
         </form>
 
-        <div
-            class="panel account-settings-panel social-login-panel"
-            *ngIf="settings.anySocialLoginEnabled()"
+        <!-- HVN: Manage Social Login panel removed — not used on this build. -->
+
+        <!-- HVN: Creator profile editor — only renders for users with the
+             creator role. Same fields as in the Creator Dashboard, persisted
+             to the same /secure/creator/profile endpoint. -->
+        <form
+            class="panel account-settings-panel"
+            *ngIf="isCreator()"
+            (ngSubmit)="saveHvnProfile()"
+            [formGroup]="hvnProfileForm"
+            ngNativeValidate
         >
-            <div class="panel-header" trans>Manage Social Login</div>
+            <div class="panel-header" trans>Creator Profile</div>
             <div class="panel-body">
-                <div class="info" trans>Enable or disable connected social services</div>
-                <connect-social-accounts-panel
-                    [user]="initialUser$ | async"
-                ></connect-social-accounts-panel>
+                <div class="input-container input-inline">
+                    <label trans>Display name</label>
+                    <input type="text" maxlength="100" formControlName="display_name">
+                </div>
+                <div class="input-container input-inline">
+                    <label trans>Bio / About</label>
+                    <textarea rows="4" maxlength="2000" formControlName="bio"></textarea>
+                </div>
+                <div class="input-container input-inline">
+                    <label trans>Profile photo</label>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onHvnPhoto($event)">
+                </div>
+                <div class="input-container input-inline">
+                    <label trans>Contact email</label>
+                    <input type="email" formControlName="contact_email">
+                </div>
+                <div class="input-container input-inline">
+                    <label trans>Website</label>
+                    <input type="url" formControlName="website_url" placeholder="https://...">
+                </div>
+                <div class="input-container input-inline">
+                    <label trans>YouTube</label>
+                    <input type="url" formControlName="youtube_url">
+                </div>
+                <div class="input-container input-inline">
+                    <label trans>Twitter / X</label>
+                    <input type="url" formControlName="twitter_url">
+                </div>
+                <div class="input-container input-inline">
+                    <label trans>Instagram</label>
+                    <input type="url" formControlName="instagram_url">
+                </div>
+                <div class="input-container input-inline">
+                    <label trans>Facebook</label>
+                    <input type="url" formControlName="facebook_url">
+                </div>
             </div>
-        </div>
+            <div class="panel-footer">
+                <button type="submit" mat-raised-button color="accent" [disabled]="hvnSaving" trans>
+                    {{ hvnSaving ? 'Saving…' : 'Save profile' }}
+                </button>
+            </div>
+        </form>
 
         <form
             class="panel account-settings-panel change-password-panel"
@@ -264,57 +309,8 @@
             </div>
         </form>
 
-        <div class="panel account-settings-panel api-panel" *ngIf="apiEnabled()">
-            <div class="panel-header">
-                <div class="panel-header-title" trans>Manage API Access Tokens</div>
-                <a class="panel-header-action" routerLink="/api-docs" target="_blank" trans
-                    >Documentation</a
-                >
-            </div>
-            <div class="panel-body">
-                <no-results-message
-                    svgImage="secure-data.svg"
-                    *ngIf="!(initialUser$ | async).tokens?.length"
-                >
-                    <span primary-text trans>You have no personal access tokens yet</span>
-                </no-results-message>
-                <ul class="unstyled-list">
-                    <li *ngFor="let token of (initialUser$ | async).tokens || []">
-                        <dl>
-                            <dt trans>Name</dt>
-                            <dd>{{ token.name }}</dd>
-                            <dt trans>Last Used</dt>
-                            <dd>
-                                {{
-                                    token.last_used_at ? (token.last_used_at | formattedDate) : '-'
-                                }}
-                            </dd>
-                        </dl>
-                        <button
-                            type="button"
-                            mat-raised-button
-                            color="warn"
-                            (click)="maybeDeleteToken(token)"
-                            trans
-                        >
-                            Delete
-                        </button>
-                    </li>
-                </ul>
-            </div>
-            <div class="panel-footer">
-                <button
-                    type="button"
-                    secondary-text
-                    mat-raised-button
-                    color="accent"
-                    (click)="openCreateTokenDialog()"
-                    trans
-                >
-                    Create new token
-                </button>
-            </div>
-        </div>
+        <!-- HVN: Manage API Access Tokens panel removed — not used. -->
+
 
         <div class="panel account-settings-panel">
             <div class="panel-header" trans>Danger Zone</div>
