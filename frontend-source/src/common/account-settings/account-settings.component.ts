@@ -173,6 +173,8 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
                 // Backend computes is_creator (role OR existing creator_profiles row).
                 // Fall back to role check for older builds.
                 this.hvnIsCreator = !!(me?.is_creator) || me?.role === 'creator';
+                // OnPush won't re-render unless we explicitly mark dirty.
+                this.cd.markForCheck();
                 if (!this.hvnIsCreator) return;
                 this.http.get<any>('creator/dashboard').subscribe(
                     res => {
@@ -185,11 +187,12 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
                             instagram_url: p.instagram_url || '',
                             facebook_url:  p.facebook_url  || '',
                         });
+                        this.cd.markForCheck();
                     },
                     () => { /* shouldn't happen — role already confirmed */ },
                 );
             },
-            () => { this.hvnIsCreator = false; },
+            () => { this.hvnIsCreator = false; this.cd.markForCheck(); },
         );
     }
 
@@ -203,6 +206,7 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
                 // the backend couldn't persist the role/profile we shouldn't
                 // pretend it did, otherwise the panel flips back on refresh.
                 this.hvnIsCreator = !!(res?.is_creator);
+                this.cd.markForCheck();
                 if (this.hvnIsCreator) {
                     this.toast.open('Welcome — you are now a Creator. Refresh to see your Creator Dashboard menu.');
                     this.loadHvnProfile();
