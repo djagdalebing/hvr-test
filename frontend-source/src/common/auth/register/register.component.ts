@@ -30,9 +30,9 @@ export class RegisterComponent implements OnInit {
         email: [''],
         password: [''],
         password_confirmation: [''],
-        // HVN: every signup is a creator now — viewer option removed from the
-        // UI. Hard-coded into the form so server still gets the role field.
-        role: ['creator'],
+        // HVN: every signup starts as a viewer; they opt in to creator from
+        // Account Settings later (one click). Keeps the creators tab clean.
+        role: ['viewer'],
         purchase_code: [''],
     });
     public errors$ = new BehaviorSubject<{
@@ -75,8 +75,10 @@ export class RegisterComponent implements OnInit {
                 this.form.get('email').disable();
             });
 
-        // HVN: role is always 'creator' (viewer option removed from signup).
-        this.form.patchValue({role: 'creator'});
+        // HVN: every new signup is a Viewer; they upgrade to Creator from
+        // Account Settings later — keeps the /admin/creators tab focused
+        // on users who actually want to create.
+        this.form.patchValue({role: 'viewer'});
     }
 
     /**

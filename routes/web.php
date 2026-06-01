@@ -166,6 +166,7 @@ Route::group(['prefix' => 'secure'], function () {
     Route::post('community/{id}/like',    [HvnController::class, 'apiToggleLike'])->where('id', '[0-9]+');
     Route::post('community/comments/{id}/like', [HvnController::class, 'apiToggleCommentLike'])->where('id', '[0-9]+');
     Route::get('creator/dashboard',       [HvnController::class, 'apiCreatorDashboard']);
+    Route::post('me/become-creator',      [HvnController::class, 'apiBecomeCreator']);
     // Creator profile + projects (portfolio)
     Route::post('creator/profile',        [HvnController::class, 'profileUpdate']);
     Route::get('creator/projects',        [HvnController::class, 'apiListProjects']);

@@ -130,7 +130,7 @@
 		<script src="client/runtime-es5.99e448decfab06770d11.js" nomodule defer></script>
 		<script src="client/polyfills-es2015.efb9d3bbd257407bb0da.js" type="module"></script>
 		<script src="client/polyfills-es5.6f7ddfe1967d03b32b3b.js" nomodule defer></script>
-		<script src="client/main-es2015.e98f4c1bcf3a9238dcd2.js" type="module"></script>
-		<script src="client/main-es5.e98f4c1bcf3a9238dcd2.js" nomodule defer></script>
+		<script src="client/main-es2015.a15daa7ae31d53d9d8c4.js" type="module"></script>
+		<script src="client/main-es5.a15daa7ae31d53d9d8c4.js" nomodule defer></script>
 	{{--angular scripts end--}}
 @endsection

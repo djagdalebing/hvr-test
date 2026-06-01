@@ -325,6 +325,25 @@ class HvnController extends Controller
         return $user;
     }
 
+    // Self-service: viewer → creator. One click from Account Settings;
+    // POST /secure/me/become-creator. No moderation step — admins can
+    // demote / block from /admin/creators if needed.
+    public function apiBecomeCreator(Request $request): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
+
+        if ($user->role !== 'creator') {
+            $user->role = 'creator';
+            $user->save();
+            // make sure their creator_profiles row exists so the dashboard
+            // doesn't 404 on first visit
+            \App\CreatorProfile::firstOrCreate(['user_id' => $user->id]);
+        }
+        return response()->json(['status' => 'success', 'role' => $user->role]);
+    }
+
     // -----------------------------------------------------------------
     // Public JSON API for the native Angular SPA pages (Creators / Community)
     // Mounted under /secure/* in routes/web.php so AppHttpClient hits them.

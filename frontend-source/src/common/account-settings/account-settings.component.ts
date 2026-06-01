@@ -112,6 +112,8 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
 
     // ---- HVN: creator profile editor ----
     public hvnSaving = false;
+    public hvnIsCreator = false;
+    public hvnBecoming = false;
     public hvnProfileForm = this.fb.group({
         display_name:  [''],
         bio:           [''],
@@ -166,6 +168,7 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
     private loadHvnProfile() {
         this.http.get<any>('creator/dashboard').subscribe(
             res => {
+                this.hvnIsCreator = true;
                 const p = res?.profile || {};
                 this.hvnProfileForm.patchValue({
                     display_name:  p.display_name  || '',
@@ -176,7 +179,27 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
                     facebook_url:  p.facebook_url  || '',
                 });
             },
-            () => {/* silent — not a creator, or no profile yet */},
+            () => {
+                // 403 => current user isn't a creator yet; show the upgrade panel.
+                this.hvnIsCreator = false;
+            },
+        );
+    }
+
+    public becomeCreator() {
+        if (this.hvnBecoming) return;
+        this.hvnBecoming = true;
+        this.http.post('me/become-creator', {}).subscribe(
+            () => {
+                this.hvnBecoming = false;
+                this.hvnIsCreator = true;
+                this.toast.open('Welcome — you are now a Creator. Refresh to see your Creator Dashboard menu.');
+                this.loadHvnProfile();
+            },
+            (err: any) => {
+                this.hvnBecoming = false;
+                this.toast.open(err?.error?.message || 'Could not upgrade your account.');
+            },
         );
     }
 

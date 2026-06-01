@@ -113,8 +113,25 @@
         <!-- HVN: Creator profile editor — only renders for users with the
              creator role. Same fields as in the Creator Dashboard, persisted
              to the same /secure/creator/profile endpoint. -->
+        <!-- HVN: viewers see a 'Become a Creator' card; creators see the
+             Public Profile editor instead. One click upgrade — no
+             moderation step in between. -->
+        <div class="panel account-settings-panel" *ngIf="!hvnIsCreator">
+            <div class="panel-header" trans>Become a Creator</div>
+            <div class="panel-body">
+                <p>Upload your own titles, build a public profile and reach the Her Vision Network audience.</p>
+            </div>
+            <div class="panel-footer">
+                <button type="button" mat-raised-button color="accent"
+                        [disabled]="hvnBecoming" (click)="becomeCreator()">
+                    {{ hvnBecoming ? 'Upgrading…' : 'Become a Creator' }}
+                </button>
+            </div>
+        </div>
+
         <form
             class="panel account-settings-panel"
+            *ngIf="hvnIsCreator"
             (ngSubmit)="saveHvnProfile()"
             [formGroup]="hvnProfileForm"
             ngNativeValidate
