@@ -84,11 +84,15 @@ class CreatorContentController extends BaseController
             ], 422);
         }
 
-        $posterPath = $request->file('cover')->store('creator_content/covers', 'public');
-        $backdropUrl = '/storage/' . $posterPath; // mirror poster if no separate hero image
+        // Store relative paths (no leading slash). Vebto's SPA concatenates
+        // baseUrl + value, so '/storage/x' would produce 'host.com//storage/x'
+        // (doubled slash → 422 at the edge).
+        $posterPath  = $request->file('cover')->store('creator_content/covers', 'public');
+        $posterUrl   = 'storage/' . $posterPath;
+        $backdropUrl = $posterUrl; // mirror poster if no separate hero image
         if ($request->hasFile('backdrop_image')) {
             $backdropPath = $request->file('backdrop_image')->store('creator_content/backdrops', 'public');
-            $backdropUrl  = '/storage/' . $backdropPath;
+            $backdropUrl  = 'storage/' . $backdropPath;
         }
 
         $type = $request->input('type');
@@ -113,7 +117,7 @@ class CreatorContentController extends BaseController
         if ($request->filled('trailer')) {
             $record->trailer = $request->input('trailer');
         }
-        $record->poster       = '/storage/' . $posterPath;
+        $record->poster       = $posterUrl;
         $record->backdrop     = $backdropUrl;
         $record->adult        = false;
         $record->is_series    = ($type === 'series') ? true : false;
