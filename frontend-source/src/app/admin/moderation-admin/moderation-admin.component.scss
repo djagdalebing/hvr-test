@@ -7,11 +7,24 @@ moderation-admin {
     .mod-tabs {
         display: flex;
         gap: 4px;
-        margin: 8px 0 16px;
+        margin: 8px 0 12px;
         button {
             opacity: .6;
             border-radius: 4px;
             &.active { opacity: 1; background: rgba(255,255,255,0.06); }
+        }
+    }
+    // Primary surface switch (Content / People) — visually separated from
+    // the status pills below it so the two-level structure is obvious.
+    .mod-mode-tabs {
+        margin: 0 0 4px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        padding-bottom: 8px;
+        button.active {
+            background: transparent;
+            color: var(--be-accent, #F65F54);
+            border-bottom: 2px solid var(--be-accent, #F65F54);
+            border-radius: 4px 4px 0 0;
         }
     }
 

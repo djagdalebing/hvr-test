@@ -1,5 +1,5 @@
 // @ts-nocheck
-import {Component, OnInit, ViewEncapsulation} from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit, ViewEncapsulation} from '@angular/core';
 import {Observable} from 'rxjs';
 import {DatatableService} from '@common/datatable/datatable.service';
 import {AppHttpClient} from '@common/core/http/app-http-client.service';
@@ -18,42 +18,51 @@ export class ModerationAdminComponent implements OnInit {
     public titles$ = this.datatable.data$ as Observable<any[]>;
     public status: 'pending' | 'approved' | 'rejected' = 'pending';
     // Two moderation surfaces share this screen: creator titles ('content')
-    // and creator-added people ('people'). Each drives the same datatable
-    // against a different endpoint.
+    // and creator-added people ('people'). Content uses the shared datatable;
+    // people use a standalone fetch (separate array) so the two never bleed
+    // into each other's table.
     public mode: 'content' | 'people' = 'content';
 
     public rejectingId: number | null = null;
     public rejectReason = '';
+
+    // People surface (independent of the datatable).
+    public people: any[] = [];
+    public peopleLoading = false;
 
     constructor(
         public currentUser: CurrentUser,
         public datatable: DatatableService<any>,
         private http: AppHttpClient,
         private toast: Toast,
+        private cd: ChangeDetectorRef,
     ) {}
 
     ngOnInit() {
-        this.datatable.init({uri: this.uri(), staticParams: {status: this.status}});
-    }
-
-    private uri(): string {
-        return this.mode === 'people' ? 'admin/people-moderation' : 'admin/moderation';
+        this.datatable.init({uri: 'admin/moderation', staticParams: {status: this.status}});
     }
 
     public switchMode(m: 'content' | 'people') {
         if (this.mode === m) return;
         this.mode = m;
         this.rejectingId = null;
-        // Re-point the datatable at the other endpoint.
-        this.datatable.destroy();
-        this.datatable.init({uri: this.uri(), staticParams: {status: this.status}});
+        if (m === 'people') {
+            this.loadPeople();
+        } else {
+            this.datatable.reset({status: this.status});
+        }
     }
 
     public switchStatus(s: 'pending' | 'approved' | 'rejected') {
         this.status = s;
-        this.datatable.reset({status: s});
+        if (this.mode === 'people') {
+            this.loadPeople();
+        } else {
+            this.datatable.reset({status: s});
+        }
     }
 
+    // ---- Content (titles) moderation ----
     public posterUrl(t: any): string | null {
         return t?.poster || null;
     }
@@ -91,7 +100,21 @@ export class ModerationAdminComponent implements OnInit {
         );
     }
 
-    // ---- People moderation ----
+    // ---- People moderation (standalone fetch) ----
+    private loadPeople() {
+        this.peopleLoading = true;
+        this.people = [];
+        this.cd.markForCheck();
+        this.http.get('admin/people-moderation', {status: this.status, perPage: 50}).subscribe(
+            (res: any) => {
+                this.people = res?.pagination?.data || [];
+                this.peopleLoading = false;
+                this.cd.markForCheck();
+            },
+            () => { this.peopleLoading = false; this.cd.markForCheck(); },
+        );
+    }
+
     public personPhoto(p: any): string | null {
         const a = p?.poster;
         if (!a) return null;
@@ -104,7 +127,7 @@ export class ModerationAdminComponent implements OnInit {
     public approvePerson(p: any) {
         if (!confirm('Approve "' + p.name + '"? They will appear on public pages.')) return;
         this.http.post('admin/people-moderation/' + p.id + '/approve', {}).subscribe(
-            () => { this.toast.open('Approved.'); this.datatable.reset({status: this.status}); },
+            () => { this.toast.open('Approved.'); this.loadPeople(); },
             () => this.toast.open('Failed to approve'),
         );
     }
@@ -112,7 +135,7 @@ export class ModerationAdminComponent implements OnInit {
     public rejectPerson(p: any) {
         if (!confirm('Reject "' + p.name + '"? They will be removed from any titles.')) return;
         this.http.post('admin/people-moderation/' + p.id + '/reject', {}).subscribe(
-            () => { this.toast.open('Rejected.'); this.datatable.reset({status: this.status}); },
+            () => { this.toast.open('Rejected.'); this.loadPeople(); },
             () => this.toast.open('Failed to reject'),
         );
     }

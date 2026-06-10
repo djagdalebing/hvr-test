@@ -1,6 +1,6 @@
 <div class="datatable-page-header">
     <h1 trans>Moderation</h1>
-    <div class="header">
+    <div class="header" *ngIf="mode==='content'">
         <datatable-filters pluralName="titles" [filters]="filters"></datatable-filters>
     </div>
 </div>
@@ -16,12 +16,12 @@
     <button mat-button [class.active]="status==='rejected'" (click)="switchStatus('rejected')">Rejected</button>
 </nav>
 
-<div class="datatable responsive-table">
+<!-- ============ CONTENT (titles) ============ -->
+<div class="datatable responsive-table" *ngIf="mode==='content'">
     <mat-progress-bar class="loading-bar" mode="indeterminate" color="accent"
         *ngIf="datatable.paginator && datatable.paginator.loading$ | async"></mat-progress-bar>
 
-    <!-- CONTENT moderation table -->
-    <table class="material-table" *ngIf="mode==='content' && (titles$ | async)?.length; else empty">
+    <table class="material-table" *ngIf="(titles$ | async)?.length; else emptyContent">
         <thead>
             <tr>
                 <th trans>Title</th>
@@ -80,8 +80,23 @@
         </tbody>
     </table>
 
-    <!-- PEOPLE moderation table -->
-    <table class="material-table" *ngIf="mode==='people' && (titles$ | async)?.length; else empty">
+    <ng-template #emptyContent>
+        <no-results-message svgImage="newspaper.svg"
+            *ngIf="!(datatable.paginator?.loading$ | async)">
+            <span primary-text>
+                <ng-container *ngIf="status==='pending'">Nothing waiting — the queue is empty.</ng-container>
+                <ng-container *ngIf="status!=='pending'">No {{ status }} titles.</ng-container>
+            </span>
+        </no-results-message>
+    </ng-template>
+    <datatable-footer></datatable-footer>
+</div>
+
+<!-- ============ PEOPLE ============ -->
+<div class="datatable responsive-table" *ngIf="mode==='people'">
+    <mat-progress-bar class="loading-bar" mode="indeterminate" color="accent" *ngIf="peopleLoading"></mat-progress-bar>
+
+    <table class="material-table" *ngIf="people.length">
         <thead>
             <tr>
                 <th trans>Person</th>
@@ -92,7 +107,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr *ngFor="let p of titles$ | async">
+            <tr *ngFor="let p of people">
                 <td data-label="Person">
                     <div class="mod-title-cell">
                         <img *ngIf="personPhoto(p)" [src]="personPhoto(p)" alt="">
@@ -128,15 +143,10 @@
         </tbody>
     </table>
 
-    <ng-template #empty>
-        <no-results-message svgImage="newspaper.svg"
-            *ngIf="!(datatable.paginator?.loading$ | async)">
-            <span primary-text>
-                <ng-container *ngIf="status==='pending'">Nothing waiting — the queue is empty.</ng-container>
-                <ng-container *ngIf="status!=='pending' && mode==='content'">No {{ status }} titles.</ng-container>
-                <ng-container *ngIf="status!=='pending' && mode==='people'">No {{ status }} people.</ng-container>
-            </span>
-        </no-results-message>
-    </ng-template>
-    <datatable-footer></datatable-footer>
+    <no-results-message svgImage="newspaper.svg" *ngIf="!peopleLoading && !people.length">
+        <span primary-text>
+            <ng-container *ngIf="status==='pending'">No people waiting for review.</ng-container>
+            <ng-container *ngIf="status!=='pending'">No {{ status }} people.</ng-container>
+        </span>
+    </no-results-message>
 </div>
