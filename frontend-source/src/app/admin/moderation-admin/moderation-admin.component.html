@@ -5,6 +5,11 @@
     </div>
 </div>
 
+<nav class="mod-tabs mod-mode-tabs">
+    <button mat-button [class.active]="mode==='content'" (click)="switchMode('content')">Content</button>
+    <button mat-button [class.active]="mode==='people'"  (click)="switchMode('people')">People</button>
+</nav>
+
 <nav class="mod-tabs">
     <button mat-button [class.active]="status==='pending'"  (click)="switchStatus('pending')">Pending</button>
     <button mat-button [class.active]="status==='approved'" (click)="switchStatus('approved')">Approved</button>
@@ -15,7 +20,8 @@
     <mat-progress-bar class="loading-bar" mode="indeterminate" color="accent"
         *ngIf="datatable.paginator && datatable.paginator.loading$ | async"></mat-progress-bar>
 
-    <table class="material-table" *ngIf="(titles$ | async)?.length; else empty">
+    <!-- CONTENT moderation table -->
+    <table class="material-table" *ngIf="mode==='content' && (titles$ | async)?.length; else empty">
         <thead>
             <tr>
                 <th trans>Title</th>
@@ -74,12 +80,61 @@
         </tbody>
     </table>
 
+    <!-- PEOPLE moderation table -->
+    <table class="material-table" *ngIf="mode==='people' && (titles$ | async)?.length; else empty">
+        <thead>
+            <tr>
+                <th trans>Person</th>
+                <th trans>Added by</th>
+                <th trans>Known for</th>
+                <th trans>Submitted</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let p of titles$ | async">
+                <td data-label="Person">
+                    <div class="mod-title-cell">
+                        <img *ngIf="personPhoto(p)" [src]="personPhoto(p)" alt="">
+                        <div class="mod-title-meta">
+                            <a [routerLink]="['/people', p.id, p.name || '-']" target="_blank" class="mod-title-link">{{ p.name }}</a>
+                            <div class="muted ellipsis" *ngIf="p.description">{{ p.description }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td data-label="Added by">
+                    <div *ngIf="p.creator; else noPersonCreator">
+                        <div>{{ p.creator.username }}</div>
+                        <div class="muted">{{ p.creator.email }}</div>
+                    </div>
+                    <ng-template #noPersonCreator><span class="muted">—</span></ng-template>
+                </td>
+                <td data-label="Known for">{{ p.known_for || '—' }}</td>
+                <td data-label="Submitted" class="muted">{{ p.created_at | date:'mediumDate' }}</td>
+                <td class="edit-column">
+                    <ng-container *ngIf="status==='pending'">
+                        <button mat-flat-button color="accent" (click)="approvePerson(p)">
+                            <mat-icon svgIcon="check"></mat-icon><span>Approve</span>
+                        </button>
+                        <button mat-button color="warn" (click)="rejectPerson(p)">
+                            <mat-icon svgIcon="cancel"></mat-icon><span>Reject</span>
+                        </button>
+                    </ng-container>
+                    <ng-container *ngIf="status!=='pending'">
+                        <a mat-button [routerLink]="['/people', p.id, p.name || '-']" target="_blank">Open</a>
+                    </ng-container>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
     <ng-template #empty>
         <no-results-message svgImage="newspaper.svg"
             *ngIf="!(datatable.paginator?.loading$ | async)">
             <span primary-text>
                 <ng-container *ngIf="status==='pending'">Nothing waiting — the queue is empty.</ng-container>
-                <ng-container *ngIf="status!=='pending'">No {{ status }} titles.</ng-container>
+                <ng-container *ngIf="status!=='pending' && mode==='content'">No {{ status }} titles.</ng-container>
+                <ng-container *ngIf="status!=='pending' && mode==='people'">No {{ status }} people.</ng-container>
             </span>
         </no-results-message>
     </ng-template>

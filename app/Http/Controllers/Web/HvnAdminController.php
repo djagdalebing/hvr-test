@@ -496,6 +496,55 @@ class HvnAdminController extends Controller
         return ['status' => 'success', 'title' => $title];
     }
 
+    // -----------------------------------------------------------------
+    // People moderation (Phase 2) — review people created by creators.
+    // -----------------------------------------------------------------
+
+    public function apiPeopleModerationList(Request $request)
+    {
+        $this->apiAdminOrAbort();
+        $status  = $request->input('status', 'pending');
+        if (!in_array($status, ['pending', 'approved', 'rejected'])) $status = 'pending';
+        $perPage = min((int) $request->input('perPage', 15), 100);
+        $search  = trim((string) $request->input('query', ''));
+
+        // Only people that came through the creator flow (created_by set).
+        $q = \App\Person::withoutGlobalScope('approved')
+            ->where('status', $status)
+            ->whereNotNull('created_by')
+            ->with('creator:id,username,email')
+            ->orderByDesc('created_at');
+
+        if ($search !== '') {
+            $q->where('name', 'like', '%' . $search . '%');
+        }
+
+        return ['pagination' => $q->paginate($perPage)];
+    }
+
+    public function apiApprovePerson(Request $request, int $personId)
+    {
+        $this->apiAdminOrAbort();
+        $person = \App\Person::withoutGlobalScope('approved')->findOrFail($personId);
+        $person->status = 'approved';
+        $person->save();
+        return ['status' => 'success', 'person' => $person];
+    }
+
+    public function apiRejectPerson(Request $request, int $personId)
+    {
+        $this->apiAdminOrAbort();
+        $person = \App\Person::withoutGlobalScope('approved')->findOrFail($personId);
+        // Reject = mark rejected and detach from any titles so the bad entry
+        // stops showing in credits. We keep the row (not hard-delete) so the
+        // creator sees it was reviewed rather than silently vanishing.
+        $person->status = 'rejected';
+        $person->save();
+        // Detach from any titles so the bad entry stops showing in credits.
+        \DB::table('creditables')->where('person_id', $person->id)->delete();
+        return ['status' => 'success', 'person' => $person];
+    }
+
     public function apiToggleTrusted(Request $request, int $userId)
     {
         $this->apiAdminOrAbort();

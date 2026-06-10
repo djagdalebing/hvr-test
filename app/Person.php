@@ -146,6 +146,15 @@ class Person extends Model
     }
 
     /**
+     * The creator (App\User) who added this person via the upload form.
+     * Null for TMDB-synced / admin-created people.
+     */
+    public function creator()
+    {
+        return $this->belongsTo(\App\User::class, 'created_by');
+    }
+
+    /**
      * @return BelongsToMany
      */
     public function credits()
