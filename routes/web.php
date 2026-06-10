@@ -160,8 +160,11 @@ Route::group(['prefix' => 'secure'], function () {
     Route::get('creators',                [HvnController::class, 'apiCreatorsList']);
     Route::get('creators/{username}',     [HvnController::class, 'apiCreatorProfile'])->where('username', '[^/]+');
     // People picker (Phase 2) — search existing people, create new (pending).
-    Route::get('people/search',           [HvnController::class, 'apiPeopleSearch']);
-    Route::post('people',                 [HvnController::class, 'apiCreatePerson']);
+    // NOTE: nested under creator/ to avoid colliding with the existing
+    // PersonController routes (`people/{id}` GET + `people` POST) declared
+    // in the first /secure group, which match first and would shadow these.
+    Route::get('creator/people/search',   [HvnController::class, 'apiPeopleSearch']);
+    Route::post('creator/people',         [HvnController::class, 'apiCreatePerson']);
     Route::get('community',               [HvnController::class, 'apiCommunityList']);
     Route::get('community/{id}',          [HvnController::class, 'apiCommunityShow'])->where('id', '[0-9]+');
     Route::post('community/posts',        [HvnController::class, 'communityStore']);

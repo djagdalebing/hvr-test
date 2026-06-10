@@ -136,7 +136,7 @@ export class CreatorDashboardPageComponent implements OnInit {
         const q = (st.q || '').trim();
         if (q.length < 2) { st.results = []; st.open = false; this.cd.markForCheck(); return; }
         st.loading = true; st.open = true;
-        this.http.get('people/search', {q}).subscribe(
+        this.http.get('creator/people/search', {q}).subscribe(
             (res: any) => {
                 st.results = res?.people || [];
                 st.loading = false;
@@ -204,7 +204,7 @@ export class CreatorDashboardPageComponent implements OnInit {
         ['description', 'gender', 'birth_date', 'birth_place', 'death_date', 'known_for', 'imdb_id']
             .forEach(k => { if (np[k]) fd.append(k, String(np[k])); });
         if (np.photo) fd.append('photo', np.photo);
-        this.http.post('people', fd).subscribe(
+        this.http.post('creator/people', fd).subscribe(
             (res: any) => {
                 np.saving = false;
                 const person = res?.person;
