@@ -1,152 +1,97 @@
-<div class="datatable-page-header">
-    <h1 trans>Moderation</h1>
-    <div class="header" *ngIf="mode==='content'">
-        <datatable-filters pluralName="titles" [filters]="filters"></datatable-filters>
+<div class="mod-page">
+    <h1 class="mod-h1">Moderation</h1>
+
+    <!-- Surface switch -->
+    <div class="mod-tabbar mod-tabbar-primary">
+        <button type="button" class="mod-tab" [class.active]="mode==='content'" (click)="switchMode('content')">Content</button>
+        <button type="button" class="mod-tab" [class.active]="mode==='people'"  (click)="switchMode('people')">People</button>
     </div>
-</div>
 
-<nav class="mod-tabs mod-mode-tabs">
-    <button mat-button [class.active]="mode==='content'" (click)="switchMode('content')">Content</button>
-    <button mat-button [class.active]="mode==='people'"  (click)="switchMode('people')">People</button>
-</nav>
+    <!-- Status switch -->
+    <div class="mod-tabbar">
+        <button type="button" class="mod-pill" [class.active]="status==='pending'"  (click)="switchStatus('pending')">Pending</button>
+        <button type="button" class="mod-pill" [class.active]="status==='approved'" (click)="switchStatus('approved')">Approved</button>
+        <button type="button" class="mod-pill" [class.active]="status==='rejected'" (click)="switchStatus('rejected')">Rejected</button>
+    </div>
 
-<nav class="mod-tabs">
-    <button mat-button [class.active]="status==='pending'"  (click)="switchStatus('pending')">Pending</button>
-    <button mat-button [class.active]="status==='approved'" (click)="switchStatus('approved')">Approved</button>
-    <button mat-button [class.active]="status==='rejected'" (click)="switchStatus('rejected')">Rejected</button>
-</nav>
+    <mat-progress-bar mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>
 
-<!-- ============ CONTENT (titles) ============ -->
-<div class="datatable responsive-table" *ngIf="mode==='content'">
-    <mat-progress-bar class="loading-bar" mode="indeterminate" color="accent"
-        *ngIf="datatable.paginator && datatable.paginator.loading$ | async"></mat-progress-bar>
-
-    <table class="material-table" *ngIf="(titles$ | async)?.length; else emptyContent">
-        <thead>
-            <tr>
-                <th trans>Title</th>
-                <th trans>Creator</th>
-                <th trans>Type</th>
-                <th trans>Submitted</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr *ngFor="let t of titles$ | async">
-                <td data-label="Title">
-                    <div class="mod-title-cell">
-                        <img *ngIf="posterUrl(t)" [src]="posterUrl(t)" alt="">
-                        <div class="mod-title-meta">
-                            <a [routerLink]="['/titles', t.id, t.name || '-']" target="_blank" class="mod-title-link">{{ t.name }}</a>
-                            <div class="muted ellipsis" *ngIf="t.description">{{ t.description }}</div>
-                            <div class="rejection muted" *ngIf="status==='rejected' && t.rejection_reason">
-                                Reason: {{ t.rejection_reason }}
-                            </div>
-                        </div>
+    <!-- ============ CONTENT ============ -->
+    <div class="mod-list" *ngIf="mode==='content' && rows.length">
+        <div class="mod-card" *ngFor="let t of rows">
+            <div class="mod-card-main">
+                <img class="mod-poster" *ngIf="posterUrl(t)" [src]="posterUrl(t)" alt="">
+                <div class="mod-poster mod-poster-empty" *ngIf="!posterUrl(t)">{{ (t.name||'?').charAt(0) }}</div>
+                <div class="mod-info">
+                    <a class="mod-name" [routerLink]="['/titles', t.id, t.name || '-']" target="_blank">{{ t.name || '(untitled)' }}</a>
+                    <div class="mod-sub">
+                        <span class="mod-type">{{ t.type || 'movie' }}</span>
+                        <span class="mod-dot">·</span>
+                        <span>{{ t.created_at | date:'mediumDate' }}</span>
                     </div>
-                </td>
-                <td data-label="Creator">
-                    <div *ngIf="creator(t); else noCreator">
-                        <div>{{ creator(t).username }}</div>
-                        <div class="muted">{{ creator(t).email }}</div>
+                    <div class="mod-creator" *ngIf="creator(t)">by {{ creator(t).username }} <span class="muted">({{ creator(t).email }})</span></div>
+                    <div class="mod-desc muted" *ngIf="t.description">{{ t.description }}</div>
+                    <div class="mod-reason" *ngIf="status==='rejected' && t.rejection_reason">Reason: {{ t.rejection_reason }}</div>
+                </div>
+            </div>
+            <div class="mod-actions">
+                <ng-container *ngIf="status==='pending' && rejectingId !== t.id">
+                    <button mat-flat-button color="accent" (click)="approve(t)"><mat-icon svgIcon="check"></mat-icon><span>Approve</span></button>
+                    <button mat-button color="warn" (click)="openReject(t)"><mat-icon svgIcon="cancel"></mat-icon><span>Reject</span></button>
+                </ng-container>
+                <ng-container *ngIf="status!=='pending'">
+                    <a mat-button [routerLink]="['/titles', t.id, t.name || '-']" target="_blank">Open</a>
+                </ng-container>
+                <div class="mod-reject-form" *ngIf="rejectingId === t.id">
+                    <input type="text" maxlength="1000" [(ngModel)]="rejectReason" placeholder="Optional reason (visible to creator)…">
+                    <div class="mod-reject-actions">
+                        <button mat-button (click)="cancelReject()">Cancel</button>
+                        <button mat-flat-button color="warn" (click)="confirmReject(t)">Confirm</button>
                     </div>
-                    <ng-template #noCreator><span class="muted">—</span></ng-template>
-                </td>
-                <td data-label="Type">{{ t.type }}</td>
-                <td data-label="Submitted" class="muted">{{ t.created_at | date:'mediumDate' }}</td>
-                <td class="edit-column">
-                    <ng-container *ngIf="status==='pending' && rejectingId !== t.id">
-                        <button mat-flat-button color="accent" (click)="approve(t)">
-                            <mat-icon svgIcon="check"></mat-icon><span>Approve</span>
-                        </button>
-                        <button mat-button color="warn" (click)="openReject(t)">
-                            <mat-icon svgIcon="cancel"></mat-icon><span>Reject</span>
-                        </button>
-                    </ng-container>
-                    <ng-container *ngIf="status!=='pending' && rejectingId !== t.id">
-                        <a mat-button [routerLink]="['/titles', t.id, t.name || '-']" target="_blank">Open</a>
-                    </ng-container>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    <div class="reject-form" *ngIf="rejectingId === t.id">
-                        <input type="text" maxlength="1000" [(ngModel)]="rejectReason"
-                               placeholder="Optional reason (visible to the creator)…">
-                        <div class="reject-actions">
-                            <button mat-button (click)="cancelReject()">Cancel</button>
-                            <button mat-flat-button color="warn" (click)="confirmReject(t)">Confirm reject</button>
-                        </div>
+    <!-- ============ PEOPLE ============ -->
+    <div class="mod-list" *ngIf="mode==='people' && rows.length">
+        <div class="mod-card" *ngFor="let p of rows">
+            <div class="mod-card-main">
+                <img class="mod-avatar" *ngIf="personPhoto(p)" [src]="personPhoto(p)" alt="">
+                <div class="mod-avatar mod-poster-empty" *ngIf="!personPhoto(p)">{{ (p.name||'?').charAt(0) }}</div>
+                <div class="mod-info">
+                    <a class="mod-name" [routerLink]="['/people', p.id, p.name || '-']" target="_blank">{{ p.name || '(unnamed)' }}</a>
+                    <div class="mod-sub">
+                        <span>{{ p.known_for || 'Person' }}</span>
+                        <span class="mod-dot">·</span>
+                        <span>{{ p.created_at | date:'mediumDate' }}</span>
                     </div>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+                    <div class="mod-creator" *ngIf="p.creator">added by {{ p.creator.username }} <span class="muted">({{ p.creator.email }})</span></div>
+                    <div class="mod-desc muted" *ngIf="p.description">{{ p.description }}</div>
+                </div>
+            </div>
+            <div class="mod-actions">
+                <ng-container *ngIf="status==='pending'">
+                    <button mat-flat-button color="accent" (click)="approvePerson(p)"><mat-icon svgIcon="check"></mat-icon><span>Approve</span></button>
+                    <button mat-button color="warn" (click)="rejectPerson(p)"><mat-icon svgIcon="cancel"></mat-icon><span>Reject</span></button>
+                </ng-container>
+                <ng-container *ngIf="status!=='pending'">
+                    <a mat-button [routerLink]="['/people', p.id, p.name || '-']" target="_blank">Open</a>
+                </ng-container>
+            </div>
+        </div>
+    </div>
 
-    <ng-template #emptyContent>
-        <no-results-message svgImage="newspaper.svg"
-            *ngIf="!(datatable.paginator?.loading$ | async)">
-            <span primary-text>
-                <ng-container *ngIf="status==='pending'">Nothing waiting — the queue is empty.</ng-container>
-                <ng-container *ngIf="status!=='pending'">No {{ status }} titles.</ng-container>
-            </span>
-        </no-results-message>
-    </ng-template>
-    <datatable-footer></datatable-footer>
-</div>
+    <!-- Empty state -->
+    <div class="mod-empty" *ngIf="!loading && !rows.length">
+        <ng-container *ngIf="status==='pending'">Nothing waiting for review — the {{ mode==='people' ? 'people' : 'content' }} queue is empty.</ng-container>
+        <ng-container *ngIf="status!=='pending'">No {{ status }} {{ mode==='people' ? 'people' : 'titles' }}.</ng-container>
+    </div>
 
-<!-- ============ PEOPLE ============ -->
-<div class="datatable responsive-table" *ngIf="mode==='people'">
-    <mat-progress-bar class="loading-bar" mode="indeterminate" color="accent" *ngIf="peopleLoading"></mat-progress-bar>
-
-    <table class="material-table" *ngIf="people.length">
-        <thead>
-            <tr>
-                <th trans>Person</th>
-                <th trans>Added by</th>
-                <th trans>Known for</th>
-                <th trans>Submitted</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr *ngFor="let p of people">
-                <td data-label="Person">
-                    <div class="mod-title-cell">
-                        <img *ngIf="personPhoto(p)" [src]="personPhoto(p)" alt="">
-                        <div class="mod-title-meta">
-                            <a [routerLink]="['/people', p.id, p.name || '-']" target="_blank" class="mod-title-link">{{ p.name }}</a>
-                            <div class="muted ellipsis" *ngIf="p.description">{{ p.description }}</div>
-                        </div>
-                    </div>
-                </td>
-                <td data-label="Added by">
-                    <div *ngIf="p.creator; else noPersonCreator">
-                        <div>{{ p.creator.username }}</div>
-                        <div class="muted">{{ p.creator.email }}</div>
-                    </div>
-                    <ng-template #noPersonCreator><span class="muted">—</span></ng-template>
-                </td>
-                <td data-label="Known for">{{ p.known_for || '—' }}</td>
-                <td data-label="Submitted" class="muted">{{ p.created_at | date:'mediumDate' }}</td>
-                <td class="edit-column">
-                    <ng-container *ngIf="status==='pending'">
-                        <button mat-flat-button color="accent" (click)="approvePerson(p)">
-                            <mat-icon svgIcon="check"></mat-icon><span>Approve</span>
-                        </button>
-                        <button mat-button color="warn" (click)="rejectPerson(p)">
-                            <mat-icon svgIcon="cancel"></mat-icon><span>Reject</span>
-                        </button>
-                    </ng-container>
-                    <ng-container *ngIf="status!=='pending'">
-                        <a mat-button [routerLink]="['/people', p.id, p.name || '-']" target="_blank">Open</a>
-                    </ng-container>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-
-    <no-results-message svgImage="newspaper.svg" *ngIf="!peopleLoading && !people.length">
-        <span primary-text>
-            <ng-container *ngIf="status==='pending'">No people waiting for review.</ng-container>
-            <ng-container *ngIf="status!=='pending'">No {{ status }} people.</ng-container>
-        </span>
-    </no-results-message>
+    <!-- Pager -->
+    <div class="mod-pager" *ngIf="lastPage > 1">
+        <button mat-icon-button [disabled]="page<=1" (click)="prev()"><mat-icon svgIcon="keyboard-arrow-left"></mat-icon></button>
+        <span>Page {{ page }} of {{ lastPage }} · {{ total }} total</span>
+        <button mat-icon-button [disabled]="page>=lastPage" (click)="next()"><mat-icon svgIcon="keyboard-arrow-right"></mat-icon></button>
+    </div>
 </div>
