@@ -517,6 +517,93 @@ class HvnController extends Controller
         ]);
     }
 
+    // -----------------------------------------------------------------
+    // People picker (Phase 2) — search the shared people table and let
+    // creators create new (pending) people inline. Editing existing
+    // people stays admin-only (PersonController); creators can only ADD.
+    // -----------------------------------------------------------------
+
+    /**
+     * GET /secure/people/search?q=tom
+     * Typeahead over existing people. The Person global scope already
+     * hides other creators' pending entries, so results are: approved
+     * people + the current creator's own pending additions.
+     */
+    public function apiPeopleSearch(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->input('q', ''));
+        if (mb_strlen($q) < 2) {
+            return response()->json(['people' => []]);
+        }
+        $people = \App\Person::where('name', 'like', '%' . $q . '%')
+            ->orderByDesc('popularity')
+            ->orderBy('name')
+            ->take(15)
+            ->get(['id', 'name', 'poster', 'known_for', 'birth_date']);
+
+        return response()->json(['people' => $people]);
+    }
+
+    /**
+     * POST /secure/people
+     * Creator creates a new person (status=pending). Becomes visible on
+     * the public /people page once an admin approves it. Editing is
+     * admin-only afterward, so this is the creator's only write path.
+     */
+    public function apiCreatePerson(Request $request): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user) return response()->json(['message' => 'Unauthenticated.'], 401);
+        if ($user->isBlocked()) return response()->json(['message' => 'Your account is blocked.'], 403);
+        if ($user->role !== 'creator') {
+            return response()->json(['message' => 'Forbidden — creators only.'], 403);
+        }
+
+        $this->validate($request, [
+            'name'        => 'required|string|min:2|max:200',
+            'description' => 'nullable|string|max:5000',
+            'gender'      => 'nullable|string|max:20',
+            'birth_date'  => 'nullable|string|max:40',
+            'birth_place' => 'nullable|string|max:200',
+            'death_date'  => 'nullable|string|max:40',
+            'known_for'   => 'nullable|string|max:50',
+            'imdb_id'     => 'nullable|string|max:20|regex:/^nm\d{6,}$/',
+            'photo'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+
+        $posterUrl = null;
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('people', 'public');
+            $posterUrl = 'storage/' . $path;
+        }
+
+        $person = new \App\Person();
+        $person->name         = $request->input('name');
+        $person->description  = $request->input('description');
+        $person->gender       = $request->input('gender');
+        $person->birth_date   = $request->input('birth_date');
+        $person->birth_place  = $request->input('birth_place');
+        $person->death_date   = $request->input('death_date');
+        $person->known_for    = $request->input('known_for');
+        $person->imdb_id      = $request->input('imdb_id');
+        $person->poster       = $posterUrl;
+        $person->popularity   = 1;
+        $person->allow_update = false;   // never auto-overwritten by TMDB sync
+        $person->fully_synced = true;
+        $person->status       = 'pending';
+        $person->created_by   = $user->id;
+        $person->save();
+
+        // Alert admins there's a new person awaiting review.
+        try {
+            \App\User::notifyAdmins(new \App\Notifications\HvnPersonSubmitted($person, $user));
+        } catch (\Throwable $e) {
+            \Log::warning('person submit notify failed', ['err' => $e->getMessage()]);
+        }
+
+        return response()->json(['person' => $person], 201);
+    }
+
     public function apiCommunityList(Request $request): JsonResponse
     {
         $perPage = min(50, max(1, (int) $request->input('perPage', 15)));

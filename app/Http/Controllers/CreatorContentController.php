@@ -248,8 +248,14 @@ class CreatorContentController extends BaseController
      * picks the correct renderer (iframe embed vs <video> tag).
      */
     /**
-     * Parse the cast JSON + director/writer strings into Person rows and
-     * attach them to the title via the morphMany creditables pivot.
+     * Attach cast + crew to the title via the creditables pivot.
+     *
+     * Phase 2 picker format: each cast row is {person_id?, name?, character?}
+     * and director/writer come as director_id / writer_id (preferred) or a
+     * plain director / writer name string (legacy fallback). When a person_id
+     * is given we resolve the existing Person (bypassing the moderation scope
+     * so a just-created pending person still attaches); otherwise we fall back
+     * to firstOrCreate by name for backward compatibility.
      * Best-effort — failures are logged but never bubble up to the user.
      */
     private function attachCredits(\App\Title $title, Request $request): void
@@ -266,13 +272,11 @@ class CreatorContentController extends BaseController
             }
             $order = 0;
             foreach ($cast as $row) {
-                $name = trim((string) ($row['name'] ?? ''));
-                if ($name === '') continue;
+                $personId = $row['person_id'] ?? null;
+                $name     = trim((string) ($row['name'] ?? ''));
+                $person   = $this->resolvePerson($personId, $name);
+                if (!$person) continue;
                 $character = trim((string) ($row['character'] ?? ''));
-                $person = \App\Person::firstOrCreate(['name' => $name], [
-                    'allow_update' => false,
-                    'fully_synced' => true,
-                ]);
                 $title->credits()->attach($person->id, [
                     'department' => 'cast',
                     'job'        => 'Actor',
@@ -282,39 +286,52 @@ class CreatorContentController extends BaseController
             }
 
             // DIRECTOR
-            if ($request->filled('director')) {
-                $name = trim((string) $request->input('director'));
-                if ($name !== '') {
-                    $person = \App\Person::firstOrCreate(['name' => $name], [
-                        'allow_update' => false,
-                        'fully_synced' => true,
-                    ]);
-                    $title->credits()->attach($person->id, [
-                        'department' => 'directing',
-                        'job'        => 'Director',
-                        'order'      => 0,
-                    ]);
-                }
+            $director = $this->resolvePerson(
+                $request->input('director_id'),
+                trim((string) $request->input('director', ''))
+            );
+            if ($director) {
+                $title->credits()->attach($director->id, [
+                    'department' => 'directing',
+                    'job'        => 'Director',
+                    'order'      => 0,
+                ]);
             }
 
             // WRITER
-            if ($request->filled('writer')) {
-                $name = trim((string) $request->input('writer'));
-                if ($name !== '') {
-                    $person = \App\Person::firstOrCreate(['name' => $name], [
-                        'allow_update' => false,
-                        'fully_synced' => true,
-                    ]);
-                    $title->credits()->attach($person->id, [
-                        'department' => 'writing',
-                        'job'        => 'Writer',
-                        'order'      => 0,
-                    ]);
-                }
+            $writer = $this->resolvePerson(
+                $request->input('writer_id'),
+                trim((string) $request->input('writer', ''))
+            );
+            if ($writer) {
+                $title->credits()->attach($writer->id, [
+                    'department' => 'writing',
+                    'job'        => 'Writer',
+                    'order'      => 0,
+                ]);
             }
         } catch (\Throwable $e) {
             \Log::warning('attachCredits failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Resolve a person from a picker selection. Prefer an explicit id
+     * (existing or just-created pending person); fall back to creating
+     * one by name for legacy free-text input. Returns null if neither.
+     */
+    private function resolvePerson($personId, string $name): ?\App\Person
+    {
+        if ($personId !== null && $personId !== '' && is_numeric($personId)) {
+            return \App\Person::withoutGlobalScope('approved')->find((int) $personId);
+        }
+        if ($name !== '') {
+            return \App\Person::firstOrCreate(['name' => $name], [
+                'allow_update' => false,
+                'fully_synced' => true,
+            ]);
+        }
+        return null;
     }
 
     private function detectExternalType(string $url): string

@@ -159,6 +159,9 @@ Route::post('community/{id}/comments', [HvnController::class, 'commentStore'])->
 Route::group(['prefix' => 'secure'], function () {
     Route::get('creators',                [HvnController::class, 'apiCreatorsList']);
     Route::get('creators/{username}',     [HvnController::class, 'apiCreatorProfile'])->where('username', '[^/]+');
+    // People picker (Phase 2) — search existing people, create new (pending).
+    Route::get('people/search',           [HvnController::class, 'apiPeopleSearch']);
+    Route::post('people',                 [HvnController::class, 'apiCreatePerson']);
     Route::get('community',               [HvnController::class, 'apiCommunityList']);
     Route::get('community/{id}',          [HvnController::class, 'apiCommunityShow'])->where('id', '[0-9]+');
     Route::post('community/posts',        [HvnController::class, 'communityStore']);

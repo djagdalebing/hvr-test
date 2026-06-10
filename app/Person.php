@@ -41,6 +41,42 @@ class Person extends Model
     ];
 
     /**
+     * People created by creators are 'pending' until an admin approves them.
+     * Hide non-approved people from the public site (people pages, search,
+     * title credits) while letting admins see everything and letting the
+     * creator who added a person preview their own pending entry.
+     *
+     * Mirrors App\Title's 'approved' scope. WHERE-only — no DB query at boot,
+     * so composer install on CI doesn't touch the database. The status column
+     * may not exist yet on a fresh checkout, so the clause tolerates NULL.
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('approved', function ($q) {
+            $userId = null;
+            $isAdmin = false;
+            try {
+                if (auth()->check()) {
+                    $u = auth()->user();
+                    $userId  = $u->id ?? null;
+                    $isAdmin = method_exists($u, 'hasPermission') && $u->hasPermission('admin');
+                }
+            } catch (\Throwable $e) {
+                // CLI bootstrap (no session) — fall through
+            }
+            if ($isAdmin) return; // admins see everything
+
+            $q->where(function ($w) use ($userId) {
+                $w->where('people.status', 'approved')
+                  ->orWhereNull('people.status');
+                if ($userId) {
+                    $w->orWhere('people.created_by', $userId);
+                }
+            });
+        });
+    }
+
+    /**
      * @param Collection $people
      * @param string $uniqueKey
      * @return Collection
