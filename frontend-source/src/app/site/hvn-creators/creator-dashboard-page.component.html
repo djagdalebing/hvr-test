@@ -221,21 +221,96 @@
                         </div>
 
                         <div class="field full crew-row">
-                            <label class="section-label">People</label>
+                            <label class="section-label">People <span class="hint">(search existing or create new — new people are reviewed before going public)</span></label>
                         </div>
+
+                        <!-- DIRECTOR picker -->
                         <div class="field">
                             <label>Director</label>
-                            <input type="text" maxlength="255" [(ngModel)]="form.director" placeholder="Director's name">
+                            <div class="person-picker" [class.has-person]="form.director.person_id">
+                                <div class="picker-input">
+                                    <input type="text" maxlength="200" autocomplete="off"
+                                           [(ngModel)]="pickerState('director').q"
+                                           (ngModelChange)="onPeopleQuery('director', form.director)"
+                                           placeholder="Search director by name…">
+                                    <button *ngIf="form.director.person_id" mat-icon-button type="button"
+                                            class="picker-clear" (click)="clearPerson('director', form.director)">
+                                        <mat-icon svgIcon="close"></mat-icon>
+                                    </button>
+                                </div>
+                                <div class="picker-dropdown" *ngIf="pickerState('director').open">
+                                    <div class="picker-loading" *ngIf="pickerState('director').loading">Searching…</div>
+                                    <button type="button" class="picker-item" *ngFor="let p of pickerState('director').results"
+                                            (click)="pickPerson('director', form.director, p)">
+                                        <img *ngIf="personPhoto(p)" [src]="personPhoto(p)" alt="">
+                                        <span class="pi-avatar" *ngIf="!personPhoto(p)">{{ (p.name||'?').charAt(0) }}</span>
+                                        <span class="pi-name">{{ p.name }}<small *ngIf="p.known_for"> · {{ p.known_for }}</small></span>
+                                    </button>
+                                    <button type="button" class="picker-create" (click)="openCreatePerson('director', form.director)">
+                                        <mat-icon svgIcon="add"></mat-icon> Create new person
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- WRITER picker -->
                         <div class="field">
                             <label>Writer</label>
-                            <input type="text" maxlength="255" [(ngModel)]="form.writer" placeholder="Writer's name">
+                            <div class="person-picker" [class.has-person]="form.writer.person_id">
+                                <div class="picker-input">
+                                    <input type="text" maxlength="200" autocomplete="off"
+                                           [(ngModel)]="pickerState('writer').q"
+                                           (ngModelChange)="onPeopleQuery('writer', form.writer)"
+                                           placeholder="Search writer by name…">
+                                    <button *ngIf="form.writer.person_id" mat-icon-button type="button"
+                                            class="picker-clear" (click)="clearPerson('writer', form.writer)">
+                                        <mat-icon svgIcon="close"></mat-icon>
+                                    </button>
+                                </div>
+                                <div class="picker-dropdown" *ngIf="pickerState('writer').open">
+                                    <div class="picker-loading" *ngIf="pickerState('writer').loading">Searching…</div>
+                                    <button type="button" class="picker-item" *ngFor="let p of pickerState('writer').results"
+                                            (click)="pickPerson('writer', form.writer, p)">
+                                        <img *ngIf="personPhoto(p)" [src]="personPhoto(p)" alt="">
+                                        <span class="pi-avatar" *ngIf="!personPhoto(p)">{{ (p.name||'?').charAt(0) }}</span>
+                                        <span class="pi-name">{{ p.name }}<small *ngIf="p.known_for"> · {{ p.known_for }}</small></span>
+                                    </button>
+                                    <button type="button" class="picker-create" (click)="openCreatePerson('writer', form.writer)">
+                                        <mat-icon svgIcon="add"></mat-icon> Create new person
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- CAST pickers -->
                         <div class="field full">
                             <label>Cast <span class="hint">(actor + character, optional)</span></label>
                             <div class="cast-list">
                                 <div *ngFor="let row of form.cast; let i = index" class="cast-row">
-                                    <input type="text" maxlength="200" [(ngModel)]="row.name" placeholder="Actor name">
+                                    <div class="person-picker" [class.has-person]="row.person_id">
+                                        <div class="picker-input">
+                                            <input type="text" maxlength="200" autocomplete="off"
+                                                   [(ngModel)]="pickerState('cast-'+i).q"
+                                                   (ngModelChange)="onPeopleQuery('cast-'+i, row)"
+                                                   placeholder="Search actor by name…">
+                                            <button *ngIf="row.person_id" mat-icon-button type="button"
+                                                    class="picker-clear" (click)="clearPerson('cast-'+i, row)">
+                                                <mat-icon svgIcon="close"></mat-icon>
+                                            </button>
+                                        </div>
+                                        <div class="picker-dropdown" *ngIf="pickerState('cast-'+i).open">
+                                            <div class="picker-loading" *ngIf="pickerState('cast-'+i).loading">Searching…</div>
+                                            <button type="button" class="picker-item" *ngFor="let p of pickerState('cast-'+i).results"
+                                                    (click)="pickPerson('cast-'+i, row, p)">
+                                                <img *ngIf="personPhoto(p)" [src]="personPhoto(p)" alt="">
+                                                <span class="pi-avatar" *ngIf="!personPhoto(p)">{{ (p.name||'?').charAt(0) }}</span>
+                                                <span class="pi-name">{{ p.name }}<small *ngIf="p.known_for"> · {{ p.known_for }}</small></span>
+                                            </button>
+                                            <button type="button" class="picker-create" (click)="openCreatePerson('cast-'+i, row)">
+                                                <mat-icon svgIcon="add"></mat-icon> Create new person
+                                            </button>
+                                        </div>
+                                    </div>
                                     <input type="text" maxlength="200" [(ngModel)]="row.character" placeholder="Character (optional)">
                                     <button mat-icon-button color="warn" (click)="removeCast(i)" type="button"
                                             [matTooltip]="'Remove' | trans">
@@ -301,6 +376,66 @@
             </div>
         </div>
     </ng-container>
+
+    <!-- Create-new-person modal -->
+    <div class="person-modal-backdrop" *ngIf="newPerson.open" (click)="closeCreatePerson()">
+        <div class="person-modal" (click)="$event.stopPropagation()">
+            <h3>Create a new person</h3>
+            <p class="person-modal-note">
+                This person will be reviewed by an admin before appearing on public pages,
+                but is attached to your title right away.
+            </p>
+            <div class="person-grid">
+                <div class="field full">
+                    <label>Name <span class="req">*</span></label>
+                    <input type="text" maxlength="200" [(ngModel)]="newPerson.name" placeholder="Full name">
+                </div>
+                <div class="field">
+                    <label>Known for <span class="hint">(e.g. Acting, Directing)</span></label>
+                    <input type="text" maxlength="50" [(ngModel)]="newPerson.known_for" placeholder="Acting">
+                </div>
+                <div class="field">
+                    <label>Gender</label>
+                    <select [(ngModel)]="newPerson.gender">
+                        <option value="">—</option>
+                        <option value="female">Female</option>
+                        <option value="male">Male</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Birth date</label>
+                    <input type="date" [(ngModel)]="newPerson.birth_date">
+                </div>
+                <div class="field">
+                    <label>Death date <span class="hint">(if applicable)</span></label>
+                    <input type="date" [(ngModel)]="newPerson.death_date">
+                </div>
+                <div class="field full">
+                    <label>Birth place</label>
+                    <input type="text" maxlength="200" [(ngModel)]="newPerson.birth_place" placeholder="City, Country">
+                </div>
+                <div class="field full">
+                    <label>Biography</label>
+                    <textarea rows="4" maxlength="5000" [(ngModel)]="newPerson.description" placeholder="Short bio…"></textarea>
+                </div>
+                <div class="field">
+                    <label>IMDB ID <span class="hint">(e.g. nm0000158)</span></label>
+                    <input type="text" maxlength="20" [(ngModel)]="newPerson.imdb_id" placeholder="nm0000158">
+                </div>
+                <div class="field">
+                    <label>Photo <span class="hint">(jpg/png/webp, max 5MB)</span></label>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onPersonPhoto($event)">
+                </div>
+            </div>
+            <div class="person-modal-actions">
+                <button mat-button (click)="closeCreatePerson()" [disabled]="newPerson.saving">Cancel</button>
+                <button mat-flat-button color="accent" (click)="saveNewPerson()" [disabled]="newPerson.saving">
+                    {{ newPerson.saving ? 'Saving…' : 'Create & attach' }}
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <footer></footer>

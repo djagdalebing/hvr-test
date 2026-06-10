@@ -86,13 +86,142 @@ export class CreatorDashboardPageComponent implements OnInit {
         tagline: '', runtime: null, genre: '', language: '', country: '',
         release_date: '', certification: '', original_title: '', trailer: '',
         budget: null, revenue: null, imdb_id: '', tmdb_id: null,
-        director: '', writer: '',
-        cast: [] as Array<{name: string, character: string}>,
+        // People are now picker selections: {person_id, name}. cast rows
+        // additionally carry {character}. A person_id of null means nothing
+        // selected yet.
+        director: {person_id: null, name: ''},
+        writer: {person_id: null, name: ''},
+        cast: [] as Array<{person_id: number | null, name: string, character: string}>,
         video_url: '', video_file: null, cover: null, backdrop_image: null,
     };
 
-    public addCast() { this.form.cast.push({name: '', character: ''}); }
+    private blankForm() {
+        return {
+            title: '', type: 'movie', year: null, description: '',
+            tagline: '', runtime: null, genre: '', language: '', country: '',
+            release_date: '', certification: '', original_title: '', trailer: '',
+            budget: null, revenue: null, imdb_id: '', tmdb_id: null,
+            director: {person_id: null, name: ''},
+            writer: {person_id: null, name: ''},
+            cast: [],
+            video_url: '', video_file: null, cover: null, backdrop_image: null,
+        };
+    }
+
+    public addCast() { this.form.cast.push({person_id: null, name: '', character: ''}); }
     public removeCast(i: number) { this.form.cast.splice(i, 1); }
+
+    // ---- People picker -------------------------------------------------
+    // Each "slot" is the object holding {person_id, name} — form.director,
+    // form.writer, or a cast row. We keep transient search state keyed by a
+    // stable slot key so multiple pickers don't clobber each other.
+    public peopleSearch: any = {};   // { [key]: {q, results, open, loading} }
+
+    private slotKey(slot: any, kind: string, i?: number): string {
+        return kind === 'cast' ? 'cast-' + i : kind;
+    }
+
+    public pickerState(key: string) {
+        if (!this.peopleSearch[key]) {
+            this.peopleSearch[key] = {q: '', results: [], open: false, loading: false};
+        }
+        return this.peopleSearch[key];
+    }
+
+    public onPeopleQuery(key: string, slot: any) {
+        const st = this.pickerState(key);
+        // Typing a fresh query invalidates any previous selection.
+        slot.person_id = null;
+        slot.name = st.q;
+        const q = (st.q || '').trim();
+        if (q.length < 2) { st.results = []; st.open = false; this.cd.markForCheck(); return; }
+        st.loading = true; st.open = true;
+        this.http.get('people/search', {q}).subscribe(
+            (res: any) => {
+                st.results = res?.people || [];
+                st.loading = false;
+                this.cd.markForCheck();
+            },
+            () => { st.loading = false; this.cd.markForCheck(); },
+        );
+    }
+
+    public pickPerson(key: string, slot: any, person: any) {
+        slot.person_id = person.id;
+        slot.name = person.name;
+        const st = this.pickerState(key);
+        st.q = person.name;
+        st.results = [];
+        st.open = false;
+        this.cd.markForCheck();
+    }
+
+    public clearPerson(key: string, slot: any) {
+        slot.person_id = null;
+        slot.name = '';
+        const st = this.pickerState(key);
+        st.q = ''; st.results = []; st.open = false;
+        this.cd.markForCheck();
+    }
+
+    public personPhoto(p: any): string | null {
+        const a = p?.poster;
+        if (!a) return null;
+        if (/^https?:\/\//.test(a)) return a;
+        if (a.charAt(0) === '/') return a;
+        if (a.indexOf('storage/') === 0) return '/' + a;
+        return '/storage/' + a;
+    }
+
+    // ---- Create-new-person inline form --------------------------------
+    public newPerson: any = {open: false, key: null, slot: null, saving: false,
+        name: '', description: '', gender: '', birth_date: '', birth_place: '',
+        death_date: '', known_for: '', imdb_id: '', photo: null};
+
+    public openCreatePerson(key: string, slot: any) {
+        const st = this.pickerState(key);
+        this.newPerson = {open: true, key, slot, saving: false,
+            name: (st.q || '').trim(), description: '', gender: '', birth_date: '',
+            birth_place: '', death_date: '', known_for: '', imdb_id: '', photo: null};
+        st.open = false;
+        this.cd.markForCheck();
+    }
+
+    public closeCreatePerson() { this.newPerson.open = false; this.cd.markForCheck(); }
+
+    public onPersonPhoto(ev: Event) {
+        const input = ev.target as HTMLInputElement;
+        this.newPerson.photo = input.files && input.files.length ? input.files[0] : null;
+    }
+
+    public saveNewPerson() {
+        const np = this.newPerson;
+        if (np.saving) return;
+        if (!np.name || !np.name.trim()) { this.toast.open('Name is required.'); return; }
+        np.saving = true;
+        const fd = new FormData();
+        fd.append('name', np.name.trim());
+        ['description', 'gender', 'birth_date', 'birth_place', 'death_date', 'known_for', 'imdb_id']
+            .forEach(k => { if (np[k]) fd.append(k, String(np[k])); });
+        if (np.photo) fd.append('photo', np.photo);
+        this.http.post('people', fd).subscribe(
+            (res: any) => {
+                np.saving = false;
+                const person = res?.person;
+                if (person) {
+                    this.pickPerson(np.key, np.slot, person);
+                    this.toast.open('Person created — pending review, but attached to this title.');
+                }
+                np.open = false;
+                this.cd.markForCheck();
+            },
+            (err: any) => {
+                np.saving = false;
+                this.toast.open(err?.error?.message || 'Could not create person.');
+                this.cd.markForCheck();
+            },
+        );
+    }
 
     public toggleUpload() { this.showUpload = !this.showUpload; }
 
@@ -175,7 +304,7 @@ export class CreatorDashboardPageComponent implements OnInit {
         const textFields = [
             'year', 'description', 'tagline', 'runtime', 'genre',
             'language', 'country', 'release_date', 'certification',
-            'original_title', 'trailer', 'video_url', 'director', 'writer',
+            'original_title', 'trailer', 'video_url',
             'budget', 'revenue', 'imdb_id', 'tmdb_id',
         ];
         for (const k of textFields) {
@@ -183,10 +312,20 @@ export class CreatorDashboardPageComponent implements OnInit {
                 fd.append(k, String(f[k]));
             }
         }
-        // Cast: send as JSON. Drop empty rows.
+        // Director / writer — prefer the picked person_id; fall back to the
+        // typed name (legacy) when nothing was selected from the dropdown.
+        if (f.director?.person_id)      fd.append('director_id', String(f.director.person_id));
+        else if (f.director?.name?.trim()) fd.append('director', f.director.name.trim());
+        if (f.writer?.person_id)        fd.append('writer_id', String(f.writer.person_id));
+        else if (f.writer?.name?.trim())   fd.append('writer', f.writer.name.trim());
+        // Cast: send as JSON {person_id?, name, character}. Drop empty rows.
         const cast = (f.cast || [])
-            .map((c: any) => ({name: (c?.name || '').trim(), character: (c?.character || '').trim()}))
-            .filter((c: any) => c.name !== '');
+            .map((c: any) => ({
+                person_id: c?.person_id || null,
+                name: (c?.name || '').trim(),
+                character: (c?.character || '').trim(),
+            }))
+            .filter((c: any) => c.person_id || c.name !== '');
         if (cast.length) fd.append('cast', JSON.stringify(cast));
         if (r2Url) fd.append('r2_video_url', r2Url);
         else if (f.video_file) fd.append('video_file', f.video_file);
@@ -198,14 +337,8 @@ export class CreatorDashboardPageComponent implements OnInit {
                 this.uploading = false;
                 this.uploadProgress = 0;
                 this.toast.open('Title uploaded.');
-                this.form = {
-                    title: '', type: 'movie', year: null, description: '',
-                    tagline: '', runtime: null, genre: '', language: '', country: '',
-                    release_date: '', certification: '', original_title: '', trailer: '',
-                    budget: null, revenue: null, imdb_id: '', tmdb_id: null,
-                    director: '', writer: '', cast: [],
-                    video_url: '', video_file: null, cover: null, backdrop_image: null,
-                };
+                this.form = this.blankForm();
+                this.peopleSearch = {};
                 this.showUpload = false;
                 this.load();
             },
