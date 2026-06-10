@@ -64,6 +64,11 @@ class CreatorContentController extends BaseController
             'certification'  => 'nullable|string|max:20',
             'original_title' => 'nullable|string|max:250',
             'trailer'        => 'nullable|string|max:1000',
+            // Financials + external IDs (Phase 1 metadata)
+            'budget'         => 'nullable|integer|min:0|max:99999999999',
+            'revenue'        => 'nullable|integer|min:0|max:99999999999',
+            'imdb_id'        => 'nullable|string|max:20|regex:/^tt\d{6,}$/',
+            'tmdb_id'        => 'nullable|integer|min:1',
             // cast is a JSON array of {name, character?}; we parse + attach
             // Person records via the creditables polymorphic table.
             'cast'           => 'nullable|string|max:8000',
@@ -117,6 +122,11 @@ class CreatorContentController extends BaseController
         if ($request->filled('trailer')) {
             $record->trailer = $request->input('trailer');
         }
+        // Phase 1 metadata — financials + external IDs (all nullable).
+        if ($request->filled('budget'))  $record->budget  = (int) $request->input('budget');
+        if ($request->filled('revenue')) $record->revenue = (int) $request->input('revenue');
+        if ($request->filled('imdb_id')) $record->imdb_id = $request->input('imdb_id');
+        if ($request->filled('tmdb_id')) $record->tmdb_id = (int) $request->input('tmdb_id');
         $record->poster       = $posterUrl;
         $record->backdrop     = $backdropUrl;
         $record->adult        = false;

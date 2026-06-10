@@ -85,6 +85,7 @@ export class CreatorDashboardPageComponent implements OnInit {
         title: '', type: 'movie', year: null, description: '',
         tagline: '', runtime: null, genre: '', language: '', country: '',
         release_date: '', certification: '', original_title: '', trailer: '',
+        budget: null, revenue: null, imdb_id: '', tmdb_id: null,
         director: '', writer: '',
         cast: [] as Array<{name: string, character: string}>,
         video_url: '', video_file: null, cover: null, backdrop_image: null,
@@ -175,6 +176,7 @@ export class CreatorDashboardPageComponent implements OnInit {
             'year', 'description', 'tagline', 'runtime', 'genre',
             'language', 'country', 'release_date', 'certification',
             'original_title', 'trailer', 'video_url', 'director', 'writer',
+            'budget', 'revenue', 'imdb_id', 'tmdb_id',
         ];
         for (const k of textFields) {
             if (f[k] !== null && f[k] !== undefined && f[k] !== '') {
@@ -200,6 +202,7 @@ export class CreatorDashboardPageComponent implements OnInit {
                     title: '', type: 'movie', year: null, description: '',
                     tagline: '', runtime: null, genre: '', language: '', country: '',
                     release_date: '', certification: '', original_title: '', trailer: '',
+                    budget: null, revenue: null, imdb_id: '', tmdb_id: null,
                     director: '', writer: '', cast: [],
                     video_url: '', video_file: null, cover: null, backdrop_image: null,
                 };

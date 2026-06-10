@@ -201,6 +201,26 @@
                         </div>
 
                         <div class="field full crew-row">
+                            <label class="section-label">Financials &amp; external IDs <span class="hint">(optional)</span></label>
+                        </div>
+                        <div class="field">
+                            <label>Budget <span class="hint">(USD)</span></label>
+                            <input type="number" min="0" step="1" [(ngModel)]="form.budget" placeholder="e.g. 1000000">
+                        </div>
+                        <div class="field">
+                            <label>Revenue <span class="hint">(USD)</span></label>
+                            <input type="number" min="0" step="1" [(ngModel)]="form.revenue" placeholder="e.g. 5000000">
+                        </div>
+                        <div class="field">
+                            <label>IMDB ID <span class="hint">(e.g. tt0111161)</span></label>
+                            <input type="text" maxlength="20" [(ngModel)]="form.imdb_id" placeholder="tt0111161">
+                        </div>
+                        <div class="field">
+                            <label>TMDB ID <span class="hint">(numeric)</span></label>
+                            <input type="number" min="1" step="1" [(ngModel)]="form.tmdb_id" placeholder="e.g. 278">
+                        </div>
+
+                        <div class="field full crew-row">
                             <label class="section-label">People</label>
                         </div>
                         <div class="field">
