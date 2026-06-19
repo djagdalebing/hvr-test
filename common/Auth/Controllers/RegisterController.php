@@ -72,6 +72,13 @@ class RegisterController extends BaseController
 
         event(new Registered($user = $this->repository->create($params)));
 
+        // HVN: mirror the users.role value into the user_role pivot so the
+        // admin Roles tab lists viewer/creator members. New signups default
+        // to viewer. Best-effort.
+        if (method_exists($user, 'syncAudienceRole')) {
+            $user->syncAudienceRole();
+        }
+
         if ($user->hasVerifiedEmail()) {
             $this->guard()->login($user);
         }

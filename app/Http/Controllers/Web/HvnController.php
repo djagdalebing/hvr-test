@@ -419,7 +419,18 @@ class HvnController extends Controller
             \Log::warning('become-creator: role update failed', $debug);
         }
 
-        // 3) Re-resolve straight from DB and recompute is_creator.
+        // 3) Mirror into the user_role pivot so the admin Roles tab moves
+        //    this user from the 'viewer' role into 'creator'.
+        try {
+            $eloquentUser = \App\User::find($user->id);
+            if ($eloquentUser && method_exists($eloquentUser, 'syncAudienceRole')) {
+                $eloquentUser->syncAudienceRole();
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('become-creator: role pivot sync failed', ['err' => $e->getMessage()]);
+        }
+
+        // 4) Re-resolve straight from DB and recompute is_creator.
         $row = \DB::table('users')->where('id', $user->id)->first();
         $hasProfile = \DB::table('creator_profiles')->where('user_id', $user->id)->exists();
         $isCreator  = $hasProfile || (isset($row->role) && $row->role === 'creator');

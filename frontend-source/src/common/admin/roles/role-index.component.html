@@ -40,6 +40,7 @@
         <ng-container leftContent *ngIf="currentUser.hasPermission('roles.update')">
             <button class="assign-users-button" mat-raised-button color="accent" (click)="showAssignUsersModal()" [disabled]="!canAssignUsers()" trans>Assign Users</button>
             <button mat-raised-button color="accent" (click)="maybeDetachUsers()" [disabled]="!(datatable.selectedRows$ | async).length" trans>Unassign Users</button>
+            <button mat-stroked-button (click)="exportUsers()" [disabled]="!(selectedRole$ | async).id" trans>Export to CSV</button>
         </ng-container>
     </datatable-header>
     <table class="material-table">

@@ -45,6 +45,7 @@ Route::group(['prefix' => 'secure', 'middleware' => 'web'], function () {
     Route::post('access-tokens', [AccessTokenController::class, 'store']);
     Route::delete('access-tokens/{tokenId}', [AccessTokenController::class, 'destroy']);
     Route::post('users/csv/export', [CommonCsvExportController::class, 'exportUsers']);
+    Route::post('roles/{id}/users/csv/export', [CommonCsvExportController::class, 'exportRoleUsers']);
 
     //ROLES
     Route::get('roles', 'Common\Auth\Roles\RolesController@index');

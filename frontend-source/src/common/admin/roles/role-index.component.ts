@@ -12,6 +12,7 @@ import {FindUserModalComponent} from '@common/auth/find-user-modal/find-user-mod
 import {BreakpointsService} from '@common/core/ui/breakpoints.service';
 import {Users} from '../../auth/users.service';
 import {DatatableService} from '../../datatable/datatable.service';
+import {CsvExporterService} from '@common/csv/csv-exporter.service';
 
 @Component({
     selector: 'role-index',
@@ -32,6 +33,7 @@ export class RoleIndexComponent implements OnInit {
         public currentUser: CurrentUser,
         public breakpoints: BreakpointsService,
         public datatable: DatatableService<User>,
+        private csv: CsvExporterService,
     ) {}
 
     ngOnInit() {
@@ -143,5 +145,12 @@ export class RoleIndexComponent implements OnInit {
 
     public canAssignUsers() {
         return this.selectedRole$.value.id && !this.datatable.selectedRows$.value.length && !this.selectedRole$.value.guests;
+    }
+
+    /** Download a CSV of the users assigned to the selected role. */
+    public exportUsers() {
+        const role = this.selectedRole$.value;
+        if (!role || !role.id) return;
+        this.csv.export('roles/' + role.id + '/users/csv/export');
     }
 }

@@ -32,6 +32,31 @@ class User extends BaseUser
     }
 
     /**
+     * Keep the user_role pivot in step with the users.role column so the
+     * admin Roles tab lists viewer/creator members. Attaches the role that
+     * matches the current users.role value and detaches the opposite one,
+     * leaving any other roles (e.g. the default 'Users') untouched.
+     * Best-effort — never throws into the caller.
+     */
+    public function syncAudienceRole(): void
+    {
+        try {
+            $target = $this->role === 'creator' ? 'creator' : 'viewer';
+            $other  = $target === 'creator' ? 'viewer' : 'creator';
+            $roles  = \Common\Auth\Roles\Role::whereIn('name', [$target, $other])
+                ->get()->keyBy('name');
+            if (isset($roles[$target])) {
+                $this->roles()->syncWithoutDetaching([$roles[$target]->id]);
+            }
+            if (isset($roles[$other])) {
+                $this->roles()->detach($roles[$other]->id);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('syncAudienceRole failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Send a notification to every admin (best effort — failures are
      * logged but never thrown). Caps at 20 recipients.
      *
