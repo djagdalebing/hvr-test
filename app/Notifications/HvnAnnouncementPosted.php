@@ -4,28 +4,36 @@ namespace App\Notifications;
 
 use App\Announcement;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\URL;
 use Str;
 
 /**
- * Delivers an admin announcement to a user's in-app notification bell.
- * Phase 1 is database-only; the mail channel is added in Phase 2 once an
- * email transport is configured.
+ * Delivers an admin announcement.
+ *  - database channel → in-app notification bell (always reliable)
+ *  - mail channel     → email (Phase 2; best-effort, respects unsubscribe)
+ *
+ * The caller decides which channels to use by passing $channels, so in-app
+ * and email can be dispatched separately and a broken mail transport can't
+ * take the in-app delivery down with it.
  */
 class HvnAnnouncementPosted extends Notification
 {
     use Queueable;
 
     public $announcement;
+    public $channels;
 
-    public function __construct(Announcement $announcement)
+    public function __construct(Announcement $announcement, array $channels = ['database'])
     {
         $this->announcement = $announcement;
+        $this->channels = $channels;
     }
 
     public function via($notifiable)
     {
-        return ['database'];
+        return $this->channels;
     }
 
     public function toArray($notifiable)
@@ -33,9 +41,7 @@ class HvnAnnouncementPosted extends Notification
         $a = $this->announcement;
         return [
             'image'      => null,
-            'mainAction' => $a->link_url
-                ? ['action' => $a->link_url]
-                : ['action' => '/'],
+            'mainAction' => ['action' => $a->link_url ?: '/'],
             'lines'      => [
                 [
                     'content' => $a->title,
@@ -50,13 +56,44 @@ class HvnAnnouncementPosted extends Notification
         ];
     }
 
+    public function toMail($notifiable): MailMessage
+    {
+        $a = $this->announcement;
+        $mail = (new MailMessage)
+            ->subject($a->title)
+            ->greeting('Hi ' . ($notifiable->username ?: 'there') . ',');
+
+        if ($a->body) {
+            $mail->line(strip_tags((string) $a->body));
+        }
+        if ($a->link_url) {
+            $mail->action('View', $this->absoluteLink($a->link_url));
+        }
+
+        // One-click unsubscribe (signed URL — no login needed).
+        $unsub = URL::signedRoute('announcements.unsubscribe', ['user' => $notifiable->id]);
+        return $mail
+            ->line('—')
+            ->line('You are receiving this because you have an account on Her Vision Network.')
+            ->salutation('— Her Vision Network')
+            ->line('[Unsubscribe from announcement emails](' . $unsub . ')');
+    }
+
+    private function absoluteLink(string $url): string
+    {
+        if (Str::startsWith($url, ['http://', 'https://'])) {
+            return $url;
+        }
+        return url($url);
+    }
+
     private function iconFor(string $type): string
     {
         switch ($type) {
             case 'new_content':      return 'movie';
             case 'platform_update':  return 'system-update';
             case 'featured_creator': return 'star';
-            case 'company_news':     return 'campaign';
+            case 'company_news':     return 'notifications';
             default:                 return 'notifications';
         }
     }

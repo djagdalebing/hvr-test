@@ -740,7 +740,7 @@ class HvnAdminController extends Controller
         if ($request->hasFile('image')) {
             $data['image_path'] = 'storage/' . $request->file('image')->store('announcements', 'public');
         }
-        $announcement->update($data);
+        $announcement->update($data); // channels persisted via the array cast
         return ['status' => 'success', 'announcement' => $announcement->fresh()];
     }
 
@@ -760,39 +760,91 @@ class HvnAdminController extends Controller
         $this->apiAdminOrAbort();
         $announcement = Announcement::findOrFail($id);
 
-        $query = User::query();
-        if ($announcement->audience === 'viewers') {
-            $query->where('role', 'viewer');
-        } elseif ($announcement->audience === 'creators') {
-            $query->where('role', 'creator');
-        }
+        $channels = $announcement->channels ?: ['in_app'];
+        $wantsInApp = in_array('in_app', $channels, true);
+        $wantsEmail = in_array('email', $channels, true);
+
+        $baseQuery = function () use ($announcement) {
+            $q = User::query();
+            if ($announcement->audience === 'viewers') {
+                $q->where('role', 'viewer');
+            } elseif ($announcement->audience === 'creators') {
+                $q->where('role', 'creator');
+            }
+            return $q;
+        };
 
         $count = 0;
-        $query->select('id', 'email', 'username', 'role')
-            ->chunkById(500, function ($users) use ($announcement, &$count) {
-                Notification::send($users, new HvnAnnouncementPosted($announcement));
-                $count += $users->count();
-            });
+        $emailCount = 0;
+
+        // In-app — reliable, delivered to every targeted user's bell.
+        if ($wantsInApp) {
+            $baseQuery()->select('id', 'email', 'username', 'role')
+                ->chunkById(500, function ($users) use ($announcement, &$count) {
+                    Notification::send($users, new HvnAnnouncementPosted($announcement, ['database']));
+                    $count += $users->count();
+                });
+        } else {
+            $count = (clone $baseQuery())->count();
+        }
+
+        // Email — best-effort, per-user isolation so a broken mail transport
+        // can't abort the batch. Skips users who unsubscribed or have no email.
+        if ($wantsEmail) {
+            $baseQuery()
+                ->where(function ($q) {
+                    $q->whereNull('newsletter_unsubscribed')->orWhere('newsletter_unsubscribed', false);
+                })
+                ->whereNotNull('email')
+                ->select('id', 'email', 'username', 'role')
+                ->chunkById(200, function ($users) use ($announcement, &$emailCount) {
+                    foreach ($users as $user) {
+                        try {
+                            $user->notify(new HvnAnnouncementPosted($announcement, ['mail']));
+                            $emailCount++;
+                        } catch (\Throwable $e) {
+                            \Log::warning('announcement email failed', ['uid' => $user->id, 'err' => $e->getMessage()]);
+                        }
+                    }
+                });
+        }
 
         $announcement->update([
             'status'           => 'sent',
             'sent_at'          => now(),
             'recipients_count' => $count,
-            'channels'         => ['in_app'],
+            'channels'         => $channels,
         ]);
 
-        return ['status' => 'success', 'recipients_count' => $count, 'announcement' => $announcement->fresh()];
+        return [
+            'status'           => 'success',
+            'recipients_count' => $count,
+            'email_count'      => $emailCount,
+            'announcement'     => $announcement->fresh(),
+        ];
     }
 
     private function validateAnnouncement(Request $request): array
     {
-        return $request->validate([
-            'title'    => 'required|string|min:2|max:200',
-            'body'     => 'nullable|string|max:10000',
-            'type'     => ['required', Rule::in(Announcement::TYPES)],
-            'audience' => ['required', Rule::in(Announcement::AUDIENCES)],
-            'link_url' => 'nullable|string|max:500',
-            'image'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        $data = $request->validate([
+            'title'      => 'required|string|min:2|max:200',
+            'body'       => 'nullable|string|max:10000',
+            'type'       => ['required', Rule::in(Announcement::TYPES)],
+            'audience'   => ['required', Rule::in(Announcement::AUDIENCES)],
+            'link_url'   => 'nullable|string|max:500',
+            'image'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            // channels: in_app and/or email (sent as channels[] in form-data)
+            'channels'   => 'nullable|array',
+            'channels.*' => Rule::in(['in_app', 'email']),
         ]);
+
+        // Default to in-app if nothing was selected.
+        $channels = array_values(array_unique($data['channels'] ?? []));
+        if (empty($channels)) {
+            $channels = ['in_app'];
+        }
+        $data['channels'] = $channels;
+
+        return $data;
     }
 }

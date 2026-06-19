@@ -37,6 +37,19 @@
                 <label>Image <span class="hint">(optional, jpg/png/webp)</span></label>
                 <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onImage($event)">
             </div>
+            <div class="field full">
+                <label>Delivery channels</label>
+                <div class="ann-channels">
+                    <label class="ann-check">
+                        <input type="checkbox" [(ngModel)]="form.channel_in_app">
+                        <span>In-app (notification bell)</span>
+                    </label>
+                    <label class="ann-check">
+                        <input type="checkbox" [(ngModel)]="form.channel_email">
+                        <span>Email <span class="hint">— requires a configured email service; skips unsubscribed users</span></span>
+                    </label>
+                </div>
+            </div>
         </div>
         <div class="ann-compose-actions">
             <button mat-button (click)="resetForm()" *ngIf="form.id">Cancel edit</button>
@@ -60,6 +73,8 @@
                     <span class="ann-type">{{ typeLabel(a.type) }}</span>
                     <span class="dot">·</span>
                     <span>{{ audienceLabel(a.audience) }}</span>
+                    <span class="dot" *ngIf="a.channels?.length">·</span>
+                    <span *ngIf="a.channels?.length">{{ a.channels.join(', ').replace('in_app','in-app') }}</span>
                     <span class="dot" *ngIf="a.status==='sent'">·</span>
                     <span *ngIf="a.status==='sent'">{{ a.recipients_count }} recipient(s) · {{ a.sent_at | date:'mediumDate' }}</span>
                 </div>

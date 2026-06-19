@@ -153,6 +153,11 @@ Route::post('community/{id}/comments', [HvnController::class, 'commentStore'])->
 // /creator/profile lives under /secure/creator/profile (HvnController::profileUpdate)
 // — see the secure group below — so we no longer need the top-level POST route.
 
+// Announcement email unsubscribe — signed link in the email footer, no login.
+Route::get('announcements/unsubscribe/{user}', [HvnController::class, 'unsubscribeAnnouncements'])
+    ->name('announcements.unsubscribe')
+    ->middleware('signed');
+
 // HVN PUBLIC JSON API — consumed by the SPA's native creators/community pages.
 // AppHttpClient auto-prefixes outgoing requests with 'secure/', so all SPA
 // reads AND writes have to live under this prefix.

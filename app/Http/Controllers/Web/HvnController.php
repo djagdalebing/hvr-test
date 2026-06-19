@@ -368,6 +368,33 @@ class HvnController extends Controller
         ])->header('Cache-Control', 'no-store, private');
     }
 
+    // One-click unsubscribe from announcement emails (Phase 2). Reached via
+    // a signed URL in the email footer — no login required. In-app bell
+    // notifications are unaffected; this only opts the user out of emails.
+    public function unsubscribeAnnouncements(Request $request, $userId)
+    {
+        $user = \App\User::find($userId);
+        if ($user) {
+            try {
+                $user->newsletter_unsubscribed = true;
+                $user->save();
+            } catch (\Throwable $e) {
+                \Log::warning('unsubscribe failed', ['uid' => $userId, 'err' => $e->getMessage()]);
+            }
+        }
+        $html = '<!doctype html><html><head><meta charset="utf-8">'
+            . '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            . '<title>Unsubscribed</title></head>'
+            . '<body style="font-family:system-ui,sans-serif;background:#0f0f10;color:#eee;'
+            . 'display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center">'
+            . '<div style="max-width:480px;padding:40px"><h2 style="margin:0 0 12px">You\'re unsubscribed</h2>'
+            . '<p style="opacity:.75;line-height:1.5">You will no longer receive announcement emails from '
+            . 'Her Vision Network. You can re-enable them anytime in your Account Settings.</p>'
+            . '<p style="margin-top:24px"><a href="/" style="color:#F65F54;text-decoration:none">Back to Her Vision Network</a></p>'
+            . '</div></body></html>';
+        return response($html);
+    }
+
     // Self-service: viewer → creator. One click from Account Settings;
     // POST /secure/me/become-creator. No moderation step — admins can
     // demote / block from /admin/creators if needed.

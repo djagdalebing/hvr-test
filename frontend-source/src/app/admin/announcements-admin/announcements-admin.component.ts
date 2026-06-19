@@ -46,7 +46,11 @@ export class AnnouncementsAdminComponent implements OnInit {
     ngOnInit() { this.load(); }
 
     private blankForm() {
-        return {id: null, title: '', body: '', type: 'general', audience: 'all', link_url: '', image: null};
+        return {
+            id: null, title: '', body: '', type: 'general', audience: 'all',
+            link_url: '', image: null,
+            channel_in_app: true, channel_email: false,
+        };
     }
 
     public load() {
@@ -74,10 +78,13 @@ export class AnnouncementsAdminComponent implements OnInit {
     }
 
     public edit(a: any) {
+        const channels = a.channels || ['in_app'];
         this.form = {
             id: a.id, title: a.title || '', body: a.body || '',
             type: a.type || 'general', audience: a.audience || 'all',
             link_url: a.link_url || '', image: null,
+            channel_in_app: channels.indexOf('in_app') !== -1,
+            channel_email: channels.indexOf('email') !== -1,
         };
         this.cd.markForCheck();
     }
@@ -95,6 +102,8 @@ export class AnnouncementsAdminComponent implements OnInit {
         if (this.form.body) fd.append('body', this.form.body);
         if (this.form.link_url) fd.append('link_url', this.form.link_url);
         if (this.form.image) fd.append('image', this.form.image);
+        if (this.form.channel_in_app) fd.append('channels[]', 'in_app');
+        if (this.form.channel_email) fd.append('channels[]', 'email');
         const url = this.form.id ? 'admin/announcements/' + this.form.id : 'admin/announcements';
         this.http.post(url, fd).subscribe(
             () => {
