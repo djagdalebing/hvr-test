@@ -1,0 +1,70 @@
+announcements-admin {
+    display: block;
+
+    .ann-page { padding: 20px 24px 40px; max-width: 1000px; }
+    .ann-h1 { margin: 0 0 4px; font-size: 1.6rem; }
+    .ann-intro { margin: 0 0 20px; opacity: .7; max-width: 720px; }
+    .muted { opacity: .6; }
+
+    .ann-compose {
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        padding: 18px 20px;
+        margin-bottom: 28px;
+        background: rgba(255,255,255,0.02);
+        h3 { margin: 0 0 14px; }
+    }
+    .ann-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 16px;
+        .field { display: flex; flex-direction: column; gap: 4px; }
+        .field.full { grid-column: 1 / -1; }
+        label { font-size: .85rem; opacity: .85; }
+        .req { color: var(--be-accent, #F65F54); }
+        .hint { opacity: .55; font-weight: 400; }
+        input, select, textarea {
+            background: var(--be-background, #141414);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px; color: inherit; font: inherit;
+            padding: 8px 10px; outline: none;
+            &:focus { border-color: rgba(255,255,255,0.35); }
+        }
+        textarea { resize: vertical; }
+    }
+    .ann-compose-actions {
+        display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;
+    }
+
+    mat-progress-bar { margin-bottom: 12px; }
+
+    .ann-list { display: flex; flex-direction: column; gap: 10px; }
+    .ann-card {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        gap: 16px; flex-wrap: wrap;
+        padding: 14px 16px;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 8px;
+        background: rgba(255,255,255,0.02);
+    }
+    .ann-info { min-width: 0; flex: 1 1 360px; }
+    .ann-title-row { display: flex; align-items: center; gap: 10px; }
+    .ann-title { font-weight: 600; font-size: 1.02rem; }
+    .ann-badge {
+        font-size: 11px; padding: 2px 8px; border-radius: 10px;
+        background: rgba(255,255,255,0.12); opacity: .85;
+        &.sent { background: rgba(76,175,80,0.18); color: #4ade80; }
+    }
+    .ann-meta {
+        display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+        font-size: .82rem; opacity: .7; margin-top: 4px;
+    }
+    .ann-type { text-transform: capitalize; }
+    .dot { opacity: .5; }
+    .ann-body {
+        font-size: .88rem; margin-top: 8px; max-width: 640px;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .ann-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .ann-empty { padding: 40px 20px; text-align: center; opacity: .6; }
+}

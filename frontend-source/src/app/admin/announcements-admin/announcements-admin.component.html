@@ -1,0 +1,85 @@
+<div class="ann-page">
+    <h1 class="ann-h1">Announcements</h1>
+    <p class="ann-intro">
+        Send general announcements — new content releases, platform updates, featured creators,
+        company news — to your users' notification bell. Choose who receives it below.
+    </p>
+
+    <!-- Compose -->
+    <div class="ann-compose">
+        <h3>{{ form.id ? 'Edit announcement' : 'New announcement' }}</h3>
+        <div class="ann-grid">
+            <div class="field full">
+                <label>Title <span class="req">*</span></label>
+                <input type="text" maxlength="200" [(ngModel)]="form.title" placeholder="e.g. New film just dropped: …">
+            </div>
+            <div class="field">
+                <label>Type</label>
+                <select [(ngModel)]="form.type">
+                    <option *ngFor="let t of types" [value]="t.value">{{ t.label }}</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Audience</label>
+                <select [(ngModel)]="form.audience">
+                    <option *ngFor="let a of audiences" [value]="a.value">{{ a.label }}</option>
+                </select>
+            </div>
+            <div class="field full">
+                <label>Message</label>
+                <textarea rows="4" maxlength="10000" [(ngModel)]="form.body" placeholder="What do you want to tell your users?"></textarea>
+            </div>
+            <div class="field">
+                <label>Link <span class="hint">(optional — where the bell click goes)</span></label>
+                <input type="text" maxlength="500" [(ngModel)]="form.link_url" placeholder="/titles/123/my-film or https://…">
+            </div>
+            <div class="field">
+                <label>Image <span class="hint">(optional, jpg/png/webp)</span></label>
+                <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onImage($event)">
+            </div>
+        </div>
+        <div class="ann-compose-actions">
+            <button mat-button (click)="resetForm()" *ngIf="form.id">Cancel edit</button>
+            <button mat-flat-button color="accent" (click)="save()" [disabled]="saving">
+                {{ saving ? 'Saving…' : (form.id ? 'Update draft' : 'Save draft') }}
+            </button>
+        </div>
+    </div>
+
+    <mat-progress-bar mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>
+
+    <!-- List -->
+    <div class="ann-list" *ngIf="rows.length">
+        <div class="ann-card" *ngFor="let a of rows">
+            <div class="ann-info">
+                <div class="ann-title-row">
+                    <span class="ann-title">{{ a.title }}</span>
+                    <span class="ann-badge" [class.sent]="a.status==='sent'">{{ a.status === 'sent' ? 'Sent' : 'Draft' }}</span>
+                </div>
+                <div class="ann-meta">
+                    <span class="ann-type">{{ typeLabel(a.type) }}</span>
+                    <span class="dot">·</span>
+                    <span>{{ audienceLabel(a.audience) }}</span>
+                    <span class="dot" *ngIf="a.status==='sent'">·</span>
+                    <span *ngIf="a.status==='sent'">{{ a.recipients_count }} recipient(s) · {{ a.sent_at | date:'mediumDate' }}</span>
+                </div>
+                <div class="ann-body muted" *ngIf="a.body">{{ a.body }}</div>
+            </div>
+            <div class="ann-actions">
+                <ng-container *ngIf="a.status !== 'sent'">
+                    <button mat-flat-button color="accent" (click)="send(a)" [disabled]="sendingId===a.id">
+                        {{ sendingId===a.id ? 'Sending…' : 'Send' }}
+                    </button>
+                    <button mat-button (click)="edit(a)">Edit</button>
+                </ng-container>
+                <button mat-icon-button color="warn" (click)="remove(a)" matTooltip="Delete">
+                    <mat-icon svgIcon="delete"></mat-icon>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="ann-empty" *ngIf="!loading && !rows.length">
+        No announcements yet — compose one above.
+    </div>
+</div>

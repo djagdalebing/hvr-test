@@ -5,6 +5,7 @@ import {TitlesPageComponent} from './titles-page/titles-page.component';
 import {CreatorsAdminComponent} from './creators-admin/creators-admin.component';
 import {CommunityAdminComponent} from './community-admin/community-admin.component';
 import {ModerationAdminComponent} from './moderation-admin/moderation-admin.component';
+import {AnnouncementsAdminComponent} from './announcements-admin/announcements-admin.component';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatTabsModule} from '@angular/material/tabs';
@@ -64,6 +65,7 @@ import {SelectUserInputModule} from '@common/core/ui/select-user-input/select-us
         CreatorsAdminComponent,
         CommunityAdminComponent,
         ModerationAdminComponent,
+        AnnouncementsAdminComponent,
     ],
     providers: [Modal],
 })

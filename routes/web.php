@@ -227,6 +227,12 @@ Route::group(['prefix' => 'secure/admin'], function () {
     Route::delete('community/{id}', [HvnAdminController::class, 'apiDeletePost']);
     Route::get('community/{id}/comments', [HvnAdminController::class, 'apiPostComments']);
     Route::delete('community/comments/{id}', [HvnAdminController::class, 'apiDeleteComment']);
+    // Announcements (Phase 1)
+    Route::get('announcements',              [HvnAdminController::class, 'apiAnnouncementsList']);
+    Route::post('announcements',             [HvnAdminController::class, 'apiCreateAnnouncement']);
+    Route::post('announcements/{id}',        [HvnAdminController::class, 'apiUpdateAnnouncement'])->where('id', '[0-9]+');
+    Route::post('announcements/{id}/send',   [HvnAdminController::class, 'apiSendAnnouncement'])->where('id', '[0-9]+');
+    Route::delete('announcements/{id}',      [HvnAdminController::class, 'apiDeleteAnnouncement'])->where('id', '[0-9]+');
 });
 
 // SESSION LOGOUT for server-rendered pages

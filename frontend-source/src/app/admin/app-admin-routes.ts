@@ -11,6 +11,7 @@ import {ReviewsIndexComponent} from './reviews-index/reviews-index.component';
 import {CreatorsAdminComponent} from './creators-admin/creators-admin.component';
 import {CommunityAdminComponent} from './community-admin/community-admin.component';
 import {ModerationAdminComponent} from './moderation-admin/moderation-admin.component';
+import {AnnouncementsAdminComponent} from './announcements-admin/announcements-admin.component';
 
 // TODO: maybe add "primary_credit" id on person table and remove lazy loading of all credits
 
@@ -31,6 +32,12 @@ export const APP_ADMIN_ROUTES: Routes = [
     {
         path: 'moderation',
         component: ModerationAdminComponent,
+        data: {permissions: ['admin']},
+    },
+    // announcements (HVN admin — send platform-wide announcements)
+    {
+        path: 'announcements',
+        component: AnnouncementsAdminComponent,
         data: {permissions: ['admin']},
     },
     // videos

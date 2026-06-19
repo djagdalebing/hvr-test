@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Announcement;
 use App\CommunityComment;
 use App\CommunityLike;
 use App\CommunityPost;
 use App\CreatorProfile;
+use App\Notifications\HvnAnnouncementPosted;
 use App\User;
 use Common\Core\BaseController as Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 
 class HvnAdminController extends Controller
@@ -693,5 +696,103 @@ class HvnAdminController extends Controller
         $comment = CommunityComment::findOrFail($commentId);
         $comment->delete();
         return ['status' => 'success'];
+    }
+
+    // -----------------------------------------------------------------
+    // Announcements (Phase 1 — compose + in-app delivery to the bell)
+    // -----------------------------------------------------------------
+
+    public function apiAnnouncementsList(Request $request)
+    {
+        $this->apiAdminOrAbort();
+        $perPage = min((int) $request->input('perPage', 20), 100);
+        $page = Announcement::with('author:id,username')
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
+        return ['pagination' => $page];
+    }
+
+    public function apiCreateAnnouncement(Request $request)
+    {
+        $this->apiAdminOrAbort();
+        $data = $this->validateAnnouncement($request);
+        unset($data['image']);
+        $data['created_by'] = auth()->id();
+        $data['status'] = 'draft';
+
+        if ($request->hasFile('image')) {
+            $data['image_path'] = 'storage/' . $request->file('image')->store('announcements', 'public');
+        }
+
+        $announcement = Announcement::create($data);
+        return ['status' => 'success', 'announcement' => $announcement->fresh()];
+    }
+
+    public function apiUpdateAnnouncement(Request $request, int $id)
+    {
+        $this->apiAdminOrAbort();
+        $announcement = Announcement::findOrFail($id);
+        if ($announcement->status === 'sent') {
+            return response()->json(['status' => 'error', 'message' => 'Sent announcements cannot be edited.'], 422);
+        }
+        $data = $this->validateAnnouncement($request);
+        unset($data['image']);
+        if ($request->hasFile('image')) {
+            $data['image_path'] = 'storage/' . $request->file('image')->store('announcements', 'public');
+        }
+        $announcement->update($data);
+        return ['status' => 'success', 'announcement' => $announcement->fresh()];
+    }
+
+    public function apiDeleteAnnouncement(Request $request, int $id)
+    {
+        $this->apiAdminOrAbort();
+        Announcement::where('id', $id)->delete();
+        return ['status' => 'success'];
+    }
+
+    /**
+     * Send the announcement to its target audience over the in-app channel
+     * (database notifications → the bell). Email is layered on in Phase 2.
+     */
+    public function apiSendAnnouncement(Request $request, int $id)
+    {
+        $this->apiAdminOrAbort();
+        $announcement = Announcement::findOrFail($id);
+
+        $query = User::query();
+        if ($announcement->audience === 'viewers') {
+            $query->where('role', 'viewer');
+        } elseif ($announcement->audience === 'creators') {
+            $query->where('role', 'creator');
+        }
+
+        $count = 0;
+        $query->select('id', 'email', 'username', 'role')
+            ->chunkById(500, function ($users) use ($announcement, &$count) {
+                Notification::send($users, new HvnAnnouncementPosted($announcement));
+                $count += $users->count();
+            });
+
+        $announcement->update([
+            'status'           => 'sent',
+            'sent_at'          => now(),
+            'recipients_count' => $count,
+            'channels'         => ['in_app'],
+        ]);
+
+        return ['status' => 'success', 'recipients_count' => $count, 'announcement' => $announcement->fresh()];
+    }
+
+    private function validateAnnouncement(Request $request): array
+    {
+        return $request->validate([
+            'title'    => 'required|string|min:2|max:200',
+            'body'     => 'nullable|string|max:10000',
+            'type'     => ['required', Rule::in(Announcement::TYPES)],
+            'audience' => ['required', Rule::in(Announcement::AUDIENCES)],
+            'link_url' => 'nullable|string|max:500',
+            'image'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
     }
 }
