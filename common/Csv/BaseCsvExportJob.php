@@ -31,6 +31,18 @@ abstract class BaseCsvExportJob implements ShouldQueue
 
     public function handle()
     {
+        $csvExport = $this->generateAndStore();
+        $this->sendNotification($csvExport);
+    }
+
+    /**
+     * Build + persist the CSV file and return the CsvExport record, WITHOUT
+     * sending any notification. Used by the controller to produce a CSV
+     * synchronously and hand back an immediate download link (no email,
+     * no queue, no bell notification).
+     */
+    public function generateAndStore(): CsvExport
+    {
         $this->csvStream = fopen('php://temp', 'w');
         $cacheName = $this->cacheName();
 
@@ -47,7 +59,7 @@ abstract class BaseCsvExportJob implements ShouldQueue
         $csvExport->storeFile($this->csvStream);
         fclose($this->csvStream);
 
-        $this->sendNotification($csvExport);
+        return $csvExport;
     }
 
     protected function writeLineToCsv(array $data)

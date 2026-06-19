@@ -34,18 +34,13 @@ class BaseCsvExportController extends BaseController
 
     protected function exportUsing(BaseCsvExportJob $exportJob)
     {
-//        $csvExport = CsvExport::where('cache_name', $exportJob->cacheName())->first();
-//
-//        if (
-//            $csvExport &&
-//            $csvExport->created_at->greaterThan(Carbon::now()->addMinutes(-30))
-//        ) {
-//            return $this->success([
-//                'downloadPath' => $csvExport->downloadLink(),
-//            ]);
-//        }
-
-        $this->dispatch($exportJob);
-        return $this->success(['result' => 'jobQueued']);
+        // Generate the CSV synchronously and hand back an immediate download
+        // link. No queue, no email — the admin clicks "Export to CSV" and the
+        // browser downloads the file straight away. (The old flow dispatched a
+        // job that emailed a link, which 500'd whenever mail was misconfigured.)
+        $csvExport = $exportJob->generateAndStore();
+        return $this->success([
+            'downloadPath' => $csvExport->downloadLink(),
+        ]);
     }
 }
