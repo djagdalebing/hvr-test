@@ -1,8 +1,4 @@
 <section class="admin-pill-nav">
-    <div class="new-role">
-        <button mat-flat-button color="accent" class="new-role-button" (click)="showCrupdateRoleModal()" *ngIf="currentUser.hasPermission('roles.create')" trans>New Role</button>
-    </div>
-
     <ng-container *ngIf="breakpoints.isMobile$ | async; else desktopNav">
         <button [matMenuTriggerFor]="navMenu" class="no-style admin-pill-nav-mobile-selector">
             <span class="name" trans>{{(selectedRole$ | async).name}}</span>
@@ -20,16 +16,6 @@
                     <div>{{role.name}}</div>
                     <div class="role-type">{{role.type}}</div>
                 </div>
-
-                <div class="actions">
-                    <button mat-icon-button [matMenuTriggerFor]="actionsMenu" (click)="$event.stopPropagation()">
-                        <mat-icon svgIcon="settings"></mat-icon>
-                    </button>
-                    <mat-menu #actionsMenu>
-                        <div mat-menu-item (click)="showCrupdateRoleModal(role)" *ngIf="currentUser.hasPermission('roles.update')" trans>Edit</div>
-                        <div mat-menu-item (click)="maybeDeleteRole(role)" *ngIf="!role.internal && currentUser.hasPermission('roles.delete')" trans>Delete</div>
-                    </mat-menu>
-                </div>
             </div>
         </aside>
     </ng-template>
@@ -37,9 +23,7 @@
 
 <div class="datatable responsive-table">
     <datatable-header pluralResourceName="roles" [showSelectedActions]="false">
-        <ng-container leftContent *ngIf="currentUser.hasPermission('roles.update')">
-            <button class="assign-users-button" mat-raised-button color="accent" (click)="showAssignUsersModal()" [disabled]="!canAssignUsers()" trans>Assign Users</button>
-            <button mat-raised-button color="accent" (click)="maybeDetachUsers()" [disabled]="!(datatable.selectedRows$ | async).length" trans>Unassign Users</button>
+        <ng-container leftContent>
             <button mat-stroked-button (click)="exportUsers()" [disabled]="!(selectedRole$ | async).id" trans>Export to CSV</button>
         </ng-container>
     </datatable-header>
