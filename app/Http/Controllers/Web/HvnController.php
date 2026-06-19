@@ -368,6 +368,34 @@ class HvnController extends Controller
         ])->header('Cache-Control', 'no-store, private');
     }
 
+    // TEMP diagnostic — counts to figure out why the Viewer role tab is
+    // empty. Admin-only. Remove once the viewer/creator split is verified.
+    public function apiRoleDebug(): JsonResponse
+    {
+        $user = $this->resolveUser();
+        if (!$user || !(method_exists($user, 'hasPermission') && $user->hasPermission('admin'))) {
+            return response()->json(['message' => 'Admin only.'], 403);
+        }
+
+        $viewerRoleId  = \DB::table('roles')->where('name', 'viewer')->value('id');
+        $creatorRoleId = \DB::table('roles')->where('name', 'creator')->value('id');
+
+        return response()->json([
+            'roles' => \DB::table('roles')->select('id', 'name', 'type', 'default', 'guests')->get(),
+            'viewer_role_id'  => $viewerRoleId,
+            'creator_role_id' => $creatorRoleId,
+            'users_total'              => \DB::table('users')->count(),
+            'users_role_creator'       => \DB::table('users')->where('role', 'creator')->count(),
+            'users_role_viewer'        => \DB::table('users')->where('role', 'viewer')->count(),
+            'users_role_other'         => \DB::table('users')->whereNotIn('role', ['creator', 'viewer'])->count(),
+            'with_creator_profile'     => \DB::table('creator_profiles')->distinct()->count('user_id'),
+            'with_uploaded_video'      => \DB::table('videos')->whereNotNull('user_id')->distinct()->count('user_id'),
+            'pivot_viewer_count'       => $viewerRoleId ? \DB::table('user_role')->where('role_id', $viewerRoleId)->count() : null,
+            'pivot_creator_count'      => $creatorRoleId ? \DB::table('user_role')->where('role_id', $creatorRoleId)->count() : null,
+            'sample_users'             => \DB::table('users')->select('id', 'username', 'email', 'role')->orderBy('id')->limit(20)->get(),
+        ])->header('Cache-Control', 'no-store, private');
+    }
+
     // Self-service: viewer → creator. One click from Account Settings;
     // POST /secure/me/become-creator. No moderation step — admins can
     // demote / block from /admin/creators if needed.

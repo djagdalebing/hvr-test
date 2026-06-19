@@ -175,6 +175,7 @@ Route::group(['prefix' => 'secure'], function () {
     // Lightweight identity probe — Account Settings uses this to decide
     // which panel to show without triggering a 403 toast from /creator/dashboard.
     Route::get('me',                      [HvnController::class, 'apiMe']);
+    Route::get('me/role-debug',           [HvnController::class, 'apiRoleDebug']); // TEMP diagnostic
     Route::post('me/become-creator',      [HvnController::class, 'apiBecomeCreator']);
     // Creator profile + projects (portfolio)
     Route::post('creator/profile',        [HvnController::class, 'profileUpdate']);
