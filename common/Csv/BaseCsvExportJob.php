@@ -82,8 +82,19 @@ abstract class BaseCsvExportJob implements ShouldQueue
 
     protected function sendNotification(CsvExport $export)
     {
-        User::find($this->requesterId)->notify(
-            new CsvExportReadyNotif($export, $this->notificationName()),
-        );
+        $user = User::find($this->requesterId);
+        if (!$user) return;
+        // Best-effort: the CSV is already written and the in-app (database)
+        // notification carries the download link. A broken mail transport
+        // must NOT turn the whole export into a 500 (the queue is sync, so an
+        // uncaught throw here propagates straight to the HTTP response).
+        try {
+            $user->notify(new CsvExportReadyNotif($export, $this->notificationName()));
+        } catch (\Throwable $e) {
+            // 'database' is first in the notification's via(), so the in-app
+            // bell notification (with the download link) is already persisted
+            // before a mail-channel failure throws here. Just log and move on.
+            \Log::warning('CSV export notification (mail) failed: ' . $e->getMessage());
+        }
     }
 }

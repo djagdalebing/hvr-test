@@ -28,7 +28,11 @@ class CsvExportReadyNotif extends Notification
 
     public function via($notifiable): array
     {
-        return ['mail', 'database'];
+        // database FIRST so the in-app bell notification (which carries the
+        // download link) is persisted before the mail channel is attempted.
+        // If mail throws (e.g. broken SMTP creds) the database row is already
+        // saved, and the job swallows the mail failure — see BaseCsvExportJob.
+        return ['database', 'mail'];
     }
 
     public function toMail($notifiable): MailMessage
