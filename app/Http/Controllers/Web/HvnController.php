@@ -457,7 +457,20 @@ class HvnController extends Controller
             \Log::warning('become-creator: role pivot sync failed', ['err' => $e->getMessage()]);
         }
 
-        // 4) Re-resolve straight from DB and recompute is_creator.
+        // 4) Warm "you're now a creator" email — best-effort, only when mail
+        //    is configured (so it never delays/fails the upgrade response).
+        if (filter_var(env('MAIL_SETUP', false), FILTER_VALIDATE_BOOLEAN) && !empty($user->email)) {
+            try {
+                $eUser = \App\User::find($user->id);
+                if ($eUser && !empty($eUser->email)) {
+                    \Mail::to($eUser->email)->send(new \App\Mail\CreatorWelcomeEmail($eUser));
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('creator welcome email failed: ' . $e->getMessage());
+            }
+        }
+
+        // 5) Re-resolve straight from DB and recompute is_creator.
         $row = \DB::table('users')->where('id', $user->id)->first();
         $hasProfile = \DB::table('creator_profiles')->where('user_id', $user->id)->exists();
         $isCreator  = $hasProfile || (isset($row->role) && $row->role === 'creator');
