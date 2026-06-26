@@ -7,8 +7,16 @@
       [hideRegisterButton]="true"
     ></material-navbar>
 
+    <!-- Animated aurora background -->
+    <div class="aurora" aria-hidden="true">
+      <span class="blob blob-1"></span>
+      <span class="blob blob-2"></span>
+      <span class="blob blob-3"></span>
+      <div class="grid-lines"></div>
+    </div>
+
     <div class="content">
-      <span class="eyebrow">{{ settings.get('branding.site_name') || 'Her Vision Network' }}</span>
+      <span class="eyebrow">✨ {{ settings.get('branding.site_name') || 'Her Vision Network' }}</span>
       <h1>{{ content.headerTitle || 'Stories worth watching.' }}</h1>
       <p>{{ content.headerSubtitle || 'Stream films and series from independent creators — anytime, on any device.' }}</p>
       <div class="cta-row">
@@ -23,9 +31,7 @@
       </div>
     </div>
 
-    <div class="background" [style.background-image]="'url(' + content.headerImage + ')'"></div>
-    <div class="overlay"></div>
-    <div class="gradient-overlay"></div>
+    <div class="gradient-overlay" aria-hidden="true"></div>
 
     <a class="scroll-cue" href="javascript:void(0)" (click)="scrollToFeatures(featuresAnchor)" aria-label="Scroll down">
       <mat-icon svgIcon="keyboard-arrow-down"></mat-icon>

@@ -9,18 +9,62 @@
     position: relative;
     overflow: hidden;
     color: #fff;
-    min-height: 92vh;
+    min-height: 94vh;
     display: flex;
     flex-direction: column;
+    background: #08070d;
 
     material-navbar { z-index: 4; }
+
+    /* Animated aurora background */
+    .aurora {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        overflow: hidden;
+    }
+    .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        opacity: 0.55;
+        will-change: transform;
+    }
+    .blob-1 {
+        width: 620px; height: 620px;
+        top: -160px; left: -120px;
+        background: radial-gradient(circle at 30% 30%, #7b3fe4, transparent 70%);
+        animation: hvn-float-1 16s ease-in-out infinite;
+    }
+    .blob-2 {
+        width: 560px; height: 560px;
+        top: -80px; right: -120px;
+        background: radial-gradient(circle at 70% 30%, #b5318c, transparent 70%);
+        animation: hvn-float-2 19s ease-in-out infinite;
+    }
+    .blob-3 {
+        width: 520px; height: 520px;
+        bottom: -180px; left: 40%;
+        background: radial-gradient(circle at 50% 50%, #F65F54, transparent 70%);
+        animation: hvn-float-3 22s ease-in-out infinite;
+    }
+    .grid-lines {
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 64px 64px;
+        mask-image: radial-gradient(120% 80% at 50% 30%, #000 30%, transparent 75%);
+        -webkit-mask-image: radial-gradient(120% 80% at 50% 30%, #000 30%, transparent 75%);
+    }
 
     .content {
         position: relative;
         z-index: 3;
         margin: auto;
-        max-width: 860px;
-        padding: 120px 24px 140px;
+        max-width: 880px;
+        padding: 120px 24px 150px;
         text-align: center;
         animation: hvn-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
@@ -101,27 +145,11 @@
     }
 }
 
-/* Hero background layers */
-.background {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    background-size: cover;
-    background-position: center;
-    transform: scale(1.05);
-}
-.overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    background:
-        radial-gradient(120% 90% at 50% 0%, rgba(123, 63, 228, 0.45) 0%, transparent 55%),
-        linear-gradient(180deg, rgba(10, 8, 16, 0.55) 0%, rgba(10, 8, 16, 0.75) 55%, var(--be-background, #0f0f12) 100%);
-}
+/* Fade hero into the page below */
 .gradient-overlay {
     position: absolute;
     left: 0; right: 0; bottom: 0;
-    height: 200px;
+    height: 240px;
     z-index: 2;
     background: linear-gradient(to bottom, transparent, var(--be-background, #0f0f12));
 }
@@ -288,6 +316,22 @@ main { position: relative; z-index: 3; }
 @keyframes hvn-bounce {
     0%, 100% { transform: translateX(-50%) translateY(0); }
     50%      { transform: translateX(-50%) translateY(8px); }
+}
+@keyframes hvn-float-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%      { transform: translate(80px, 60px) scale(1.15); }
+}
+@keyframes hvn-float-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%      { transform: translate(-70px, 50px) scale(1.1); }
+}
+@keyframes hvn-float-3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%      { transform: translate(-60px, -70px) scale(1.2); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .blob { animation: none !important; }
+    .scroll-cue { animation: none !important; }
 }
 
 /* ============================ RESPONSIVE ============================ */
