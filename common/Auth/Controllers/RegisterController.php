@@ -79,6 +79,17 @@ class RegisterController extends BaseController
             $user->syncAudienceRole();
         }
 
+        // HVN: warm welcome email. Only attempt when mail is actually set up
+        // (otherwise the synchronous send would add latency / fail on the
+        // dead SMTP host). Best-effort — never block or fail registration.
+        if (filter_var(env('MAIL_SETUP', false), FILTER_VALIDATE_BOOLEAN) && !empty($user->email)) {
+            try {
+                \Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($user));
+            } catch (\Throwable $e) {
+                \Log::warning('welcome email failed: ' . $e->getMessage());
+            }
+        }
+
         if ($user->hasVerifiedEmail()) {
             $this->guard()->login($user);
         }
