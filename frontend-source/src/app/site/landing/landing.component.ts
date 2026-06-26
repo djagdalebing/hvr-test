@@ -25,4 +25,10 @@ export class LandingComponent implements OnInit {
     public isInlineIcon(url: string): boolean {
         return !url.includes('.') && !url.includes('/');
     }
+
+    public scrollToFeatures(el: HTMLElement) {
+        if (el) {
+            el.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
+    }
 }
