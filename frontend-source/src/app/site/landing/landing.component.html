@@ -9,21 +9,13 @@
     <div class="content">
       <h1>{{ content.headerTitle }}</h1>
       <p>{{ content.headerSubtitle }}</p>
-      <div class="cta-row">
-        <a
-          mat-raised-button
-          class="cta-button"
-          color="accent"
-          [routerLink]="settings.get('billing.enable') ? '/billing/pricing' : '/register'"
-          >{{ content.actions.cta1 }}</a
-        >
-        <a
-          mat-stroked-button
-          class="cta-button explore-button"
-          routerLink="/browse"
-          >Explore the network</a
-        >
-      </div>
+      <a
+        mat-raised-button
+        class="cta-button"
+        color="accent"
+        routerLink="/browse"
+        >Explore the Network</a
+      >
     </div>
     <div class="background" [style.background-image]="'url(' + content.headerImage + ')'"></div>
     <div class="overlay" [style.background-color]="content.headerOverlayColor"></div>
