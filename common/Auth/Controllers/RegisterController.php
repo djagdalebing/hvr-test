@@ -66,6 +66,22 @@ class RegisterController extends BaseController
         ]);
 
         $params = $request->all();
+
+        // SECURITY: never let a self-registering user assign privileges or
+        // admin-only attributes. UserRepository::create() applies any
+        // 'roles'/'permissions' it receives with no authorization check, so
+        // these must be stripped from public-registration input (otherwise a
+        // registrant could POST permissions/roles and grant themselves admin).
+        unset(
+            $params['roles'],
+            $params['permissions'],
+            $params['available_space'],
+            $params['email_verified_at'],
+            $params['avatar'],
+            $params['trusted_creator'],
+            $params['blocked']
+        );
+
         if ( ! $this->settings->get('require_email_confirmation')) {
             $params['email_verified_at'] = Carbon::now();
         }
