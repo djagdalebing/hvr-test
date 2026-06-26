@@ -764,6 +764,16 @@ class HvnAdminController extends Controller
         $wantsInApp = in_array('in_app', $channels, true);
         $wantsEmail = in_array('email', $channels, true);
 
+        // Only attempt email if mail is actually configured. Otherwise the
+        // synchronous send would hang on the dead default SMTP host and the
+        // request would never return (button stuck on "Sending…").
+        $mailReady = filter_var(env('MAIL_SETUP', false), FILTER_VALIDATE_BOOLEAN);
+        $emailSkipped = false;
+        if ($wantsEmail && !$mailReady) {
+            $wantsEmail = false;
+            $emailSkipped = true;
+        }
+
         $baseQuery = function () use ($announcement) {
             $q = User::query();
             if ($announcement->audience === 'viewers') {
@@ -820,6 +830,7 @@ class HvnAdminController extends Controller
             'status'           => 'success',
             'recipients_count' => $count,
             'email_count'      => $emailCount,
+            'email_skipped'    => $emailSkipped,
             'announcement'     => $announcement->fresh(),
         ];
     }

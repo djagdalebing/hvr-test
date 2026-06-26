@@ -127,7 +127,13 @@ export class AnnouncementsAdminComponent implements OnInit {
         this.http.post('admin/announcements/' + a.id + '/send', {}).subscribe(
             (res: any) => {
                 this.sendingId = null;
-                this.toast.open('Sent to ' + (res?.recipients_count ?? 0) + ' user(s).');
+                let msg = 'Sent to ' + (res?.recipients_count ?? 0) + ' user(s) in-app.';
+                if (res?.email_skipped) {
+                    msg += ' Email skipped — mail isn\'t configured yet (Settings → Mail).';
+                } else if (res?.email_count) {
+                    msg += ' ' + res.email_count + ' email(s) sent.';
+                }
+                this.toast.open(msg);
                 this.load();
             },
             () => { this.sendingId = null; this.toast.open('Failed to send.'); },

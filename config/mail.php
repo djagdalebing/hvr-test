@@ -41,7 +41,9 @@ return [
             'encryption' => env('MAIL_ENCRYPTION', 'tls'),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
+            // Fail fast instead of hanging when the host/creds are wrong
+            // (a null timeout let bad SMTP block requests for minutes).
+            'timeout' => env('MAIL_TIMEOUT', 15),
             'auth_mode' => null,
         ],
 
