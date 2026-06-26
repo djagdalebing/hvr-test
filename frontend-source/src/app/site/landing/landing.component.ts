@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation} from '@angular/core';
 import {Settings} from '@common/core/config/settings.service';
 import {ReplaySubject} from 'rxjs';
 import {LandingContent} from './landing-content';
@@ -8,14 +8,17 @@ import {AppHttpClient} from '@common/core/http/app-http-client.service';
     selector: 'landing',
     templateUrl: './landing.component.html',
     styleUrls: ['./landing.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    // Global styles (uniquely lp-* prefixed) so the layout can't fail to
+    // apply due to view-encapsulation attribute mismatches.
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingComponent implements OnInit {
     public content$ = new ReplaySubject<LandingContent>(1);
 
-    // Real catalog content for the cinematic hero + showcase row.
-    public posterColumns: string[][] = [];
+    public featured: any = null;
     public popular: any[] = [];
+    public series: any[] = [];
 
     constructor(
         public settings: Settings,
@@ -31,28 +34,22 @@ export class LandingComponent implements OnInit {
     }
 
     private loadCatalog() {
-        this.http.get('titles', {perPage: 30, orderBy: 'popularity', orderDir: 'desc'})
+        this.http.get('titles', {perPage: 40, orderBy: 'popularity', orderDir: 'desc'})
             .subscribe((res: any) => {
-                const data = (res && res.pagination && res.pagination.data) || res.data || [];
+                const data = (res && res.pagination && res.pagination.data) || (res && res.data) || [];
                 const withPoster = data.filter((t: any) => !!t.poster);
 
-                this.popular = withPoster.slice(0, 18);
+                this.featured = withPoster.find((t: any) => !!t.backdrop) || withPoster[0] || null;
 
-                const posters = withPoster.map((t: any) => t.poster);
-                const colCount = 6;
-                const cols: string[][] = Array.from({length: colCount}, () => []);
-                posters.forEach((p: string, i: number) => cols[i % colCount].push(p));
-                // Duplicate each column so the vertical scroll loops seamlessly.
-                this.posterColumns = cols
-                    .filter(c => c.length)
-                    .map(c => [...c, ...c]);
+                this.popular = withPoster.slice(0, 16);
+                this.series = withPoster.filter((t: any) => t.is_series || t.type === 'series').slice(0, 16);
 
                 this.cd.markForCheck();
-            }, () => { /* fall back to gradient hero */ });
+            }, () => { /* graceful: hero falls back to gradient + copy */ });
     }
 
-    public isInlineIcon(url: string): boolean {
-        return !url.includes('.') && !url.includes('/');
+    public backdropUrl(t: any): string | null {
+        return t ? (t.backdrop || t.poster || null) : null;
     }
 
     public scrollToFeatures(el: HTMLElement) {

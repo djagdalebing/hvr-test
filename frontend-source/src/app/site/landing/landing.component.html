@@ -1,109 +1,89 @@
 <ng-container *ngIf="content$ | async as content">
-  <header class="hero">
-    <material-navbar
-      class="login-button-accent"
-      menuPosition="landing"
-      [transparent]="true"
-      [hideRegisterButton]="true"
-    ></material-navbar>
+  <div class="lp">
 
-    <!-- Cinematic poster-wall background (real catalog) -->
-    <div class="poster-wall" *ngIf="posterColumns.length" aria-hidden="true">
-      <div class="poster-col" *ngFor="let col of posterColumns; let i = index" [class.down]="i % 2 === 1">
-        <img *ngFor="let p of col" [src]="p" alt="" loading="lazy">
+    <!-- ===================== HERO (billboard) ===================== -->
+    <header class="lp-hero" [class.lp-hero--has-image]="backdropUrl(featured)">
+      <material-navbar
+        class="login-button-accent"
+        menuPosition="landing"
+        [transparent]="true"
+        [hideRegisterButton]="true"
+      ></material-navbar>
+
+      <div class="lp-hero-bg" *ngIf="backdropUrl(featured)" [style.background-image]="'url(' + backdropUrl(featured) + ')'"></div>
+      <div class="lp-hero-veil"></div>
+
+      <div class="lp-hero-content">
+        <span class="lp-eyebrow">✨ {{ settings.get('branding.site_name') || 'Her Vision Network' }}</span>
+        <h1 class="lp-title">{{ content.headerTitle || 'Stories worth watching.' }}</h1>
+        <p class="lp-subtitle">{{ content.headerSubtitle || 'Stream films and series from independent creators — anytime, on any device.' }}</p>
+        <div class="lp-cta-row">
+          <a
+            mat-flat-button
+            class="lp-btn lp-btn--primary"
+            [routerLink]="settings.get('billing.enable') ? '/billing/pricing' : '/register'"
+          >{{ content.actions?.cta1 || 'Get started' }}</a>
+          <a mat-stroked-button class="lp-btn lp-btn--ghost" routerLink="/creators">Explore creators</a>
+        </div>
+        <div class="lp-featured-meta" *ngIf="featured">
+          <span class="lp-featured-pill">Featured</span>
+          <span class="lp-featured-name">{{ featured.name }}</span>
+        </div>
       </div>
-    </div>
 
-    <!-- Gradient fallback if catalog hasn't loaded -->
-    <div class="aurora" *ngIf="!posterColumns.length" aria-hidden="true">
-      <span class="blob blob-1"></span>
-      <span class="blob blob-2"></span>
-      <span class="blob blob-3"></span>
-    </div>
+      <a class="lp-scroll-cue" href="javascript:void(0)" (click)="scrollToFeatures(rowsAnchor)" aria-label="Scroll down">
+        <mat-icon svgIcon="keyboard-arrow-down"></mat-icon>
+      </a>
+    </header>
 
-    <div class="hero-veil" aria-hidden="true"></div>
+    <main #rowsAnchor class="lp-main">
 
-    <div class="content">
-      <span class="eyebrow">✨ {{ settings.get('branding.site_name') || 'Her Vision Network' }}</span>
-      <h1>{{ content.headerTitle || 'Stories worth watching.' }}</h1>
-      <p>{{ content.headerSubtitle || 'Stream films and series from independent creators — anytime, on any device.' }}</p>
-      <div class="cta-row">
+      <!-- ===================== CONTENT ROWS ===================== -->
+      <section class="lp-row-section" *ngIf="popular.length">
+        <h2 class="lp-row-title">Popular on {{ settings.get('branding.site_name') || 'Her Vision Network' }}</h2>
+        <div class="lp-row">
+          <a class="lp-card" *ngFor="let t of popular" [routerLink]="['/titles', t.id, t.name || '-']" [title]="t.name">
+            <img [src]="t.poster" [alt]="t.name" loading="lazy">
+            <span class="lp-card-name">{{ t.name }}</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="lp-row-section" *ngIf="series.length">
+        <h2 class="lp-row-title">Series &amp; shows</h2>
+        <div class="lp-row">
+          <a class="lp-card" *ngFor="let t of series" [routerLink]="['/titles', t.id, t.name || '-']" [title]="t.name">
+            <img [src]="t.poster" [alt]="t.name" loading="lazy">
+            <span class="lp-card-name">{{ t.name }}</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- ===================== FEATURES ===================== -->
+      <section class="lp-features" *ngIf="content.primaryFeatures?.length">
+        <div class="lp-features-grid">
+          <div class="lp-feature" *ngFor="let f of content.primaryFeatures">
+            <div class="lp-feature-icon"><image-or-icon [src]="f.image"></image-or-icon></div>
+            <h3>{{ f.title }}</h3>
+            <p>{{ f.subtitle }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== CLOSING CTA ===================== -->
+      <section class="lp-closing">
+        <h2>Ready to start watching?</h2>
+        <p>Join {{ settings.get('branding.site_name') || 'Her Vision Network' }} and dive into stories from creators worth following.</p>
         <a
           mat-flat-button
-          class="cta-button"
-          color="accent"
+          class="lp-btn lp-btn--primary"
           [routerLink]="settings.get('billing.enable') ? '/billing/pricing' : '/register'"
-          >{{ content.actions?.cta1 || 'Get started' }}</a
-        >
-        <a mat-stroked-button class="cta-button ghost" routerLink="/creators">Explore creators</a>
-      </div>
-    </div>
+        >{{ content.actions?.cta1 || 'Get started' }}</a>
+      </section>
 
-    <div class="gradient-overlay" aria-hidden="true"></div>
-
-    <a class="scroll-cue" href="javascript:void(0)" (click)="scrollToFeatures(featuresAnchor)" aria-label="Scroll down">
-      <mat-icon svgIcon="keyboard-arrow-down"></mat-icon>
-    </a>
-  </header>
-
-  <main #featuresAnchor>
-    <!-- Popular content showcase -->
-    <section class="showcase" *ngIf="popular.length">
-      <div class="container">
-        <h2 class="showcase-title">Popular on {{ settings.get('branding.site_name') || 'Her Vision Network' }}</h2>
-      </div>
-      <div class="poster-row">
-        <a class="poster-card" *ngFor="let t of popular" [routerLink]="['/titles', t.id, t.name || '-']" [title]="t.name">
-          <img [src]="t.poster" [alt]="t.name" loading="lazy">
-          <span class="poster-card-name">{{ t.name }}</span>
-        </a>
-      </div>
-    </section>
-
-    <div class="container">
       <ad-host slot="ads.landing.top"></ad-host>
-      <ul class="unstyled-list inline-features">
-        <li class="inline-feature" *ngFor="let primaryFeature of content.primaryFeatures">
-          <div class="feature-icon"><image-or-icon [src]="primaryFeature.image"></image-or-icon></div>
-          <h3>{{ primaryFeature.title }}</h3>
-          <p>{{ primaryFeature.subtitle }}</p>
-        </li>
-      </ul>
-    </div>
+    </main>
 
-    <ul class="unstyled-list big-features">
-      <ng-container
-        *ngFor="
-          let secondaryFeature of content.secondaryFeatures;
-          even as even
-        "
-      >
-        <li class="big-feature container" [class.reverse]="even">
-          <div class="big-feature-media">
-            <img [src]="settings.getBaseUrl(true) + '/' + secondaryFeature.image + '?v3'" alt="" />
-          </div>
-          <section class="info">
-            <small>{{ secondaryFeature.subtitle }}</small>
-            <h2>{{ secondaryFeature.title }}</h2>
-            <div class="feature-border"></div>
-            <p>{{ secondaryFeature.description }}</p>
-          </section>
-        </li>
-      </ng-container>
-    </ul>
-
-    <section class="closing-cta container">
-      <h2>Ready to start watching?</h2>
-      <p>Join {{ settings.get('branding.site_name') || 'Her Vision Network' }} and dive into stories from creators worth following.</p>
-      <a
-        mat-flat-button
-        class="cta-button"
-        color="accent"
-        [routerLink]="settings.get('billing.enable') ? '/billing/pricing' : '/register'"
-        >{{ content.actions?.cta1 || 'Get started' }}</a
-      >
-    </section>
-  </main>
-
-  <footer></footer>
+    <footer></footer>
+  </div>
 </ng-container>
