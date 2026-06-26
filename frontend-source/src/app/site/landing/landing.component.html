@@ -7,13 +7,21 @@
       [hideRegisterButton]="true"
     ></material-navbar>
 
-    <!-- Animated aurora background -->
-    <div class="aurora" aria-hidden="true">
+    <!-- Cinematic poster-wall background (real catalog) -->
+    <div class="poster-wall" *ngIf="posterColumns.length" aria-hidden="true">
+      <div class="poster-col" *ngFor="let col of posterColumns; let i = index" [class.down]="i % 2 === 1">
+        <img *ngFor="let p of col" [src]="p" alt="" loading="lazy">
+      </div>
+    </div>
+
+    <!-- Gradient fallback if catalog hasn't loaded -->
+    <div class="aurora" *ngIf="!posterColumns.length" aria-hidden="true">
       <span class="blob blob-1"></span>
       <span class="blob blob-2"></span>
       <span class="blob blob-3"></span>
-      <div class="grid-lines"></div>
     </div>
+
+    <div class="hero-veil" aria-hidden="true"></div>
 
     <div class="content">
       <span class="eyebrow">✨ {{ settings.get('branding.site_name') || 'Her Vision Network' }}</span>
@@ -39,6 +47,19 @@
   </header>
 
   <main #featuresAnchor>
+    <!-- Popular content showcase -->
+    <section class="showcase" *ngIf="popular.length">
+      <div class="container">
+        <h2 class="showcase-title">Popular on {{ settings.get('branding.site_name') || 'Her Vision Network' }}</h2>
+      </div>
+      <div class="poster-row">
+        <a class="poster-card" *ngFor="let t of popular" [routerLink]="['/titles', t.id, t.name || '-']" [title]="t.name">
+          <img [src]="t.poster" [alt]="t.name" loading="lazy">
+          <span class="poster-card-name">{{ t.name }}</span>
+        </a>
+      </div>
+    </section>
+
     <div class="container">
       <ad-host slot="ads.landing.top"></ad-host>
       <ul class="unstyled-list inline-features">

@@ -48,15 +48,43 @@
         background: radial-gradient(circle at 50% 50%, #F65F54, transparent 70%);
         animation: hvn-float-3 22s ease-in-out infinite;
     }
-    .grid-lines {
+    /* Cinematic scrolling poster wall */
+    .poster-wall {
+        position: absolute;
+        inset: -8% -4%;
+        z-index: 1;
+        display: flex;
+        gap: 14px;
+        justify-content: center;
+        transform: scale(1.08);
+        opacity: 0.55;
+    }
+    .poster-col {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        animation: hvn-scroll-up 60s linear infinite;
+        &.down { animation: hvn-scroll-down 60s linear infinite; }
+        img {
+            width: 100%;
+            aspect-ratio: 2 / 3;
+            object-fit: cover;
+            border-radius: 10px;
+            display: block;
+            background: #1a1622;
+        }
+    }
+
+    /* Dark veil so the headline stays readable over the posters */
+    .hero-veil {
         position: absolute;
         inset: 0;
-        background-image:
-            linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-        background-size: 64px 64px;
-        mask-image: radial-gradient(120% 80% at 50% 30%, #000 30%, transparent 75%);
-        -webkit-mask-image: radial-gradient(120% 80% at 50% 30%, #000 30%, transparent 75%);
+        z-index: 2;
+        background:
+            radial-gradient(80% 70% at 50% 42%, rgba(8, 7, 13, 0.55) 0%, rgba(8, 7, 13, 0.82) 60%, #08070d 100%),
+            linear-gradient(180deg, rgba(8, 7, 13, 0.7) 0%, transparent 30%);
     }
 
     .content {
@@ -165,8 +193,69 @@
     mat-icon { width: 34px; height: 34px; font-size: 34px; }
 }
 
-/* ============================ FEATURES ============================ */
+/* ============================ SHOWCASE ROW ============================ */
 main { position: relative; z-index: 3; }
+
+.showcase {
+    margin: 56px 0 30px;
+    .showcase-title {
+        font-size: clamp(1.4rem, 2.4vw, 2rem);
+        font-weight: 700;
+        letter-spacing: -0.4px;
+        margin: 0 0 18px;
+        color: var(--be-foreground-base, #fff);
+    }
+}
+.poster-row {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding: 6px 24px 22px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    &::-webkit-scrollbar { height: 8px; }
+    &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 8px; }
+}
+.poster-card {
+    position: relative;
+    flex: 0 0 auto;
+    width: 168px;
+    scroll-snap-align: start;
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none;
+    background: #15121d;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    img {
+        width: 100%;
+        aspect-ratio: 2 / 3;
+        object-fit: cover;
+        display: block;
+    }
+    .poster-card-name {
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        padding: 26px 12px 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    &:hover {
+        transform: translateY(-6px) scale(1.03);
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.55);
+        .poster-card-name { opacity: 1; }
+    }
+}
+
+/* ============================ FEATURES ============================ */
 
 .container {
     max-width: 1140px;
@@ -329,8 +418,16 @@ main { position: relative; z-index: 3; }
     0%, 100% { transform: translate(0, 0) scale(1); }
     50%      { transform: translate(-60px, -70px) scale(1.2); }
 }
+@keyframes hvn-scroll-up {
+    from { transform: translateY(0); }
+    to   { transform: translateY(-50%); }
+}
+@keyframes hvn-scroll-down {
+    from { transform: translateY(-50%); }
+    to   { transform: translateY(0); }
+}
 @media (prefers-reduced-motion: reduce) {
-    .blob { animation: none !important; }
+    .blob, .poster-col { animation: none !important; }
     .scroll-cue { animation: none !important; }
 }
 
