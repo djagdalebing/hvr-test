@@ -77,6 +77,11 @@ export class PlyrStrategyService {
     supported(video: Video) {
         return (
             video.type === 'video' ||
+            // 'direct' is what creator file-uploads (R2 / local mp4) are saved
+            // as — same as 'video', a self-hosted file Plyr plays in a <video>
+            // tag. Without this they fell through and the browser downloaded
+            // the raw file instead of playing it.
+            video.type === 'direct' ||
             video.type === 'stream' ||
             (video.type === 'embed' && this.embedSupportedByPlyr(video.url))
         );
