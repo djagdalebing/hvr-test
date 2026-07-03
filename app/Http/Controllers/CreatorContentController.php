@@ -78,7 +78,10 @@ class CreatorContentController extends BaseController
             // r2_video_url is the public URL of a file the browser already
             // uploaded straight to Cloudflare R2 via a presigned PUT.
             'r2_video_url'   => 'nullable|string|max:1000',
-            'video_file'     => 'nullable|file|mimetypes:video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo|max:512000',
+            // Only web-playable containers. .mov/.avi upload fine but don't
+            // play in Chrome/Firefox HTML5 video (no transcoding yet), so we
+            // reject them up front instead of shipping unplayable content.
+            'video_file'     => 'nullable|file|mimetypes:video/mp4,video/webm,video/ogg|max:512000',
             'cover'          => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
             'backdrop_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:8192',
         ]);
@@ -209,7 +212,10 @@ class CreatorContentController extends BaseController
 
         $this->validate($request, [
             'filename'     => 'required|string|max:255',
-            'content_type' => 'required|string|max:120|starts_with:video/',
+            // Web-playable containers only (see the video_file rule in store()).
+            'content_type' => 'required|string|in:video/mp4,video/webm,video/ogg',
+        ], [
+            'content_type.in' => 'Please upload an MP4, WebM or OGG video — those play in all browsers. (MOV/AVI aren\'t supported yet.)',
         ]);
 
         $ext = pathinfo($request->input('filename'), PATHINFO_EXTENSION);
