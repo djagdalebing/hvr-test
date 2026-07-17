@@ -17,6 +17,7 @@ export class AdsPageComponent implements OnInit {
     public loading$ = new BehaviorSubject(false);
     public form = this.fb.group({
         'ads.disable': [false],
+        'ads.video_tag_url': [''],
     });
 
     constructor(
@@ -52,7 +53,10 @@ export class AdsPageComponent implements OnInit {
 
     private hydrate() {
         const settings = this.settings.getFlat() || {};
-        this.form.patchValue({'ads.disable': settings['ads.disable']});
+        this.form.patchValue({
+            'ads.disable': settings['ads.disable'],
+            'ads.video_tag_url': settings['ads.video_tag_url'] || '',
+        });
         this.allAds().forEach(ad => {
             this.form.addControl(ad.slot, this.fb.control(settings[ad.slot]));
         });

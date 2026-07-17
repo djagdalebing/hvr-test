@@ -5,6 +5,7 @@ import {Settings} from '@common/core/config/settings.service';
 import {PlayerQualityVariantOptions} from './shaka-strategy.service';
 import {Subject} from 'rxjs';
 import {VideoPlaysLoggerService} from '../video-plays-logger.service';
+import {CurrentUser} from '@common/auth/current-user';
 
 declare const Plyr: any;
 
@@ -19,7 +20,8 @@ export class PlyrStrategyService {
     constructor(
         private lazyLoader: LazyLoaderService,
         private settings: Settings,
-        private playLogger: VideoPlaysLoggerService
+        private playLogger: VideoPlaysLoggerService,
+        private currentUser: CurrentUser,
     ) {
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
@@ -112,6 +114,21 @@ export class PlyrStrategyService {
                         options: variantOptions.variants.map(qv => qv.quality),
                     };
                 }
+
+                // YouTube-style pre-roll video ad (Google IMA / VAST). Only for
+                // self-hosted video (embeds bring their own ads), only when a
+                // VAST tag is configured in admin, ads aren't globally disabled,
+                // and the viewer isn't a paying subscriber.
+                const adTag = this.settings.get('ads.video_tag_url');
+                const adsAllowed =
+                    !!adTag &&
+                    this.video.type !== 'embed' &&
+                    !this.settings.get('ads.disable') &&
+                    !(this.currentUser && this.currentUser.isSubscribed && this.currentUser.isSubscribed());
+                if (adsAllowed) {
+                    (plyrOptions as any).ads = {enabled: true, tagUrl: adTag};
+                }
+
                 this.player = new Plyr(videoEl, plyrOptions);
                 this.player.on('ended', () => {
                     this.playbackEnded$.next();

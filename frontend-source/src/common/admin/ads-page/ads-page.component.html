@@ -9,6 +9,14 @@
         <image-zoom [src]="getPreviewUrl(ad)"></image-zoom>
     </div>
 
+    <div class="header margin-top" trans>Video Ads (pre-roll)</div>
+    <div class="input-container">
+        <label for="ads.video_tag_url" trans>Video ad tag URL (VAST / Google IMA)</label>
+        <input type="url" name="ads.video_tag_url" id="ads.video_tag_url" formControlName="ads.video_tag_url"
+               placeholder="https://pubads.g.doubleclick.net/gampad/ads?...">
+        <p trans>Paste a VAST ad-tag URL (e.g. from Google Ad Manager) to play a pre-roll ad before self-hosted videos. Leave blank to disable video ads. Ads never show to paying subscribers.</p>
+    </div>
+
     <div class="setting-toggle-container margin-top margin-bottom">
         <mat-slide-toggle name="ads.disable" id="ads.disable" formControlName="ads.disable" trans>Disable Ads</mat-slide-toggle>
         <p trans>Disable all ad related functionality.</p>
