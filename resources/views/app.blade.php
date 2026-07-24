@@ -1,5 +1,16 @@
 @extends('common::framework')
 
+@section('head-end')
+    {{-- Make "Add to Home Screen" behave like a native app (full-screen,
+         branded icon + name) on iOS and Android. --}}
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Her Vision Network">
+    <link rel="apple-touch-icon" sizes="152x152" href="client/favicon/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="client/favicon/icon-192x192.png">
+@endsection
+
 @section('body-end')
 <script>
 (function () {
