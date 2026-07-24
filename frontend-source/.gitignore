@@ -5,3 +5,7 @@ out-tsc/
 .vscode/
 .DS_Store
 *.log
+
+# Capacitor native projects (generated locally; build with Xcode / Android Studio)
+/ios/
+/android/

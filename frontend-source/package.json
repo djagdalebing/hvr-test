@@ -8,7 +8,12 @@
     "build": "ng build --configuration production",
     "build:dev": "ng build",
     "watch": "ng build --watch",
-    "test": "ng test"
+    "test": "ng test",
+    "mobile:sync": "ng build --configuration production && npx cap sync",
+    "mobile:add:ios": "npx cap add ios",
+    "mobile:add:android": "npx cap add android",
+    "mobile:ios": "npx cap open ios",
+    "mobile:android": "npx cap open android"
   },
   "dependencies": {
     "@angular/animations": "~11.2.14",
@@ -39,13 +44,20 @@
     "swagger-ui": "^4.5.0",
     "tinymce": "^5.10.2",
     "tslib": "^2.0.0",
-    "zone.js": "~0.10.3"
+    "zone.js": "~0.10.3",
+    "@capacitor/core": "^5.7.8",
+    "@capacitor/ios": "^5.7.8",
+    "@capacitor/android": "^5.7.8",
+    "@capacitor/app": "^5.0.8",
+    "@capacitor/splash-screen": "^5.0.8",
+    "@capacitor/status-bar": "^5.0.8"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~0.1102.19",
     "@angular/cli": "~11.2.19",
     "@angular/compiler-cli": "~11.2.14",
     "@types/node": "^12.20.0",
-    "typescript": "~4.1.6"
+    "typescript": "~4.1.6",
+    "@capacitor/cli": "^5.7.8"
   }
 }
