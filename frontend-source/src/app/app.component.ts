@@ -66,6 +66,10 @@ export class AppComponent implements OnInit {
         if (!cap || typeof cap.isNativePlatform !== 'function' || !cap.isNativePlatform()) {
             return;
         }
+        // Flags the CSS to apply safe-area insets so the top navbar clears the
+        // status bar / notch and is tappable.
+        try { document.body.classList.add('hvn-native'); } catch (e) {}
+
         const plugins = cap.Plugins || {};
         try { plugins.StatusBar && plugins.StatusBar.setStyle({style: 'DARK'}); } catch (e) {}
         try { plugins.StatusBar && plugins.StatusBar.setBackgroundColor({color: '#0d0b12'}); } catch (e) {}

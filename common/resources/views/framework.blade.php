@@ -9,7 +9,7 @@
             <title class="dst">{{ $settings->get('branding.site_name') }}</title>
         @endif
 
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
         <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500&display=swap" rel="stylesheet">
         <link rel="icon" type="image/x-icon" href="client/favicon/icon-144x144.png">
         <link rel="apple-touch-icon" href="client/favicon/icon-192x192.png">
