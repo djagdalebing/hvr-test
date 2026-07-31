@@ -23,6 +23,8 @@ import {PagesModule} from '@common/pages/shared/pages.module';
 import {NotFoundRoutingModule} from '@common/pages/not-found-routing.module';
 import {UrlGeneratorService} from '@common/core/services/url-generator.service';
 import {AppUrlGeneratorService} from './app-url-generator.service';
+import {HTTP_INTERCEPTORS} from '@angular/common/http';
+import {MobileApiInterceptor} from './mobile/mobile-api.interceptor';
 
 @NgModule({
     declarations: [AppComponent],
@@ -56,6 +58,13 @@ import {AppUrlGeneratorService} from './app-url-generator.service';
     ],
     providers: [
         ...CORE_PROVIDERS,
+        {
+            // Mobile (Capacitor) only: rewrite relative API calls to the remote
+            // backend + attach the bearer token. No-op on the web build.
+            provide: HTTP_INTERCEPTORS,
+            useClass: MobileApiInterceptor,
+            multi: true,
+        },
         {
             provide: Bootstrapper,
             useClass: AppBootstrapperService,

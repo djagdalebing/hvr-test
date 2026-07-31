@@ -15,7 +15,10 @@ return [
     |
     */
 
-    'paths' => ['api/*'],
+    // 'secure/*' added so the native (Capacitor) app can call the SPA API
+    // cross-origin. Token auth only (no cookies), so credentials stay off and
+    // wildcard origin is safe.
+    'paths' => ['api/*', 'secure/*'],
 
     'allowed_methods' => ['*'],
 
