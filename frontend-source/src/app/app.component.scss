@@ -1,11 +1,3 @@
 /* extracted from production bundle */
 app-root{display:block;min-height:100vh;background-color:var(--be-background);color:var(--be-text)}app-root .be-container,app-root .container{margin:0 auto;padding-left:15px;padding-right:15px}@media screen and (min-width: 768px){app-root .be-container,app-root .container{max-width:750px}}@media screen and (min-width: 992px){app-root .be-container,app-root .container{max-width:970px}}@media screen and (min-width: 1200px){app-root .be-container,app-root .container{max-width:1170px}}
 
-
-/* Native app (Capacitor): keep the UI clear of the status bar / notch and the
-   home indicator so the top navbar (logo + account) is fully tappable.
-   Requires viewport-fit=cover (set in the base HTML) for env() to resolve. */
-body.hvn-native app-root {
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-}

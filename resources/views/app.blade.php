@@ -9,6 +9,17 @@
     <meta name="apple-mobile-web-app-title" content="Her Vision Network">
     <link rel="apple-touch-icon" sizes="152x152" href="client/favicon/icon-152x152.png">
     <link rel="apple-touch-icon" sizes="192x192" href="client/favicon/icon-192x192.png">
+
+    {{-- Native app safe-area insets. Kept as raw CSS here (NOT in the Angular
+         build) because Angular 11's CSS optimizer strips env(). The
+         `hvn-native` class is added on <body> by the app when running in the
+         Capacitor shell, so this is inert on the web. --}}
+    <style>
+        body.hvn-native app-root {
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+    </style>
 @endsection
 
 @section('body-end')
