@@ -59,6 +59,10 @@ class Kernel extends HttpKernel
             StartSession::class,
             AuthenticateSession::class,
             ShareErrorsFromSession::class,
+            // Native mobile app: resolve the Sanctum bearer token into an auth
+            // user when the WKWebView session cookie isn't available. No-op for
+            // web (no bearer token). Must run before route `auth` middleware.
+            \App\Http\Middleware\AuthenticateBearerToken::class,
             VerifyCsrfToken::class,
             SubstituteBindings::class,
             ServeHvnPages::class,
