@@ -48,8 +48,21 @@ class LoginController extends BaseController
             Auth::logoutOtherDevices($request->get('password'));
         }
 
+        $extra = [];
+
+        // Mobile app (Capacitor): when a device/token name is supplied, issue a
+        // Sanctum bearer token so the native app can authenticate its API calls
+        // without the web session cookie. Web login omits token_name → unchanged.
+        if ($request->filled('token_name')) {
+            try {
+                $extra['access_token'] = $user->refreshApiToken($request->get('token_name'));
+            } catch (\Throwable $e) {
+                // best-effort — never block a successful login on token issuance
+            }
+        }
+
         $data = $this->bootstrapData->init()->getEncoded();
 
-        return $this->success(['data' => $data]);
+        return $this->success(array_merge(['data' => $data], $extra));
     }
 }

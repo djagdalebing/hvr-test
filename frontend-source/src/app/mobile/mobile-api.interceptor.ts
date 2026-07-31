@@ -1,7 +1,11 @@
 import {Injectable} from '@angular/core';
-import {HttpEvent, HttpHandler, HttpInterceptor, HttpRequest} from '@angular/common/http';
+import {HttpEvent, HttpHandler, HttpInterceptor, HttpRequest, HttpResponse} from '@angular/common/http';
 import {Observable} from 'rxjs';
+import {tap} from 'rxjs/operators';
 import {isNativeApp, MOBILE_BACKEND_URL, MOBILE_TOKEN_KEY} from './mobile.config';
+
+/** Device/token name used when requesting a Sanctum token for this app. */
+const DEVICE_NAME = 'hvn-mobile-app';
 
 /**
  * Makes the bundled native app talk to the remote backend:
@@ -28,15 +32,41 @@ export class MobileApiInterceptor implements HttpInterceptor {
             request = request.clone({url: `${base}/${path}`});
         }
 
-        // 2) Attach the bearer token when we have one and the call is to our API.
-        const token = this.token();
-        if (token && request.url.indexOf(MOBILE_BACKEND_URL) === 0) {
-            request = request.clone({
-                setHeaders: {Authorization: `Bearer ${token}`},
-            });
+        // 2) On login/register, ask the backend to issue a bearer token
+        //    (token_name) so we can authenticate without the web cookie.
+        if (/auth\/(login|register)$/.test(request.url) && request.method === 'POST') {
+            const body = request.body && typeof request.body === 'object' ? request.body : {};
+            if (!(body as any).token_name) {
+                request = request.clone({body: {...body, token_name: DEVICE_NAME}});
+            }
         }
 
-        return next.handle(request);
+        // 3) Attach the bearer token when we have one and the call is to our API.
+        const token = this.token();
+        if (token && request.url.indexOf(MOBILE_BACKEND_URL) === 0) {
+            request = request.clone({setHeaders: {Authorization: `Bearer ${token}`}});
+        }
+
+        // 4) Capture the token from a login response; clear it on logout.
+        return next.handle(request).pipe(
+            tap(event => {
+                if (!(event instanceof HttpResponse)) return;
+                const url = request.url;
+                const b: any = event.body;
+                if (/auth\/(login|register)$/.test(url) && b && b.access_token) {
+                    this.store(b.access_token);
+                } else if (/auth\/logout$/.test(url)) {
+                    this.clear();
+                }
+            }),
+        );
+    }
+
+    private store(token: string) {
+        try { window.localStorage.setItem(MOBILE_TOKEN_KEY, token); } catch (e) {}
+    }
+    private clear() {
+        try { window.localStorage.removeItem(MOBILE_TOKEN_KEY); } catch (e) {}
     }
 
     private token(): string | null {

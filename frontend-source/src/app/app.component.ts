@@ -53,6 +53,25 @@ export class AppComponent implements OnInit {
         }
 
         this.cookieNotice.maybeShow();
+        this.initNativeApp();
+    }
+
+    /**
+     * Native (Capacitor) launch polish: dark status bar + hide the splash once
+     * the app shell is ready. Uses the runtime Capacitor plugin bridge so it
+     * adds no build-time dependency and is a no-op in the browser.
+     */
+    private initNativeApp() {
+        const cap = (window as any).Capacitor;
+        if (!cap || typeof cap.isNativePlatform !== 'function' || !cap.isNativePlatform()) {
+            return;
+        }
+        const plugins = cap.Plugins || {};
+        try { plugins.StatusBar && plugins.StatusBar.setStyle({style: 'DARK'}); } catch (e) {}
+        try { plugins.StatusBar && plugins.StatusBar.setBackgroundColor({color: '#0d0b12'}); } catch (e) {}
+        setTimeout(() => {
+            try { plugins.SplashScreen && plugins.SplashScreen.hide(); } catch (e) {}
+        }, 500);
     }
 
     private triggerAnalyticsPageView() {
