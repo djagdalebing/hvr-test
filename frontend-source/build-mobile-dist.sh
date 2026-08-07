@@ -39,8 +39,44 @@ html = open(sys.argv[1], encoding='utf-8').read()
 html = re.sub(r'window\.bootstrapData\s*=\s*"[^"]*";', 'window.bootstrapData = "";', html)
 html = re.sub(r'<script>\s*\(function\(i,s,o,g,r,a,m\).*?</script>', '', html, flags=re.S)
 html = re.sub(r'<base href="[^"]*">', '<base href="/">', html)
-# Inject the storage/ <img> URL rewriter right before </head>
-inject = '''    <script>
+# Inject native-app chrome CSS (safe areas + polish) + the storage/ <img>
+# URL rewriter, right before </head>. The CSS uses !important and comes after
+# the fetched head, so it overrides the live app-root safe-area rule.
+inject = '''    <style>
+        /* Native app (Capacitor) chrome — safe areas + polish. Applies only in
+           the native shell (body.hvn-native); the website is unaffected. */
+        body.hvn-native app-root { padding-top: 0 !important; padding-bottom: env(safe-area-inset-bottom, 0px); }
+        body.hvn-native material-navbar {
+            padding-top: env(safe-area-inset-top, 0px);
+            height: calc(70px + env(safe-area-inset-top, 0px)) !important;
+            box-sizing: border-box;
+        }
+        body.hvn-native .landing-header, body.hvn-native header.transparent { padding-top: env(safe-area-inset-top, 0px); }
+        body.hvn-native::before {
+            content: ''; position: fixed; top: 0; left: 0; right: 0;
+            height: env(safe-area-inset-top, 0px);
+            background: var(--be-primary-default, #121212); z-index: 6; pointer-events: none;
+        }
+        body.hvn-native .fixed-bottom, body.hvn-native footer { padding-bottom: env(safe-area-inset-bottom, 0px); }
+        /* Home hero: clear the caption from the absolute transparent navbar. */
+        body.hvn-native slider .slide-cover {
+            align-items: flex-start;
+            padding-top: calc(70px + env(safe-area-inset-top, 0px) + 22px);
+            box-sizing: border-box;
+        }
+        body.hvn-native slider::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0;
+            height: calc(120px + env(safe-area-inset-top, 0px));
+            background: linear-gradient(to bottom, rgba(0,0,0,.65), rgba(0,0,0,0));
+            pointer-events: none; z-index: 1;
+        }
+        body.hvn-native slider material-navbar { z-index: 2; }
+        body.hvn-native material-navbar .mat-icon-button { width: 44px; height: 44px; line-height: 44px; }
+        /* Web cookie-consent banner is useless in native (capacitor:// scheme
+           doesn't persist the consent cookie, so it reappears everywhere). */
+        body.hvn-native cookie-notice { display: none !important; }
+    </style>
+    <script>
     (function () {
         var BACKEND = 'BACKEND_URL';
         function absolutize(u){ if(!u) return u; var p=u.replace(/^\\.?\\//,''); return /^storage\\//.test(p)?BACKEND+'/'+p:u; }
