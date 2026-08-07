@@ -115,9 +115,16 @@ class RegisterController extends BaseController
         if ($user->hasVerifiedEmail()) {
             // for mobile
             if ($request->has('token_name')) {
-                $bootstrapData = app(MobileBootstrapData::class)->init();
-                $bootstrapData->refreshToken($request->get('token_name'));
-                $response['boostrapData'] = $bootstrapData->get();
+                // Issue the Sanctum bearer token ONCE and surface it at the top
+                // level of the response, mirroring LoginController. The native
+                // app's MobileApiInterceptor captures `access_token` from both
+                // login AND register responses; the bundled (store) build has no
+                // session cookie, so this token is how a freshly-registered user
+                // stays authenticated. (Previously the token was only nested
+                // inside boostrapData.user, which the interceptor doesn't read,
+                // so signup left the bundled app logged-out on the next call.)
+                $response['access_token'] = $user->refreshApiToken($request->get('token_name'));
+                $response['boostrapData'] = app(MobileBootstrapData::class)->init()->get();
 
             // for web
             } else {

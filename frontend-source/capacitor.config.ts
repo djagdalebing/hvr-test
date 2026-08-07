@@ -14,13 +14,19 @@ import type {CapacitorConfig} from '@capacitor/cli';
 const config: CapacitorConfig = {
     appId: 'com.hervisionnetwork.app',
     appName: 'Her Vision Network',
-    webDir: 'dist/client',
+    // PHASE 2 (store-ready): bundled offline shell. `mobile-dist` holds the real
+    // production web assets (the exact deployed JS/CSS bundles) plus a static
+    // index.html with server-injected bootstrapData stripped, so the app boots
+    // from local files and talks to the backend over token-authenticated XHR
+    // (see MobileApiInterceptor). No `server.url` → Apple 4.2 compliant, works
+    // offline-start, and the API base is the absolute backend URL.
+    webDir: 'mobile-dist',
     server: {
         androidScheme: 'https',
-        // Phase 1: load the live web app inside the native shell.
-        // Change to your production domain (hervisionnetwork.com) when ready,
-        // or comment out for bundled/offline assets (Phase 2).
-        url: 'https://aqua-narwhal-640720.hostingersite.com',
+        iosScheme: 'capacitor',
+        // Phase 1 (internal/TestFlight) loaded the live site directly:
+        //   url: 'https://aqua-narwhal-640720.hostingersite.com',
+        // Phase 2 bundles the assets instead — no server.url.
         cleartext: false,
     },
     plugins: {

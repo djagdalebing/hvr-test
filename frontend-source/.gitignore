@@ -9,3 +9,6 @@ out-tsc/
 # Capacitor native projects (generated locally; build with Xcode / Android Studio)
 /ios/
 /android/
+
+# Phase-2 bundled webDir — derived, regenerate via build-mobile-dist.sh
+/mobile-dist/

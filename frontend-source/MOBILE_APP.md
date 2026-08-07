@@ -58,3 +58,43 @@ code changes. This is ideal for internal testing and TestFlight.
   `frontend-source`; `ng build` is unchanged).
 - Apple may reject a pure website wrapper (guideline 4.2) — the Phase 2 native
   features (push, offline, share) are what make it a real app for submission.
+
+---
+
+## Phase 2 — bundled store-ready build (DONE, verified on simulator)
+
+The app now runs as a **bundled, offline-start** build (no `server.url`), which
+is what Apple guideline 4.2 expects. It boots from local assets and talks to the
+backend over **token-authenticated XHR** (no session cookie).
+
+### How it works
+- `capacitor.config.ts` has **no `server.url`**; `webDir: 'mobile-dist'`.
+- `mobile-dist/` holds the exact deployed JS/CSS bundles + a static `index.html`
+  with the server-injected `bootstrapData` stripped, so the app fetches
+  `bootstrap-data` at runtime. With a stored bearer token, it boots
+  **already-authenticated**. (Regenerate with `./build-mobile-dist.sh`.)
+- Auth: `MobileApiInterceptor` attaches `Authorization: Bearer <token>` to every
+  backend call; the backend's `AuthenticateBearerToken` middleware resolves it
+  onto the session guard so all `secure/*` routes work without a cookie. Login
+  AND register return a top-level `access_token` the interceptor stores.
+- Images: a small rewriter in `index.html` absolutizes backend-relative
+  `storage/…` media (logo, avatars, posters) to the backend origin, since
+  `<img>` can't load them from `capacitor://localhost`.
+
+### Rebuild / iterate
+```bash
+cd frontend-source
+./build-mobile-dist.sh     # refresh bundled assets from the live deploy
+npx cap copy ios           # copy webDir into the iOS project
+# then rebuild the "App" scheme (Xcode or the iOS-Simulator build tool)
+```
+
+### Verified on iPhone 16 simulator
+- Boots bundled → fetches config → landing + browse render, posters + logo load.
+- Token login works with no session cookie; **survives a cold restart** (stays
+  logged in). Safe-area navbar correct.
+
+### Still required for actual store submission (needs paid accounts)
+- Apple Developer Program ($99/yr) + signing; App Store Connect listing.
+- Google Play Console ($25 once) for the Android build.
+- Push notifications (APNs + FCM) if desired — not required to submit.
