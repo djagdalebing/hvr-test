@@ -34,4 +34,16 @@
     <Files "ngsw-worker.js">
         Header Set Service-Worker-allowed "/"
     </Files>
+
+    # Allow the bundled native app (origin capacitor://localhost) to cross-origin
+    # fetch STATIC front-end assets served directly by the web server (which
+    # bypasses Laravel, so config/cors.php can't add the header). Most important:
+    # the SVG icon sprite (/assets/icons/merged.svg) — without CORS the WKWebView
+    # blocks it and every mat-icon (navbar buttons, share/rate icons) is blank.
+    # Scoped to static file extensions so API routes keep Laravel's own CORS
+    # header (avoids a duplicate Access-Control-Allow-Origin). Public files, so a
+    # wildcard origin is safe.
+    <FilesMatch "\.(svg|png|jpe?g|gif|webp|ico|woff2?|ttf|eot|js|css|json|map|mp4|webm|vtt)$">
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
 </IfModule>
