@@ -1,0 +1,13 @@
+# Allow the bundled native app (origin capacitor://localhost) to cross-origin
+# fetch static front-end assets here — most importantly the SVG icon sprite
+# (assets/icons/merged.svg). Without an Access-Control-Allow-Origin header the
+# WKWebView blocks that fetch, so every mat-icon (navbar buttons, share/rate
+# icons) renders blank.
+#
+# These are public static files served directly by the web server (LiteSpeed),
+# which bypasses Laravel — so config/cors.php can't add the header; it must be
+# set here. Token-auth only (no cookies), so a wildcard origin is safe.
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, OPTIONS"
+</IfModule>
