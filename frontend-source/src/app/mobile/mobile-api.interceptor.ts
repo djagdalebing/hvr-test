@@ -25,8 +25,14 @@ export class MobileApiInterceptor implements HttpInterceptor {
 
         let request = req;
 
-        // 1) Prefix relative API calls with the backend origin.
-        if (MOBILE_BACKEND_URL && !/^https?:\/\//i.test(req.url)) {
+        // 1) Prefix RELATIVE API calls (e.g. "secure/…") with the backend origin.
+        //    Only rewrite URLs with no scheme — a URL that already carries any
+        //    scheme (http://, https://, AND local ones like capacitor://,
+        //    ionic://, file://) must be left untouched. The old check only
+        //    excluded http(s), so it mangled local capacitor:// asset requests
+        //    (e.g. the icon sprite) into "https://backend/capacitor://…",
+        //    breaking them and blanking every mat-icon in the bundled app.
+        if (MOBILE_BACKEND_URL && !/^[a-z][a-z0-9+.-]*:\/\//i.test(req.url)) {
             const base = MOBILE_BACKEND_URL.replace(/\/+$/, '');
             const path = req.url.replace(/^\/+/, '');
             request = request.clone({url: `${base}/${path}`});

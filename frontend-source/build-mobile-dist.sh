@@ -39,10 +39,34 @@ html = open(sys.argv[1], encoding='utf-8').read()
 html = re.sub(r'window\.bootstrapData\s*=\s*"[^"]*";', 'window.bootstrapData = "";', html)
 html = re.sub(r'<script>\s*\(function\(i,s,o,g,r,a,m\).*?</script>', '', html, flags=re.S)
 html = re.sub(r'<base href="[^"]*">', '<base href="/">', html)
-# Inject native-app chrome CSS (safe areas + polish) + the storage/ <img>
-# URL rewriter, right before </head>. The CSS uses !important and comes after
-# the fetched head, so it overrides the live app-root safe-area rule.
-inject = '''    <style>
+# Inject native-app chrome CSS (safe areas + polish) + a mangled-URL repair +
+# the storage/ <img> rewriter, right before </head>. The CSS uses !important and
+# comes after the fetched head, so it overrides the live app-root safe-area rule.
+inject = '''    <script>
+    /* Repair mangled local asset URLs. The bundled build ships the deployed
+       production JS, whose mobile HTTP interceptor rewrites non-http(s) URLs to
+       the backend — mangling local capacitor:// asset requests (icon sprite,
+       fonts) into "https://backend/capacitor://…" so they fail and mat-icons go
+       blank. Restore them to the real local scheme at the native XHR/fetch layer.
+       Harmless no-op once the fixed interceptor is deployed + re-bundled. */
+    (function () {
+        var RE = /^https?:\\/\\/[^/]+\\/((?:capacitor|ionic|file):\\/\\/.*)$/i;
+        var O = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function (method, url) {
+            var a = Array.prototype.slice.call(arguments);
+            if (typeof url === 'string') { var m = url.match(RE); if (m) a[1] = m[1]; }
+            return O.apply(this, a);
+        };
+        if (window.fetch) {
+            var F = window.fetch;
+            window.fetch = function (input, init) {
+                if (typeof input === 'string') { var m = input.match(RE); if (m) input = m[1]; }
+                return F.call(this, input, init);
+            };
+        }
+    })();
+    </script>
+    <style>
         /* Native app (Capacitor) chrome — safe areas + polish. Applies only in
            the native shell (body.hvn-native); the website is unaffected. */
         body.hvn-native app-root { padding-top: 0 !important; padding-bottom: env(safe-area-inset-bottom, 0px); }
