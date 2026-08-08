@@ -3,7 +3,7 @@
         <img class="thumbnail-image" [src]="video.thumbnail" alt="Video thumbnail">
         <div class="thumbnail-overlay"></div>
         <button mat-mini-fab color="accent" class="play-video-button" (click)="titlePage.playVideo(video)">
-            <mat-icon [svgIcon]="video.type === 'external' ? 'open-in-new' : 'play-arrow'"></mat-icon>
+            <mat-icon [svgIcon]="isExternalLink(video) ? 'open-in-new' : 'play-arrow'"></mat-icon>
         </button>
     </div>
     <div class="meta">

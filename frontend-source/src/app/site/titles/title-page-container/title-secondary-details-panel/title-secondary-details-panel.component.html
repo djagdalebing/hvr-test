@@ -67,10 +67,9 @@
 
 <section class="right">
   <title-action-buttons [item]="titlePage.activeEpisode || titlePage.title"></title-action-buttons>
-  <!-- Only show the cover box when there's an image to show or a video to play.
-       Otherwise (no backdrop/thumbnail and nothing playable) media-image rendered
-       a broken-image placeholder — an ugly empty grey box on titles with no
-       content yet. -->
+  <!-- Cover box: show the image/play button when there's something to show.
+       media-image is only rendered when there's actually an image, so titles
+       with no backdrop/thumbnail don't get an ugly broken-image placeholder. -->
   <div class="video-cover" *ngIf="titlePage.videoCoverImage || titlePage.primaryVideo">
     <media-image
       *ngIf="titlePage.videoCoverImage"
@@ -86,5 +85,12 @@
     >
       <mat-icon svgIcon="play-arrow"></mat-icon>
     </button>
+  </div>
+
+  <!-- Nothing to preview yet: a clean, intentional empty state instead of a
+       blank space or a broken image. -->
+  <div class="video-cover-empty" *ngIf="!titlePage.videoCoverImage && !titlePage.primaryVideo">
+    <mat-icon svgIcon="movie"></mat-icon>
+    <span trans>No preview available yet</span>
   </div>
 </section>

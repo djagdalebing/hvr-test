@@ -31,4 +31,14 @@ export class TitleVideoCarouselComponent implements OnInit, OnDestroy {
     ngOnDestroy() {
         this.changeSub.unsubscribe();
     }
+
+    /**
+     * True only for GENUINELY external links (arbitrary sites) that open in a new
+     * tab. YouTube/Vimeo links saved as type 'external' actually play inline, so
+     * they should show a play icon, not the "open in new tab" icon.
+     */
+    isExternalLink(video): boolean {
+        return video && video.type === 'external' &&
+            !/(?:youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com)/i.test(video.url || '');
+    }
 }
