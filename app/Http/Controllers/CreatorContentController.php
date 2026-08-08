@@ -105,9 +105,14 @@ class CreatorContentController extends BaseController
 
         $type = $request->input('type');
 
-        // Trusted creators (Phase 2) skip the queue. Phase 1: everyone pending.
-        $isTrusted = (bool) ($user->trusted_creator ?? false);
-        $initialStatus = $isTrusted ? 'approved' : 'pending';
+        // Every creator submission — trusted creators included — starts PENDING
+        // and must be approved by an admin before it goes live. Auto-approving
+        // trusted creators put content live without review and also created an
+        // "approved title / unapproved video" mismatch, because the title status
+        // and the video's `approved` flag are gated separately. Keeping both
+        // pending here means an admin approval (apiApproveContent) is the single
+        // point that flips the title AND its videos live, in sync.
+        $initialStatus = 'pending';
 
         $record = new Title();
         $record->name           = $request->input('title');

@@ -7,8 +7,8 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * Sent when an admin promotes a creator to Trusted status. Their
- * uploads bypass the moderation queue from then on.
+ * Sent when an admin marks a creator as Trusted. This is a recognition badge —
+ * all uploads (trusted creators included) are still reviewed before going live.
  */
 class HvnTrustedPromoted extends Notification
 {
@@ -35,7 +35,7 @@ class HvnTrustedPromoted extends Notification
                     'type'    => 'primary',
                 ],
                 [
-                    'content' => 'Your future uploads go live immediately — no more waiting for review.',
+                    'content' => 'A mark of recognition for your work. Uploads are still reviewed before they go live.',
                     'type'    => 'secondary',
                 ],
             ],
@@ -47,8 +47,8 @@ class HvnTrustedPromoted extends Notification
         return (new MailMessage)
             ->subject('You are now a Trusted Creator on Her Vision Network')
             ->greeting('Hi ' . ($notifiable->username ?: 'there') . ',')
-            ->line('Good news — an administrator has marked your account as a Trusted Creator.')
-            ->line('From now on your uploads will be published immediately without waiting for review.')
+            ->line('Good news — an administrator has recognised your account as a Trusted Creator.')
+            ->line('It\'s a mark of recognition for your contributions. Your uploads are still reviewed before they go live, so quality stays consistent across the network.')
             ->salutation('— Her Vision Network');
     }
 }
