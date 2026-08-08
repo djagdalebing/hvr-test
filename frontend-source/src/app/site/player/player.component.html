@@ -1,10 +1,10 @@
 <mat-sidenav-container>
     <mat-sidenav-content>
-        <div class="iframe-container video-and-stream-container" #videoContainer [class.hidden]="(player.iframeUrl$ | async) || player.activeVideo?.type === 'external'"></div>
+        <div class="iframe-container video-and-stream-container" #videoContainer [class.hidden]="(player.iframeUrl$ | async) || player.isExternalLink()"></div>
         <div class="iframe-container embed-container" *ngIf="player.iframeUrl$ | async as iframeUrl">
             <iframe [src]="iframeUrl" height="100%" width="100%" allowfullscreen allowtransparency allow="autoplay"></iframe>
         </div>
-        <div class="iframe-container external-link-container" *ngIf="player.activeVideo?.type === 'external'">
+        <div class="iframe-container external-link-container" *ngIf="player.isExternalLink()">
             <a mat-raised-button color="accent" [href]="player.activeVideo?.url" class="open-external-link-button" target="_blank">
                 <mat-icon svgIcon="open-in-new"></mat-icon>
                 <span trans>Open Link</span>

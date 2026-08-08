@@ -66,6 +66,19 @@ export class PlayerService {
         this.sidebarOpen$.next(!this.sidebarOpen$.value);
     }
 
+    /**
+     * True only for GENUINELY external links (arbitrary sites) that can't be
+     * embedded, so the template shows an "Open Link" button and hides the video
+     * area. YouTube/Vimeo links saved as type 'external' are embeddable and play
+     * inline, so they must NOT count here — otherwise the embedded player is
+     * hidden behind an "Open Link" button and the video looks unplayable.
+     */
+    public isExternalLink(): boolean {
+        const v = this.activeVideo;
+        return !!v && v.type === 'external' &&
+            !/(?:youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com)/i.test(v.url || '');
+    }
+
     private createVideoEl() {
         if ( ! this.videoEl) {
             this.videoEl = document.createElement('video');
