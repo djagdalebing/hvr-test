@@ -4,3 +4,8 @@
 /*# sourceMappingURL=styles.dd30edb2e30333fe4043.css.map*/
 /* HVN native app safe-area insets (hvn-native class added by app; inert on web) */
 body.hvn-native app-root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+
+/* Title page: empty-state card when a title has no preview/video yet. */
+title-secondary-details-panel .right .video-cover-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:281px;background-color:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.12);border-radius:4px;color:rgba(255,255,255,.55);text-align:center;padding:20px}
+title-secondary-details-panel .right .video-cover-empty .mat-icon{width:44px;height:44px;font-size:44px;opacity:.55}
+title-secondary-details-panel .right .video-cover-empty span{font-size:1.5rem}
