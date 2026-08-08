@@ -177,11 +177,15 @@ export class PlyrStrategyService {
     }
 
     private isYoutube(url: string): boolean {
-        return url.includes('youtube.com');
+        // Match every YouTube URL shape, not just "youtube.com". In particular
+        // youtu.be short links are what YouTube's Share button produces, and
+        // missing them made the player fall back to an iframe of the raw URL —
+        // which YouTube refuses to embed — so pasted links wouldn't play.
+        return /(?:youtube\.com|youtu\.be|youtube-nocookie\.com)/i.test(url || '');
     }
 
     private isVimeo(url: string): boolean {
-        return url.includes('vimeo.com');
+        return /vimeo\.com/i.test(url || '');
     }
 
     private embedSupportedByPlyr(url: string): boolean {
