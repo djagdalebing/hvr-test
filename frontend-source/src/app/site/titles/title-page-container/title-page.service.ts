@@ -96,11 +96,23 @@ export class TitlePageService {
     }
 
     private setPrimaryVideo() {
+        // A video counts as playable (and so can be the primary video, which is
+        // what shows the Play button) unless it's a GENUINELY external link that
+        // just opens in a new tab. YouTube/Vimeo links are embeddable and play
+        // inline even when they were saved as type 'external' (older creator
+        // uploads stored them that way) — so don't exclude those, otherwise the
+        // title shows no Play button and the video appears unplayable.
+        const playable = (video) =>
+            video.type !== 'external' || this.isEmbeddable(video.url);
         if (this.settings.get('streaming.prefer_full')) {
-            this.primaryVideo = this.title.videos.find(video => video.category === 'full' && video.type !== 'external');
+            this.primaryVideo = this.title.videos.find(video => video.category === 'full' && playable(video));
         } else {
-            this.primaryVideo = this.title.videos.find(video => video.category !== 'full' && video.type !== 'external');
+            this.primaryVideo = this.title.videos.find(video => video.category !== 'full' && playable(video));
         }
+    }
+
+    private isEmbeddable(url: string): boolean {
+        return /(?:youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com)/i.test(url || '');
     }
 
     private setCoverImage() {
