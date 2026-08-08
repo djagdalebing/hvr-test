@@ -67,8 +67,17 @@
 
 <section class="right">
   <title-action-buttons [item]="titlePage.activeEpisode || titlePage.title"></title-action-buttons>
-  <div class="video-cover">
-    <media-image [src]="titlePage.videoCoverImage" size="large" mode="landscape"></media-image>
+  <!-- Only show the cover box when there's an image to show or a video to play.
+       Otherwise (no backdrop/thumbnail and nothing playable) media-image rendered
+       a broken-image placeholder — an ugly empty grey box on titles with no
+       content yet. -->
+  <div class="video-cover" *ngIf="titlePage.videoCoverImage || titlePage.primaryVideo">
+    <media-image
+      *ngIf="titlePage.videoCoverImage"
+      [src]="titlePage.videoCoverImage"
+      size="large"
+      mode="landscape"
+    ></media-image>
     <button
       mat-fab
       (click)="titlePage.playVideo(titlePage.primaryVideo)"
