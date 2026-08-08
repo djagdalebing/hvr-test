@@ -88,9 +88,11 @@
   </div>
 
   <!-- Nothing to preview yet: a clean, intentional empty state instead of a
-       blank space or a broken image. -->
-  <div class="video-cover-empty" *ngIf="!titlePage.videoCoverImage && !titlePage.primaryVideo">
-    <mat-icon svgIcon="movie"></mat-icon>
-    <span trans>No preview available yet</span>
+       blank space or a broken image. Inline styles so it can't be stripped by
+       the CSS optimizer or served stale from a cached global stylesheet. -->
+  <div class="video-cover-empty" *ngIf="!titlePage.videoCoverImage && !titlePage.primaryVideo"
+       style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:281px;background-color:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.14);border-radius:4px;color:rgba(255,255,255,.55);text-align:center;padding:20px;box-sizing:border-box">
+    <mat-icon svgIcon="movie" style="width:44px;height:44px;font-size:44px;opacity:.55"></mat-icon>
+    <span trans style="font-size:1.5rem">No preview available yet</span>
   </div>
 </section>
