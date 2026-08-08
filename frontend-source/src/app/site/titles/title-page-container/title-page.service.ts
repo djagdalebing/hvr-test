@@ -72,7 +72,11 @@ export class TitlePageService {
         if ( ! this.currentUser.hasPermission('videos.play')) {
             return this.router.navigate(['billing/upgrade']);
         }
-        if (video.type === 'external') {
+        // Only send GENUINELY external links (arbitrary sites) to a new tab.
+        // YouTube/Vimeo links are embeddable and play inline in the overlay even
+        // when they were saved as type 'external' — window.open()ing those was
+        // why pasted YouTube links opened a new tab instead of playing.
+        if (video.type === 'external' && !this.isEmbeddable(video.url)) {
             window.open(video.url, '_blank');
         } else {
             this.playerOverlay.open(video, this.activeEpisode || this.title);
