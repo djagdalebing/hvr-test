@@ -85,7 +85,12 @@ export class PlyrStrategyService {
             // the raw file instead of playing it.
             video.type === 'direct' ||
             video.type === 'stream' ||
-            (video.type === 'embed' && this.embedSupportedByPlyr(video.url))
+            // Any recognised embed-provider URL (YouTube / Vimeo) plays via
+            // Plyr, REGARDLESS of the stored `type`. Some links were saved as
+            // 'external' (which otherwise just window.open()s the URL in a new
+            // tab, so nothing plays inline) instead of 'embed'. Keying off the
+            // URL — not the type — makes those pasted links play.
+            this.embedSupportedByPlyr(video.url)
         );
     }
 
@@ -138,7 +143,9 @@ export class PlyrStrategyService {
     }
 
     private buildSource(video: Video) {
-        if (video.type === 'embed') {
+        // Treat any YouTube/Vimeo URL as an embed source (with a provider),
+        // even if it was stored as 'external' rather than 'embed'.
+        if (video.type === 'embed' || this.embedSupportedByPlyr(video.url)) {
             return {
                 type: 'video',
                 poster: video.thumbnail,
