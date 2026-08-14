@@ -451,6 +451,11 @@ class HvnAdminController extends Controller
         $title = \App\Title::withoutGlobalScope('approved')->findOrFail($titleId);
         $title->status = 'approved';
         $title->rejection_reason = null;
+        // Stamp the approval time so the homepage "Exclusive Content Release"
+        // row can order by newest-approved-first. Only set it the first time.
+        if (empty($title->approved_at)) {
+            $title->approved_at = now();
+        }
         $title->save();
 
         // Flip the linked creator video(s) to approved so /admin/videos
@@ -497,6 +502,62 @@ class HvnAdminController extends Controller
         }
 
         return ['status' => 'success', 'title' => $title];
+    }
+
+    // -----------------------------------------------------------------
+    // Editor's Picks — admin curates up to 10 titles pinned to the
+    // homepage "Editor's Pick" row. Stored as an ordered list of title IDs
+    // in the `homepage.editor_picks` setting.
+    // -----------------------------------------------------------------
+
+    const EDITOR_PICKS_MAX = 10;
+
+    public function apiGetEditorPicks()
+    {
+        $this->apiAdminOrAbort();
+        $ids = $this->editorPickIds();
+        if (empty($ids)) {
+            return ['status' => 'success', 'titles' => []];
+        }
+        // Load in the pinned order; withoutGlobalScope so admins still see a
+        // pinned title even if it later goes pending.
+        $titles = \App\Title::withoutGlobalScope('approved')
+            ->whereIn('id', $ids)
+            ->get(['id', 'name', 'poster', 'year', 'status']);
+        $titles = $titles->sortBy(fn($t) => array_search($t->id, $ids))->values();
+        return ['status' => 'success', 'titles' => $titles];
+    }
+
+    public function apiSetEditorPicks(Request $request)
+    {
+        $this->apiAdminOrAbort();
+        $request->validate([
+            'ids'   => 'present|array|max:' . self::EDITOR_PICKS_MAX,
+            'ids.*' => 'integer',
+        ]);
+        // De-dupe, keep order, cap at max, and drop ids that don't exist.
+        $ids = collect($request->input('ids', []))
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->take(self::EDITOR_PICKS_MAX)
+            ->values();
+        $existing = \App\Title::withoutGlobalScope('approved')
+            ->whereIn('id', $ids)->pluck('id')->all();
+        $ids = $ids->filter(fn($id) => in_array($id, $existing))->values()->all();
+
+        app(\Common\Settings\Settings::class)->save([
+            'homepage.editor_picks' => json_encode($ids),
+        ]);
+
+        return ['status' => 'success', 'ids' => $ids];
+    }
+
+    private function editorPickIds(): array
+    {
+        $raw = app(\Common\Settings\Settings::class)->get('homepage.editor_picks');
+        if (is_string($raw)) $raw = json_decode($raw, true);
+        if (!is_array($raw)) return [];
+        return array_values(array_filter(array_map('intval', $raw)));
     }
 
     // -----------------------------------------------------------------

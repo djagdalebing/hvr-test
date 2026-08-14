@@ -117,6 +117,10 @@ Route::group(['prefix' => 'secure'], function () {
     Route::post('admin/community/{id}/hide',     [HvnAdminController::class, 'hidePost']);
     Route::delete('admin/community/{id}',        [HvnAdminController::class, 'deletePost']);
     Route::delete('admin/community',             [HvnAdminController::class, 'deleteCommunityPostsJson']);
+
+    // Editor's Picks — curate the homepage "Editor's Pick" row (max 10 titles).
+    Route::get('admin/editor-picks',             [HvnAdminController::class, 'apiGetEditorPicks']);
+    Route::post('admin/editor-picks',            [HvnAdminController::class, 'apiSetEditorPicks']);
 });
 
 // FRONT-END ROUTES THAT NEED TO BE PRE-RENDERED
