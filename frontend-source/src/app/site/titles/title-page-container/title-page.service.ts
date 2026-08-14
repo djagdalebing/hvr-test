@@ -152,7 +152,13 @@ export class TitlePageService {
         const selectedCategory = this.settings.get('streaming.video_panel_content');
         let videos: Video[];
 
-        if (selectedCategory === 'full') {
+        // Anyone who can manage videos sees EVERY video (trailers AND the full
+        // movie/episode) in the panel, so they can edit/delete any of them from
+        // the title page. Viewers still only see the configured category.
+        if (this.currentUser.hasPermission('videos.update') ||
+            this.currentUser.hasPermission('videos.create')) {
+            videos = this.title.videos;
+        } else if (selectedCategory === 'full') {
             videos = this.title.videos.filter(v => v.category === 'full');
         } else if (selectedCategory === 'short') {
             videos = this.title.videos.filter(v => v.category !== 'full');

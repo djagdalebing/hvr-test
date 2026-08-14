@@ -14,6 +14,7 @@ import {openUploadWindow} from '@common/uploads/utils/open-upload-window';
 import {UploadInputTypes} from '@common/uploads/upload-input-config';
 import {LanguageListItem, ValueLists} from '@common/core/services/value-lists.service';
 import {Router} from '@angular/router';
+import {CurrentUser} from '@common/auth/current-user';
 import {scrollInvalidInputIntoView} from '@common/core/utils/scroll-invalid-input-into-view';
 import {BackendErrorResponse} from '@common/core/types/backend-error-response';
 import {UploadApiConfig} from '@common/uploads/types/upload-api-config';
@@ -61,6 +62,7 @@ export class CrupdateVideoModalComponent implements OnInit {
         private valueLists: ValueLists,
         public settings: Settings,
         private router: Router,
+        public currentUser: CurrentUser,
         private dialogRef: MatDialogRef<CrupdateVideoModalComponent>,
         @Inject(MAT_DIALOG_DATA) public data: AddVideoModalData,
     ) {
@@ -208,6 +210,19 @@ export class CrupdateVideoModalComponent implements OnInit {
 
     public insideAdmin(): boolean {
         return this.router.url.indexOf('admin') > -1;
+    }
+
+    /**
+     * Whether to show the Category select (Trailer / Full Movie / Clip …).
+     * Anyone who can manage videos should be able to choose the kind — not only
+     * inside the /admin panel. Previously this was gated on insideAdmin(), so
+     * opening Add/Edit Video from a title page hid Category and every video
+     * silently defaulted to 'trailer' with no way to make a full movie.
+     */
+    public canSetCategory(): boolean {
+        return this.insideAdmin() ||
+            this.currentUser.hasPermission('videos.create') ||
+            this.currentUser.hasPermission('videos.update');
     }
 
     public supportsCaptions(): boolean {

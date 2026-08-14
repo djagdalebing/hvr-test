@@ -112,7 +112,7 @@
       *ngIf="!data.episode_num"
     ></select-title-input>
 
-    <ng-container *ngIf="settings.get('streaming.show_category_select') || insideAdmin()">
+    <ng-container *ngIf="settings.get('streaming.show_category_select') || canSetCategory()">
       <div class="input-container">
         <label for="category" trans>Category</label>
         <select required id="category" formControlName="category">
