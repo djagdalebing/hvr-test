@@ -78,10 +78,11 @@ class CreatorContentController extends BaseController
             // r2_video_url is the public URL of a file the browser already
             // uploaded straight to Cloudflare R2 via a presigned PUT.
             'r2_video_url'   => 'nullable|string|max:1000',
-            // Only web-playable containers. .mov/.avi upload fine but don't
-            // play in Chrome/Firefox HTML5 video (no transcoding yet), so we
-            // reject them up front instead of shipping unplayable content.
-            'video_file'     => 'nullable|file|mimetypes:video/mp4,video/webm,video/ogg|max:512000',
+            // MP4/WebM/OGG play in every browser. QuickTime (.mov / .m4v) is
+            // accepted too — it's usually H.264 and plays in Safari + modern
+            // Chrome, though not everywhere (no transcoding yet), so it's
+            // best-effort. Other containers (.avi/.mkv/…) still can't play.
+            'video_file'     => 'nullable|file|mimetypes:video/mp4,video/webm,video/ogg,video/quicktime,video/x-m4v|max:512000',
             'cover'          => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
             'backdrop_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:8192',
         ]);
@@ -217,10 +218,11 @@ class CreatorContentController extends BaseController
 
         $this->validate($request, [
             'filename'     => 'required|string|max:255',
-            // Web-playable containers only (see the video_file rule in store()).
-            'content_type' => 'required|string|in:video/mp4,video/webm,video/ogg',
+            // See the video_file rule in store(). MP4/WebM/OGG play everywhere;
+            // QuickTime (.mov/.m4v) accepted best-effort.
+            'content_type' => 'required|string|in:video/mp4,video/webm,video/ogg,video/quicktime,video/x-m4v',
         ], [
-            'content_type.in' => 'Please upload an MP4, WebM or OGG video — those play in all browsers. (MOV/AVI aren\'t supported yet.)',
+            'content_type.in' => 'Please upload MP4, WebM, OGG, or MOV. MP4 plays in every browser; MOV may not play for all viewers. (AVI/MKV aren\'t supported — convert to MP4 first.)',
         ]);
 
         $ext = pathinfo($request->input('filename'), PATHINFO_EXTENSION);
