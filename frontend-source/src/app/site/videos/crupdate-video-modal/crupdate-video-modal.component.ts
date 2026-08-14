@@ -117,9 +117,20 @@ export class CrupdateVideoModalComponent implements OnInit {
 
     public uploadFile(type: 'image'|'video') {
         openUploadWindow({types: [UploadInputTypes[type]]}).then(uploads => {
-            const htmlVideo = document.createElement('video');
-            if (type === 'video' &&  !htmlVideo.canPlayType(uploads[0].mime)) {
-                return this.toast.open('This video format is not supported.');
+            if (type === 'video') {
+                const mime = uploads[0].mime || '';
+                const name = (uploads[0] as any).name || '';
+                // QuickTime (.mov/.m4v) can't be confirmed by canPlayType() in
+                // Chrome/Firefox, but usually plays in Safari + modern Chrome —
+                // accept it best-effort (with a heads-up) instead of blocking.
+                const isQuicktime = /quicktime|x-m4v/i.test(mime) || /\.(mov|m4v)$/i.test(name);
+                const htmlVideo = document.createElement('video');
+                if (!htmlVideo.canPlayType(mime) && !isQuicktime) {
+                    return this.toast.open('This video format is not supported. Please upload MP4, WebM, OGG, or MOV.');
+                }
+                if (isQuicktime && !htmlVideo.canPlayType(mime)) {
+                    this.toast.open('Heads up: MOV may not play in every browser — MP4 is recommended.');
+                }
             }
             const params = {
                 uri: `uploads/${type}s`,
