@@ -1,0 +1,69 @@
+<div class="editor-picks-admin" style="padding:24px;max-width:920px;margin:0 auto">
+  <h1 style="font-size:2.4rem;margin:0 0 4px">Editor's Picks</h1>
+  <p style="color:var(--be-secondary-text);margin:0 0 24px;font-size:1.5rem">
+    Pin up to {{MAX}} titles to the <strong>Editor's Pick</strong> row on the homepage. Reorder with the arrows; changes go live when you press Save.
+  </p>
+
+  <!-- Pinned list -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <h2 style="font-size:1.7rem;margin:0">Pinned <span style="color:var(--be-hint-text)">({{picks.length}}/{{MAX}})</span></h2>
+    <button mat-raised-button color="accent" (click)="save()" [disabled]="saving || loading">
+      {{ saving ? 'Saving…' : 'Save changes' }}
+    </button>
+  </div>
+
+  <div *ngIf="loading" style="color:var(--be-hint-text);padding:20px 0">Loading…</div>
+
+  <div *ngIf="!loading && !picks.length"
+       style="padding:22px;border:1px dashed var(--be-divider-default);border-radius:6px;color:var(--be-hint-text);text-align:center;font-size:1.5rem">
+    No titles pinned yet — search below to add some.
+  </div>
+
+  <div *ngFor="let t of picks; index as i"
+       style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid var(--be-divider-default);border-radius:6px;margin-bottom:8px">
+    <span style="width:24px;text-align:center;color:var(--be-hint-text);font-weight:500">{{ i + 1 }}</span>
+    <img [src]="posterUrl(t)" alt="" style="width:40px;height:60px;object-fit:cover;border-radius:3px;background:var(--be-chip);flex-shrink:0">
+    <div style="flex:1 1 auto;min-width:0">
+      <div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.name }}</div>
+      <div style="font-size:1.2rem;color:var(--be-hint-text)">
+        {{ t.year }}<span *ngIf="t.status && t.status !== 'approved'"> · {{ t.status }}</span>
+      </div>
+    </div>
+    <button mat-icon-button (click)="moveUp(i)" [disabled]="i === 0" title="Move up">
+      <mat-icon svgIcon="arrow-upward"></mat-icon>
+    </button>
+    <button mat-icon-button (click)="moveDown(i)" [disabled]="i === picks.length - 1" title="Move down">
+      <mat-icon svgIcon="arrow-downward"></mat-icon>
+    </button>
+    <button mat-icon-button (click)="remove(i)" title="Remove">
+      <mat-icon svgIcon="close"></mat-icon>
+    </button>
+  </div>
+
+  <!-- Search / add -->
+  <h2 style="font-size:1.7rem;margin:30px 0 12px">Add a title</h2>
+  <input
+    [(ngModel)]="query"
+    (ngModelChange)="onSearchChange()"
+    placeholder="Search titles by name…"
+    style="width:100%;height:46px;padding:8px 14px;border:1px solid var(--be-divider-default);border-radius:6px;background:var(--be-background);color:inherit;font-size:1.5rem;box-sizing:border-box"
+  >
+
+  <div *ngIf="searching" style="color:var(--be-hint-text);padding:12px 0">Searching…</div>
+
+  <div *ngIf="!searching && query && !results.length" style="color:var(--be-hint-text);padding:12px 0">No titles found.</div>
+
+  <div *ngFor="let t of results"
+       style="display:flex;align-items:center;gap:12px;padding:8px 10px;border-bottom:1px solid var(--be-divider-default)">
+    <img [src]="posterUrl(t)" alt="" style="width:36px;height:54px;object-fit:cover;border-radius:3px;background:var(--be-chip);flex-shrink:0">
+    <div style="flex:1 1 auto;min-width:0">
+      <div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.name }}</div>
+      <div style="font-size:1.2rem;color:var(--be-hint-text)">
+        {{ t.year }}<span *ngIf="t.status && t.status !== 'approved'"> · {{ t.status }}</span>
+      </div>
+    </div>
+    <button mat-button color="accent" (click)="add(t)" [disabled]="isPinned(t) || picks.length >= MAX">
+      {{ isPinned(t) ? 'Pinned' : 'Pin' }}
+    </button>
+  </div>
+</div>

@@ -12,6 +12,7 @@ import {CreatorsAdminComponent} from './creators-admin/creators-admin.component'
 import {CommunityAdminComponent} from './community-admin/community-admin.component';
 import {ModerationAdminComponent} from './moderation-admin/moderation-admin.component';
 import {AnnouncementsAdminComponent} from './announcements-admin/announcements-admin.component';
+import {EditorPicksAdminComponent} from './editor-picks-admin/editor-picks-admin.component';
 
 // TODO: maybe add "primary_credit" id on person table and remove lazy loading of all credits
 
@@ -38,6 +39,12 @@ export const APP_ADMIN_ROUTES: Routes = [
     {
         path: 'announcements',
         component: AnnouncementsAdminComponent,
+        data: {permissions: ['admin']},
+    },
+    // editor's picks (HVN admin — curate the homepage Editor's Pick row)
+    {
+        path: 'editor-picks',
+        component: EditorPicksAdminComponent,
         data: {permissions: ['admin']},
     },
     // videos

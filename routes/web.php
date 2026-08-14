@@ -121,6 +121,7 @@ Route::group(['prefix' => 'secure'], function () {
     // Editor's Picks — curate the homepage "Editor's Pick" row (max 10 titles).
     Route::get('admin/editor-picks',             [HvnAdminController::class, 'apiGetEditorPicks']);
     Route::post('admin/editor-picks',            [HvnAdminController::class, 'apiSetEditorPicks']);
+    Route::get('admin/editor-picks/search',      [HvnAdminController::class, 'apiSearchTitles']);
 });
 
 // FRONT-END ROUTES THAT NEED TO BE PRE-RENDERED

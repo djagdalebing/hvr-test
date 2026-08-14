@@ -560,6 +560,21 @@ class HvnAdminController extends Controller
         return array_values(array_filter(array_map('intval', $raw)));
     }
 
+    /** Title search for the Editor's Picks admin picker (name match). */
+    public function apiSearchTitles(Request $request)
+    {
+        $this->apiAdminOrAbort();
+        $q = trim((string) $request->input('query', ''));
+        if ($q === '') {
+            return ['status' => 'success', 'titles' => []];
+        }
+        $titles = \App\Title::where('name', 'like', '%' . $q . '%')
+            ->orderByDesc('popularity')
+            ->limit(20)
+            ->get(['id', 'name', 'poster', 'year', 'status']);
+        return ['status' => 'success', 'titles' => $titles];
+    }
+
     // -----------------------------------------------------------------
     // People moderation (Phase 2) — review people created by creators.
     // -----------------------------------------------------------------
