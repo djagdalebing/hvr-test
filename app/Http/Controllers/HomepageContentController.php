@@ -66,12 +66,26 @@ class HomepageContentController extends BaseController
             return $list;
         });
 
-        // HVN computed homepage rows, appended after the admin-curated lists.
-        // Each is capped at 10 and hidden entirely when it has no titles.
+        // HVN computed homepage rows. Each is capped at 10 and hidden when it
+        // has no titles. Insert them right after the "Now Streaming on HVN" row
+        // if present, otherwise append to the end.
         $lists = $lists->values()->all();
-        foreach ($this->hvnSections() as $section) {
-            if ($section['items']->isNotEmpty()) {
-                $lists[] = $section;
+        $sections = array_values(array_filter(
+            $this->hvnSections(),
+            fn($s) => $s['items']->isNotEmpty(),
+        ));
+        if (!empty($sections)) {
+            $anchor = null;
+            foreach ($lists as $i => $l) {
+                if (strcasecmp((string) ($l->name ?? ''), 'Now Streaming on HVN') === 0) {
+                    $anchor = $i;
+                    break;
+                }
+            }
+            if ($anchor !== null) {
+                array_splice($lists, $anchor + 1, 0, $sections);
+            } else {
+                $lists = array_merge($lists, $sections);
             }
         }
 
