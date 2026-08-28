@@ -31,8 +31,9 @@
             <mat-icon svgIcon="keyboard-arrow-left"></mat-icon>
           </button>
 
+          <!-- Netflix-style rows always use wide landscape (16:9) cards. -->
           <media-view
-            [mode]="list.style === 'landscape-grid' ? modes.Landscape : modes.Portrait"
+            [mode]="modes.Landscape"
             [items]="list.items"
             class="full-width nf-scroll"
             [showPlayButton]="settings.get('homepage.show_play_buttons')"

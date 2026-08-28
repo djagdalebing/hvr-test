@@ -12,13 +12,19 @@
                     <a class="title" [routerLink]="url.generate(item)" draggable="false">{{item.name}}</a>
                     <div class="description" [moreLessText]="(breakpoints.isMobile$ | async) ? 200 : 350" [textContent]="item.description"></div>
                     <genre-widget [genres]="item.genres"></genre-widget>
-                    <button mat-raised-button color="accent" class="play-trailer-button play-button-animation" (click)="playVideo(item)" *ngIf="item?.videos?.length">
-                        <mat-icon svgIcon="play-arrow"></mat-icon>
-                        <span *ngIf="item.videos[0].category !== 'full'; else playFull" trans>Play Trailer</span>
-                        <ng-template #playFull>
-                            <span trans>Watch Now</span>
-                        </ng-template>
-                    </button>
+                    <div class="hero-buttons">
+                        <button mat-raised-button color="accent" class="play-trailer-button play-button-animation" (click)="playVideo(item)" *ngIf="item?.videos?.length">
+                            <mat-icon svgIcon="play-arrow"></mat-icon>
+                            <span *ngIf="item.videos[0].category !== 'full'; else playFull" trans>Play Trailer</span>
+                            <ng-template #playFull>
+                                <span trans>Watch Now</span>
+                            </ng-template>
+                        </button>
+                        <a mat-button class="more-info-button" [routerLink]="url.generate(item)" draggable="false">
+                            <mat-icon svgIcon="info"></mat-icon>
+                            <span trans>More Info</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
