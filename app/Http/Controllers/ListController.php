@@ -57,9 +57,39 @@ class ListController extends BaseController
         return $this->success(['pagination' => $pagination]);
     }
 
-    public function show(int $id)
+    public function show($id)
     {
-        $list = $this->list->with('user')->findOrFail($id);
+        // Computed HVN sections (Exclusive / Editor's Pick / Highest Viewed)
+        // have slug ids and no backing list row — serve them as a showcase page
+        // so their homepage headers can link here like normal lists do.
+        $sections = app(\App\Services\Hvn\HvnHomepageSections::class);
+        if (is_string($id) && !ctype_digit($id) && $sections->isSection($id)) {
+            $section = $sections->section($id, 60);
+            $items = $section['items'];
+            $now = now();
+            $list = [
+                'id' => $id,
+                'name' => $section['name'],
+                'description' => $section['description'],
+                'style' => $section['style'],
+                'system' => true,
+                'public' => true,
+                'user_id' => null,
+                'user' => null,
+                'items_count' => $items->count(),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+            $paginator = new LengthAwarePaginator(
+                $items,
+                $items->count(),
+                $items->count() ?: 1,
+            );
+
+            return $this->success(['list' => $list, 'items' => $paginator]);
+        }
+
+        $list = $this->list->with('user')->findOrFail((int) $id);
 
         $this->authorize('show', $list);
 

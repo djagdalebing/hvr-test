@@ -9,14 +9,12 @@
     <div class="list">
       <div class="container">
         <h2>
-          <!-- Real lists (numeric id) link to their list page. HVN computed rows
-               (Exclusive / Editor's Pick / Highest Viewed) have string ids like
-               'hvn-exclusive' with no backing list, so their header is plain text
-               instead of a dead link to /lists. -->
-          <a *ngIf="+list.id > 0; else plainHeading" [routerLink]="['/lists', list.id]">{{ list.name }}</a>
-          <ng-template #plainHeading>{{ list.name }}</ng-template>
+          <!-- Every row header links to its showcase page. Real lists resolve by
+               numeric id; the computed HVN rows (Exclusive / Editor's Pick /
+               Highest Viewed) resolve by slug via ListController@show. -->
+          <a [routerLink]="['/lists', list.id]">{{ list.name }}</a>
         </h2>
-        <p *ngIf="list.description">{{ list.description }}</p>
+        <p *ngIf="list.description" class="list-subtitle">{{ list.description }}</p>
 
         <!-- Netflix-style horizontal row: fixed-width poster cards that scroll
              sideways, with hover arrows. Scoped to the homepage via .nf-row. -->

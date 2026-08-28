@@ -3,14 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\ListModel;
+use App\Services\Hvn\HvnHomepageSections;
 use App\Services\Lists\LoadListContent;
-use App\Title;
-use App\Video;
 use Common\Core\BaseController;
 use Common\Settings\Settings;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Collection;
-use Str;
 
 class HomepageContentController extends BaseController
 {
@@ -24,10 +20,19 @@ class HomepageContentController extends BaseController
      */
     private $settings;
 
-    public function __construct(ListModel $list, Settings $settings)
-    {
+    /**
+     * @var HvnHomepageSections
+     */
+    private $sections;
+
+    public function __construct(
+        ListModel $list,
+        Settings $settings,
+        HvnHomepageSections $sections
+    ) {
         $this->list = $list;
         $this->settings = $settings;
+        $this->sections = $sections;
     }
 
     public function show()
@@ -100,106 +105,17 @@ class HomepageContentController extends BaseController
     }
 
     /**
-     * The three HVN homepage rows: recently-approved platform originals,
-     * admin-pinned editor's picks, and the most-viewed titles.
+     * The three computed HVN homepage rows, built by the shared service so the
+     * same sections can also render a full "showcase" page via /lists/{slug}.
      */
     private function hvnSections(): array
     {
-        return [
-            [
-                'id'    => 'hvn-exclusive',
-                'name'  => 'Exclusive Content Release',
-                'style' => 'portrait',
-                'items' => $this->loadTitlesByIds($this->exclusiveIds()),
-            ],
-            [
-                'id'    => 'hvn-editor-picks',
-                'name'  => "Editor's Pick",
-                'style' => 'portrait',
-                'items' => $this->loadTitlesByIds($this->editorPickIds()),
-            ],
-            [
-                'id'    => 'hvn-highest-viewed',
-                'name'  => 'Highest Viewed',
-                'style' => 'portrait',
-                'items' => $this->loadTitlesByIds($this->highestViewedIds()),
-            ],
-        ];
-    }
-
-    /** Newest-approved-first titles uploaded by creators on this platform. */
-    private function exclusiveIds(): array
-    {
-        return Title::where('status', 'approved')
-            ->whereExists(function ($q) {
-                $q->selectRaw('1')->from('videos')
-                    ->whereColumn('videos.title_id', 'titles.id')
-                    ->whereNotNull('videos.user_id')
-                    ->where('videos.approved', 1);
-            })
-            ->orderByRaw('COALESCE(approved_at, created_at) DESC')
-            ->limit(10)
-            ->pluck('id')
-            ->all();
-    }
-
-    /** Admin-pinned editor's picks (ordered, max 10). */
-    private function editorPickIds(): array
-    {
-        $raw = $this->settings->get('homepage.editor_picks');
-        if (is_string($raw)) $raw = json_decode($raw, true);
-        if (!is_array($raw)) return [];
-        return array_slice(array_values(array_filter(array_map('intval', $raw))), 0, 10);
-    }
-
-    /** Most-viewed titles. */
-    private function highestViewedIds(): array
-    {
-        return Title::orderBy('views', 'desc')
-            ->limit(10)
-            ->pluck('id')
-            ->all();
-    }
-
-    /**
-     * Load Title models for the given ordered ids, shaped like normal list
-     * items (same select fields + genres + videos) so <media-view> renders
-     * them identically. Order is preserved and anything not visible to the
-     * current viewer (global 'approved' scope) is dropped.
-     */
-    private function loadTitlesByIds(array $ids): Collection
-    {
-        if (empty($ids)) {
-            return collect();
+        // Homepage carousels are capped at 10; the full showcase page
+        // (/lists/{slug}) shows more.
+        $out = [];
+        foreach (array_keys($this->sections->definitions()) as $slug) {
+            $out[] = $this->sections->section($slug, 10);
         }
-
-        $preferFull = $this->settings->get('streaming.prefer_full');
-
-        $titles = Title::whereIn('id', $ids)->get([
-            'id', 'name', 'poster', 'description', 'is_series', 'year',
-            'tmdb_vote_average', 'backdrop', 'runtime', 'release_date',
-            'popularity', 'local_vote_average',
-        ]);
-
-        $titles->load([
-            'genres',
-            'videos' => function (HasMany $query) use ($titles, $preferFull) {
-                $query
-                    ->where('type', '!=', 'external')
-                    ->where('category', $preferFull ? '=' : '!=', 'full')
-                    ->groupBy('title_id');
-                if (!$preferFull) {
-                    $query->limit($titles->count());
-                }
-            },
-        ]);
-
-        return $titles
-            ->sortBy(fn($t) => array_search($t->id, $ids))
-            ->values()
-            ->map(function ($t) {
-                $t->description = Str::limit($t->description, 600);
-                return $t;
-            });
+        return $out;
     }
 }
