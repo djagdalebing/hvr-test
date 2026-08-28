@@ -9,7 +9,12 @@
     <div class="list">
       <div class="container">
         <h2>
-          <a [routerLink]="['/lists', list.id]">{{ list.name }}</a>
+          <!-- Real lists (numeric id) link to their list page. HVN computed rows
+               (Exclusive / Editor's Pick / Highest Viewed) have string ids like
+               'hvn-exclusive' with no backing list, so their header is plain text
+               instead of a dead link to /lists. -->
+          <a *ngIf="+list.id > 0; else plainHeading" [routerLink]="['/lists', list.id]">{{ list.name }}</a>
+          <ng-template #plainHeading>{{ list.name }}</ng-template>
         </h2>
         <p *ngIf="list.description">{{ list.description }}</p>
 
