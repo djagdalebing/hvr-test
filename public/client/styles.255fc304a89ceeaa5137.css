@@ -27,33 +27,37 @@ homepage .list:hover h2::after{opacity:1;transform:translateX(0)}
 /* Row scroller: horizontal, free-scroll, hidden scrollbar */
 homepage .list media-view.nf-scroll{padding-top:0;margin-top:0;border-top:none}
 homepage .nf-row{position:relative;margin:0 -6px}
-homepage .nf-row .auto-height-grid{display:flex!important;flex-wrap:nowrap;grid-template-columns:none!important;grid-gap:0!important;gap:7px;overflow-x:auto;overflow-y:visible;scroll-snap-type:x proximity;scroll-behavior:smooth;scroll-padding-left:clamp(20px,4vw,60px);padding:30px 6px;margin:-30px 0;-ms-overflow-style:none;scrollbar-width:none}
+homepage .nf-row .auto-height-grid{display:flex!important;flex-wrap:nowrap;grid-template-columns:none!important;grid-gap:0!important;gap:7px;overflow-x:auto;overflow-y:visible;scroll-snap-type:x proximity;scroll-behavior:smooth;scroll-padding-left:clamp(20px,4vw,60px);padding:38px 6px;margin:-38px 0;-ms-overflow-style:none;scrollbar-width:none}
 homepage .nf-row .auto-height-grid::-webkit-scrollbar{display:none}
 
-/* Cards: fixed width, snap start */
+/* Cards: fixed width; the whole card (poster + hover overlay) scales together */
 homepage .nf-row .auto-height-grid>title-portrait-item,
-homepage .nf-row .auto-height-grid>person-portrait-item{flex:0 0 auto;width:clamp(118px,13vw,188px);scroll-snap-align:start}
+homepage .nf-row .auto-height-grid>person-portrait-item{flex:0 0 auto;width:clamp(118px,13vw,188px);scroll-snap-align:start;position:relative;transition:transform .3s cubic-bezier(.25,.8,.35,1)}
 homepage .nf-row .auto-height-grid>title-landscape-item,
-homepage .nf-row .auto-height-grid>person-landscape-item{flex:0 0 auto;width:clamp(220px,22vw,320px);scroll-snap-align:start}
+homepage .nf-row .auto-height-grid>person-landscape-item{flex:0 0 auto;width:clamp(220px,22vw,320px);scroll-snap-align:start;position:relative;transition:transform .3s cubic-bezier(.25,.8,.35,1)}
 
-/* Poster: borderless, rounded, soft shadow. Zoom the POSTER (not the label). */
+/* Poster: borderless, rounded, soft shadow */
 homepage .nf-row .grid-item{cursor:pointer;background:#1b1b20;border-radius:6px}
-homepage .nf-row .grid-content{border:none!important;border-radius:6px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.5);transition:transform .32s cubic-bezier(.25,.8,.35,1),box-shadow .32s ease,outline-color .15s ease;transform-origin:center center;outline:0 solid rgba(255,255,255,.9)}
+homepage .nf-row .grid-content{border:none!important;border-radius:6px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.5);transition:box-shadow .3s ease,outline-color .15s ease;outline:0 solid rgba(255,255,255,.92)}
 homepage .nf-row .grid-content img{width:100%;height:100%;object-fit:cover}
 
-/* Hover: lift the card above neighbours, zoom poster, white ring + deep shadow */
-homepage .nf-row .auto-height-grid>*{transition:transform .32s cubic-bezier(.25,.8,.35,1)}
-homepage .nf-row .auto-height-grid>*:hover{z-index:6;position:relative}
-homepage .nf-row .auto-height-grid>*:hover .grid-content{transform:scale(1.16) translateY(-6px);box-shadow:0 16px 34px rgba(0,0,0,.75);outline:2px solid rgba(255,255,255,.92)}
+/* Hover: lift + zoom the whole card, white ring + deep shadow */
+homepage .nf-row .auto-height-grid>*:hover{transform:scale(1.2) translateY(-6px);z-index:6}
+homepage .nf-row .auto-height-grid>*:hover .grid-content{box-shadow:0 18px 38px rgba(0,0,0,.8);outline:2px solid rgba(255,255,255,.92)}
 
-/* Labels: minimal — small title, drop the genre clutter for the clean look */
-homepage .nf-row .grid-label{margin-top:9px;text-align:left;padding:0 2px}
-homepage .nf-row .grid-label .title{font-size:.92rem;font-weight:500;color:#d6d6d6}
-homepage .nf-row .grid-label .title:hover{color:#fff}
-homepage .nf-row .grid-label .subtitle{display:none}
+/* NO permanent title. Details slide up over the poster ONLY on hover (Netflix). */
+homepage .nf-row .grid-label{position:absolute;left:0;right:0;bottom:0;margin:0;padding:30px 11px 11px;text-align:left;background:linear-gradient(to top,rgba(6,6,10,.96) 0%,rgba(6,6,10,.72) 45%,rgba(6,6,10,0) 100%);border-radius:0 0 6px 6px;opacity:0;transform:translateY(8px);transition:opacity .22s ease,transform .22s ease;pointer-events:none}
+homepage .nf-row .auto-height-grid>*:hover .grid-label{opacity:1;transform:translateY(0)}
+homepage .nf-row .grid-label .title{display:block;font-size:.82rem;font-weight:700;color:#fff;white-space:normal;line-height:1.25;margin-bottom:3px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+homepage .nf-row .grid-label .subtitle{display:block;font-size:.68rem;color:#cfcfcf;text-transform:capitalize;white-space:normal;line-height:1.3}
+homepage .nf-row .grid-label genre-widget{display:inline}
+
+/* Play button (if enabled) fades in on hover, centered on the poster */
+homepage .nf-row media-view-play-button{opacity:0;transition:opacity .2s ease}
+homepage .nf-row .auto-height-grid>*:hover media-view-play-button{opacity:1}
 
 /* Arrows: tall gradient panels, large chevron, appear on row hover */
-homepage .nf-arrow{position:absolute;top:0;bottom:38px;width:58px;z-index:20;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;opacity:0;border:none;transition:opacity .2s ease}
+homepage .nf-arrow{position:absolute;top:0;bottom:0;width:58px;z-index:20;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;opacity:0;border:none;transition:opacity .2s ease}
 homepage .nf-arrow-left{left:0;border-radius:0 6px 6px 0;background:linear-gradient(90deg,rgba(8,7,12,.95),rgba(8,7,12,0))}
 homepage .nf-arrow-right{right:0;border-radius:6px 0 0 6px;background:linear-gradient(270deg,rgba(8,7,12,.95),rgba(8,7,12,0))}
 homepage .nf-row:hover .nf-arrow{opacity:1}
@@ -62,4 +66,4 @@ homepage .nf-arrow:hover svg,homepage .nf-arrow:hover mat-icon{transform:scale(1
 
 /* Responsive + touch */
 @media (max-width:900px){homepage .list h2{font-size:1.2rem}homepage .list .container{padding:0 16px}homepage .nf-row .auto-height-grid{scroll-padding-left:16px}}
-@media (hover:none){homepage .nf-arrow{display:none}}
+@media (hover:none){homepage .nf-arrow{display:none}homepage .nf-row .grid-label{position:static;opacity:1;transform:none;background:none;padding:8px 2px 0;text-align:center}homepage .nf-row .grid-label .title{font-weight:500;color:#d6d6d6}homepage .nf-row .grid-label .subtitle{display:none}}
