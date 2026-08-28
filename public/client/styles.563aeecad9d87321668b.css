@@ -50,7 +50,7 @@ homepage .list:hover h2::after{opacity:1;transform:translateX(0)}
 /* ---------- Row scroller ---------- */
 homepage .list media-view.nf-scroll{padding-top:0;margin-top:0;border-top:none}
 homepage .nf-row{position:relative;margin:0 -6px}
-homepage .nf-row .auto-height-grid{display:flex!important;flex-wrap:nowrap;grid-template-columns:none!important;grid-gap:0!important;gap:10px;overflow-x:auto;overflow-y:visible;scroll-snap-type:x proximity;scroll-behavior:smooth;scroll-padding-left:clamp(20px,4vw,60px);padding:42px 6px;margin:-42px 0;-ms-overflow-style:none;scrollbar-width:none}
+homepage .nf-row .auto-height-grid{display:flex!important;flex-wrap:nowrap;grid-template-columns:none!important;gap:16px!important;overflow-x:auto;overflow-y:visible;scroll-snap-type:x proximity;scroll-behavior:smooth;scroll-padding-left:clamp(20px,4vw,60px);padding:42px 6px;margin:-42px 0;-ms-overflow-style:none;scrollbar-width:none}
 homepage .nf-row .auto-height-grid::-webkit-scrollbar{display:none}
 
 /* ---------- Portrait cards ---------- */
