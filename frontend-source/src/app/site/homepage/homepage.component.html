@@ -31,9 +31,9 @@
             <mat-icon svgIcon="keyboard-arrow-left"></mat-icon>
           </button>
 
-          <!-- Netflix-style rows always use wide landscape (16:9) cards. -->
+          <!-- Rows use vertical (portrait) poster cards. -->
           <media-view
-            [mode]="modes.Landscape"
+            [mode]="modes.Portrait"
             [items]="list.items"
             class="full-width nf-scroll"
             [showPlayButton]="settings.get('homepage.show_play_buttons')"
