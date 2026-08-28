@@ -40,7 +40,7 @@ export class TagsManagerComponent implements OnInit, ControlValueAccessor {
     constructor(private tagService: TagsService) {}
 
     ngOnInit() {
-        this.tagService.index({perPage: 15, type: this.tagType}).subscribe(response => {
+        this.tagService.index({perPage: 100, type: this.tagType}).subscribe(response => {
             this.existingTags$.next(response.pagination.data.filter(tag => tag.type !== 'status'));
         });
         this.formControl.valueChanges.subscribe(q => {

@@ -24,13 +24,31 @@ class TagController extends BaseController
     {
         $this->authorize('index', Tag::class);
 
-        $builder = $this->getModel()->newQuery();
-        if ($type = request('type')) {
-            $builder->where('type', '=', $type);
-        }
+        // Picker use-case (e.g. the genre/keyword selector) filters strictly by
+        // type. The MysqlDataSource path below rebuilds its own query from the
+        // bare model and DROPS any type constraint, which is why keyword tags
+        // (including explicit adult ones) were leaking into the genre picker.
+        // Handle type/notType here so the filter is actually applied.
+        $type = request('type');
+        $notType = request('notType');
+        if ($type || $notType) {
+            $builder = $this->getModel()->newQuery();
+            if ($type) {
+                $builder->where('type', '=', $type);
+            }
+            if ($notType) {
+                $builder->where('type', '!=', $notType);
+            }
+            if ($query = request('query')) {
+                $builder->where(function ($q) use ($query) {
+                    $q->where('name', 'like', "%{$query}%")
+                        ->orWhere('display_name', 'like', "%{$query}%");
+                });
+            }
+            $builder->orderBy('name', 'asc');
+            $pagination = $builder->paginate((int) request('perPage', 15));
 
-        if ($notType = request('notType')) {
-            $builder->where('type', '!=', $notType);
+            return $this->success(['pagination' => $pagination]);
         }
 
         $dataSource = (new MysqlDataSource($this->getModel(), $this->request->all()));
