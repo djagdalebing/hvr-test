@@ -1,3 +1,95 @@
 /* extracted from production bundle */
 homepage{display:block;width:100%}homepage .lists{margin-top:30px;margin-bottom:30px;min-height:calc(100vh - 600px)}homepage .list{margin-bottom:30px;padding:30px 0}homepage .list:nth-of-type(even){background-color:var(--be-background-alternative)}homepage .list h2{font-size:3rem;margin:0}homepage .list h2 a{color:inherit}homepage .list h2 a:hover{text-decoration:underline}homepage .list p{margin:0 0 5px}homepage .list media-view{padding-top:25px;margin-top:5px;border-top:1px solid var(--be-divider-default)}homepage .shared-ad-host{margin-top:60px}homepage .homepage-ad-host{margin-bottom:60px}
 
+/* ===== Netflix-style rows ===== */
+/* Uniform dark background (no alternating stripes) + tighter row spacing. */
+homepage .list { margin-bottom: 8px; padding: 18px 0; }
+homepage .list:nth-of-type(even) { background-color: transparent; }
+homepage .list h2 { font-size: 2rem; margin: 0 0 2px; font-weight: 700; }
+/* Drop the divider line above each row for the clean streaming look. */
+homepage .list media-view.nf-scroll { padding-top: 4px; margin-top: 0; border-top: none; }
+
+/* The row wrapper anchors the hover arrows. */
+homepage .nf-row { position: relative; }
+
+/* Turn the wrapping grid into a single horizontal, snap-scrolling track. */
+homepage .nf-row .auto-height-grid {
+  display: flex !important;
+  flex-wrap: nowrap;
+  grid-template-columns: none !important;
+  grid-gap: 0 !important;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  /* vertical breathing room so the hover-zoom isn't clipped */
+  padding: 22px 2px;
+  margin: -22px 0;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+homepage .nf-row .auto-height-grid::-webkit-scrollbar { display: none; }
+
+/* Fixed-width poster cards. */
+homepage .nf-row .auto-height-grid > title-portrait-item,
+homepage .nf-row .auto-height-grid > person-portrait-item {
+  flex: 0 0 auto;
+  width: 175px;
+  scroll-snap-align: start;
+  transition: transform .25s ease;
+}
+homepage .nf-row .auto-height-grid > title-landscape-item,
+homepage .nf-row .auto-height-grid > person-landscape-item {
+  flex: 0 0 auto;
+  width: 300px;
+  scroll-snap-align: start;
+  transition: transform .25s ease;
+}
+/* Netflix hover-zoom: the hovered card grows and sits above its neighbours. */
+homepage .nf-row .auto-height-grid > title-portrait-item:hover,
+homepage .nf-row .auto-height-grid > title-landscape-item:hover,
+homepage .nf-row .auto-height-grid > person-portrait-item:hover {
+  transform: scale(1.09);
+  z-index: 5;
+  position: relative;
+}
+
+/* Hover arrows (desktop). Hidden until the row is hovered. */
+homepage .nf-arrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 52px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+homepage .nf-arrow-left  { left: 0;  background: linear-gradient(90deg,  rgba(0,0,0,.7), rgba(0,0,0,0)); }
+homepage .nf-arrow-right { right: 0; background: linear-gradient(270deg, rgba(0,0,0,.7), rgba(0,0,0,0)); }
+homepage .nf-row:hover .nf-arrow { opacity: 1; }
+homepage .nf-arrow:hover { color: var(--be-accent-default); }
+homepage .nf-arrow mat-icon,
+homepage .nf-arrow .mat-icon { width: 40px; height: 40px; font-size: 40px; }
+homepage .nf-arrow svg { width: 40px; height: 40px; }
+
+/* Smaller cards + no arrows (swipe instead) on narrow / touch screens. */
+@media (max-width: 900px) {
+  homepage .nf-row .auto-height-grid > title-portrait-item,
+  homepage .nf-row .auto-height-grid > person-portrait-item { width: 140px; }
+  homepage .nf-row .auto-height-grid > title-landscape-item { width: 240px; }
+  homepage .list h2 { font-size: 1.7rem; }
+}
+@media (max-width: 560px) {
+  homepage .nf-row .auto-height-grid > title-portrait-item,
+  homepage .nf-row .auto-height-grid > person-portrait-item { width: 120px; }
+}
+@media (hover: none) {
+  homepage .nf-arrow { display: none; }
+}
+

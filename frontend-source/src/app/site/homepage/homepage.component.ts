@@ -35,4 +35,20 @@ export class HomepageComponent implements OnInit {
             this.lists$.next(data.api.lists);
         });
     }
+
+    /**
+     * Scroll a Netflix-style row left (dir -1) or right (dir 1) by ~90% of its
+     * visible width. Finds the scroll container relative to the clicked arrow so
+     * we don't need a ViewChild per row.
+     */
+    scrollRow(event: Event, dir: number) {
+        const row = (event.currentTarget as HTMLElement).closest('.nf-row');
+        const scroller = row?.querySelector('.auto-height-grid') as HTMLElement;
+        if (scroller) {
+            scroller.scrollBy({
+                left: dir * scroller.clientWidth * 0.9,
+                behavior: 'smooth',
+            });
+        }
+    }
 }
