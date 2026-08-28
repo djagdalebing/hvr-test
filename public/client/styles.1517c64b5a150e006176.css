@@ -10,24 +10,56 @@ title-secondary-details-panel .right .video-cover-empty{display:flex;flex-direct
 title-secondary-details-panel .right .video-cover-empty .mat-icon{width:44px;height:44px;font-size:44px;opacity:.55}
 title-secondary-details-panel .right .video-cover-empty span{font-size:1.5rem}
 
-/* ===== HVN Netflix-style homepage rows (global; scoped to `homepage`) ===== */
-homepage .list{margin-bottom:8px;padding:18px 0}
+/* ===== HVN modern Netflix-style homepage (global; scoped to `homepage`) ===== */
+/* Rhythm + edge-to-edge rows */
+homepage .lists{margin-top:18px;margin-bottom:48px}
+homepage .list{margin-bottom:6px;padding:14px 0;background:transparent!important}
 homepage .list:nth-of-type(even){background-color:transparent}
-homepage .list h2{font-size:2rem;margin:0 0 2px;font-weight:700}
-homepage .list media-view.nf-scroll{padding-top:4px;margin-top:0;border-top:none}
-homepage .nf-row{position:relative}
-homepage .nf-row .auto-height-grid{display:flex!important;flex-wrap:nowrap;grid-template-columns:none!important;grid-gap:0!important;gap:10px;overflow-x:auto;overflow-y:visible;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:22px 2px;margin:-22px 0;-ms-overflow-style:none;scrollbar-width:none}
+homepage .list .container{max-width:none;padding:0 clamp(20px,4vw,60px)}
+homepage .list p{margin:0 0 10px;color:#9a9a9a}
+/* Section header: smaller, semibold, muted, with an "explore" chevron on hover */
+homepage .list h2{font-size:1.45rem;line-height:1.2;margin:0 0 12px;font-weight:600;color:#e5e5e5;letter-spacing:.2px;display:inline-flex;align-items:center;gap:6px}
+homepage .list h2 a{color:inherit}
+homepage .list h2 a:hover{text-decoration:none}
+homepage .list h2::after{content:"\203A";color:var(--be-accent-default);font-size:1.35em;line-height:1;opacity:0;transform:translateX(-6px);transition:opacity .2s ease,transform .2s ease}
+homepage .list:hover h2::after{opacity:1;transform:translateX(0)}
+
+/* Row scroller: horizontal, free-scroll, hidden scrollbar */
+homepage .list media-view.nf-scroll{padding-top:0;margin-top:0;border-top:none}
+homepage .nf-row{position:relative;margin:0 -6px}
+homepage .nf-row .auto-height-grid{display:flex!important;flex-wrap:nowrap;grid-template-columns:none!important;grid-gap:0!important;gap:7px;overflow-x:auto;overflow-y:visible;scroll-snap-type:x proximity;scroll-behavior:smooth;scroll-padding-left:clamp(20px,4vw,60px);padding:30px 6px;margin:-30px 0;-ms-overflow-style:none;scrollbar-width:none}
 homepage .nf-row .auto-height-grid::-webkit-scrollbar{display:none}
-homepage .nf-row .auto-height-grid>title-portrait-item,homepage .nf-row .auto-height-grid>person-portrait-item{flex:0 0 auto;width:175px;scroll-snap-align:start;transition:transform .25s ease}
-homepage .nf-row .auto-height-grid>title-landscape-item,homepage .nf-row .auto-height-grid>person-landscape-item{flex:0 0 auto;width:300px;scroll-snap-align:start;transition:transform .25s ease}
-homepage .nf-row .auto-height-grid>title-portrait-item:hover,homepage .nf-row .auto-height-grid>title-landscape-item:hover,homepage .nf-row .auto-height-grid>person-portrait-item:hover{transform:scale(1.09);z-index:5;position:relative}
-homepage .nf-arrow{position:absolute;top:0;bottom:0;width:52px;z-index:10;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;opacity:0;transition:opacity .2s ease}
-homepage .nf-arrow-left{left:0;background:linear-gradient(90deg,rgba(0,0,0,.7),rgba(0,0,0,0))}
-homepage .nf-arrow-right{right:0;background:linear-gradient(270deg,rgba(0,0,0,.7),rgba(0,0,0,0))}
+
+/* Cards: fixed width, snap start */
+homepage .nf-row .auto-height-grid>title-portrait-item,
+homepage .nf-row .auto-height-grid>person-portrait-item{flex:0 0 auto;width:clamp(118px,13vw,188px);scroll-snap-align:start}
+homepage .nf-row .auto-height-grid>title-landscape-item,
+homepage .nf-row .auto-height-grid>person-landscape-item{flex:0 0 auto;width:clamp(220px,22vw,320px);scroll-snap-align:start}
+
+/* Poster: borderless, rounded, soft shadow. Zoom the POSTER (not the label). */
+homepage .nf-row .grid-item{cursor:pointer;background:#1b1b20;border-radius:6px}
+homepage .nf-row .grid-content{border:none!important;border-radius:6px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.5);transition:transform .32s cubic-bezier(.25,.8,.35,1),box-shadow .32s ease,outline-color .15s ease;transform-origin:center center;outline:0 solid rgba(255,255,255,.9)}
+homepage .nf-row .grid-content img{width:100%;height:100%;object-fit:cover}
+
+/* Hover: lift the card above neighbours, zoom poster, white ring + deep shadow */
+homepage .nf-row .auto-height-grid>*{transition:transform .32s cubic-bezier(.25,.8,.35,1)}
+homepage .nf-row .auto-height-grid>*:hover{z-index:6;position:relative}
+homepage .nf-row .auto-height-grid>*:hover .grid-content{transform:scale(1.16) translateY(-6px);box-shadow:0 16px 34px rgba(0,0,0,.75);outline:2px solid rgba(255,255,255,.92)}
+
+/* Labels: minimal — small title, drop the genre clutter for the clean look */
+homepage .nf-row .grid-label{margin-top:9px;text-align:left;padding:0 2px}
+homepage .nf-row .grid-label .title{font-size:.92rem;font-weight:500;color:#d6d6d6}
+homepage .nf-row .grid-label .title:hover{color:#fff}
+homepage .nf-row .grid-label .subtitle{display:none}
+
+/* Arrows: tall gradient panels, large chevron, appear on row hover */
+homepage .nf-arrow{position:absolute;top:0;bottom:38px;width:58px;z-index:20;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;opacity:0;border:none;transition:opacity .2s ease}
+homepage .nf-arrow-left{left:0;border-radius:0 6px 6px 0;background:linear-gradient(90deg,rgba(8,7,12,.95),rgba(8,7,12,0))}
+homepage .nf-arrow-right{right:0;border-radius:6px 0 0 6px;background:linear-gradient(270deg,rgba(8,7,12,.95),rgba(8,7,12,0))}
 homepage .nf-row:hover .nf-arrow{opacity:1}
-homepage .nf-arrow:hover{color:var(--be-accent-default)}
-homepage .nf-arrow mat-icon,homepage .nf-arrow .mat-icon{width:40px;height:40px;font-size:40px}
-homepage .nf-arrow svg{width:40px;height:40px}
-@media (max-width:900px){homepage .nf-row .auto-height-grid>title-portrait-item,homepage .nf-row .auto-height-grid>person-portrait-item{width:140px}homepage .nf-row .auto-height-grid>title-landscape-item{width:240px}homepage .list h2{font-size:1.7rem}}
-@media (max-width:560px){homepage .nf-row .auto-height-grid>title-portrait-item,homepage .nf-row .auto-height-grid>person-portrait-item{width:120px}}
+homepage .nf-arrow svg,homepage .nf-arrow mat-icon,homepage .nf-arrow .mat-icon{width:36px;height:36px;font-size:36px;transition:transform .2s ease;filter:drop-shadow(0 2px 5px rgba(0,0,0,.7))}
+homepage .nf-arrow:hover svg,homepage .nf-arrow:hover mat-icon{transform:scale(1.28)}
+
+/* Responsive + touch */
+@media (max-width:900px){homepage .list h2{font-size:1.2rem}homepage .list .container{padding:0 16px}homepage .nf-row .auto-height-grid{scroll-padding-left:16px}}
 @media (hover:none){homepage .nf-arrow{display:none}}
