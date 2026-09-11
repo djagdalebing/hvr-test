@@ -1,0 +1,41 @@
+<button type="button" class="fb-fab" (click)="toggle()" [attr.aria-expanded]="open"
+        aria-label="Send feedback or report a problem">
+    <mat-icon svgIcon="comment"></mat-icon>
+    <span class="fb-fab-label">Send Feedback</span>
+</button>
+
+<div class="fb-panel" *ngIf="open">
+    <div class="fb-panel-head">
+        <h3>Send feedback</h3>
+        <button type="button" class="fb-close" (click)="toggle()" aria-label="Close">
+            <mat-icon svgIcon="close"></mat-icon>
+        </button>
+    </div>
+
+    <div class="fb-panel-body">
+        <p class="fb-context">
+            About this page: <strong>{{ currentPage() }}</strong>
+        </p>
+
+        <label class="fb-label" for="fb-type">What kind of feedback?</label>
+        <select id="fb-type" class="fb-input" [(ngModel)]="form.type">
+            <option *ngFor="let t of types" [value]="t.value">{{ t.label }}</option>
+        </select>
+
+        <label class="fb-label" for="fb-message">What happened?</label>
+        <textarea id="fb-message" class="fb-input fb-textarea" rows="4" maxlength="5000"
+                  [(ngModel)]="form.message"
+                  placeholder="Tell us what was confusing or didn't work…"></textarea>
+
+        <label class="fb-label" for="fb-email">Email <span class="fb-hint">(optional — if you'd like a reply)</span></label>
+        <input id="fb-email" class="fb-input" type="email" maxlength="190"
+               [(ngModel)]="form.contact_email" placeholder="you@example.com">
+    </div>
+
+    <div class="fb-panel-actions">
+        <button type="button" class="fb-btn fb-btn-ghost" (click)="toggle()" [disabled]="sending">Cancel</button>
+        <button type="button" class="fb-btn fb-btn-primary" (click)="submit()" [disabled]="sending">
+            {{ sending ? 'Sending…' : 'Send feedback' }}
+        </button>
+    </div>
+</div>

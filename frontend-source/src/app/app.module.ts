@@ -25,6 +25,7 @@ import {UrlGeneratorService} from '@common/core/services/url-generator.service';
 import {AppUrlGeneratorService} from './app-url-generator.service';
 import {HTTP_INTERCEPTORS} from '@angular/common/http';
 import {MobileApiInterceptor} from './mobile/mobile-api.interceptor';
+import {FeedbackModule} from './site/hvn-feedback/feedback.module';
 
 @NgModule({
     declarations: [AppComponent],
@@ -45,6 +46,7 @@ import {MobileApiInterceptor} from './mobile/mobile-api.interceptor';
         CookieNoticeModule,
         ContactPageModule,
         LoadingIndicatorModule,
+        FeedbackModule,
 
         NgxsModule.forRoot([], {developmentMode: false}),
 

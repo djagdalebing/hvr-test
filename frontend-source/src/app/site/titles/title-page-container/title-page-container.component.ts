@@ -40,11 +40,38 @@ export class TitlePageContainerComponent implements OnInit {
         this.map = new Map([['key', 'value']]);
     }
 
+    /** Guards against re-triggering autoplay when the title reloads. */
+    private autoPlayed = false;
+
     ngOnInit() {
         this.titlePage.changed$.subscribe(() => {
             this.matTabGroup.selectedIndex = 0;
             this.cd.markForCheck();
+            this.maybeAutoPlay();
         });
+    }
+
+    /**
+     * Supports ?play=full and ?play=trailer so other pages (e.g. a creator's
+     * public profile) can link straight into playback instead of only linking
+     * to the details page.
+     */
+    private maybeAutoPlay() {
+        if (this.autoPlayed) {
+            return;
+        }
+        const want = this.route.snapshot.queryParams.play;
+        if (!want) {
+            return;
+        }
+        const videos = Array.from(this.titlePage.videos.values());
+        const video = want === 'trailer'
+            ? videos.find(v => v.category === 'trailer')
+            : (this.titlePage.primaryVideo || videos.find(v => v.category === 'full') || videos[0]);
+        if (video) {
+            this.autoPlayed = true;
+            this.titlePage.playVideo(video);
+        }
     }
 
     public openImageGallery(images: Image[], activeIndex: number) {

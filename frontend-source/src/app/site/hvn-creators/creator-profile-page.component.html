@@ -19,7 +19,14 @@
             <div class="meta">
                 <h1>{{ displayName() }}</h1>
                 <div class="handle">{{ user.username }}</div>
-                <div class="bio" *ngIf="profile?.bio">{{ profile.bio }}</div>
+                <div class="bio-wrap" *ngIf="profile?.bio">
+                    <div class="bio" [class.clamped]="bioIsLong() && !bioExpanded">{{ profile.bio }}</div>
+                    <button type="button" class="bio-toggle" *ngIf="bioIsLong()"
+                            (click)="bioExpanded = !bioExpanded"
+                            [attr.aria-expanded]="bioExpanded">
+                        {{ bioExpanded ? 'Read less' : 'Read more' }}
+                    </button>
+                </div>
                 <div class="socials" *ngIf="socialLinks().length">
                     <a *ngFor="let s of socialLinks()" [href]="s.url" target="_blank" rel="noopener" class="social-chip">
                         <mat-icon [svgIcon]="s.icon"></mat-icon>
@@ -33,19 +40,35 @@
             <h2>Titles by {{ displayName() }}</h2>
             <ul class="title-grid">
                 <li *ngFor="let t of titles" class="title-card">
-                    <a [routerLink]="['/titles', t.id, t.name || '-']" class="title-link">
+                    <a [routerLink]="titleLink(t)" class="title-link">
                         <div class="title-poster" [class.placeholder]="!t.poster">
                             <img *ngIf="t.poster" [src]="t.poster" [alt]="t.name">
                         </div>
-                        <div class="title-meta">
-                            <div class="title-name">{{ t.name }}</div>
-                            <div class="title-sub">
-                                <span class="title-type">{{ t.type || 'movie' }}</span>
-                                <span *ngIf="t.year"> · {{ t.year }}</span>
-                                <span *ngIf="t.runtime"> · {{ t.runtime }} min</span>
-                            </div>
-                        </div>
                     </a>
+                    <div class="title-meta">
+                        <a [routerLink]="titleLink(t)" class="title-name">{{ t.name }}</a>
+                        <div class="title-sub">
+                            <span class="title-type">{{ t.type || 'movie' }}</span>
+                            <span *ngIf="t.year"> · {{ t.year }}</span>
+                            <span *ngIf="t.runtime"> · {{ t.runtime }} min</span>
+                        </div>
+                        <p class="title-tagline" *ngIf="t.tagline">{{ t.tagline }}</p>
+                        <div class="title-actions">
+                            <a mat-flat-button color="accent" class="ta-btn ta-watch"
+                               *ngIf="t.has_video"
+                               [routerLink]="titleLink(t)" [queryParams]="{play: 'full'}">
+                                <mat-icon svgIcon="play-arrow"></mat-icon><span>Watch</span>
+                            </a>
+                            <a mat-stroked-button class="ta-btn"
+                               *ngIf="t.has_trailer"
+                               [routerLink]="titleLink(t)" [queryParams]="{play: 'trailer'}">
+                                <mat-icon svgIcon="movie"></mat-icon><span>Trailer</span>
+                            </a>
+                            <a mat-button class="ta-btn ta-details" [routerLink]="titleLink(t)">
+                                <mat-icon svgIcon="info"></mat-icon><span>Details</span>
+                            </a>
+                        </div>
+                    </div>
                 </li>
             </ul>
         </section>

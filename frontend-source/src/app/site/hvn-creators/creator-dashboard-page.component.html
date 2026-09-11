@@ -32,6 +32,22 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Creators manage their public presence here, so give them a
+                     direct way to edit it (the editor still lives in account
+                     settings; this deep-links straight to that panel). -->
+                <div class="dash-profile-actions">
+                    <a mat-flat-button color="accent" class="dash-edit-profile"
+                       routerLink="/account/settings" fragment="public-profile">
+                        <mat-icon svgIcon="edit"></mat-icon>
+                        <span>Edit profile</span>
+                    </a>
+                    <a mat-stroked-button class="dash-view-profile"
+                       *ngIf="user?.username"
+                       [routerLink]="['/creators', user.username]">
+                        <span>View public profile</span>
+                    </a>
+                </div>
             </aside>
 
             <div class="dash-main">

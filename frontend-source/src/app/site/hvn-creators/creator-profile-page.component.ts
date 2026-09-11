@@ -74,6 +74,23 @@ export class CreatorProfilePageComponent implements OnInit {
         return p?.image_path ? '/storage/' + p.image_path : null;
     }
 
+    // ----- biography -----
+    /** Long bios are collapsed behind a "Read more" toggle. */
+    public bioExpanded = false;
+    private static readonly BIO_CLAMP_CHARS = 320;
+
+    public bioIsLong(): boolean {
+        const bio = this.profile?.bio || '';
+        return bio.length > CreatorProfilePageComponent.BIO_CLAMP_CHARS
+            || (bio.match(/\n/g) || []).length >= 4;
+    }
+
+    // ----- featured work -----
+    /** Route parts for a title, shared by every action button. */
+    public titleLink(t: any): any[] {
+        return ['/titles', t.id, t.name || '-'];
+    }
+
     public socialLinks() {
         const p = this.profile || {};
         const list = [];

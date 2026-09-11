@@ -167,6 +167,11 @@ Route::get('announcements/unsubscribe/{user}', [HvnController::class, 'unsubscri
 // AppHttpClient auto-prefixes outgoing requests with 'secure/', so all SPA
 // reads AND writes have to live under this prefix.
 Route::group(['prefix' => 'secure'], function () {
+    // Beta feedback — open to guests too, so a confused tester can report
+    // without signing in. Admin list is permission-checked in the controller.
+    Route::post('feedback',               [\App\Http\Controllers\FeedbackController::class, 'store']);
+    Route::get('admin/feedback',          [\App\Http\Controllers\FeedbackController::class, 'index']);
+
     Route::get('creators',                [HvnController::class, 'apiCreatorsList']);
     Route::get('creators/{username}',     [HvnController::class, 'apiCreatorProfile'])->where('username', '[^/]+');
     // People picker (Phase 2) — search existing people, create new (pending).

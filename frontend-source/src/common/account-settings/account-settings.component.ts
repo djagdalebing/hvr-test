@@ -236,6 +236,26 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
 
     ngAfterViewInit() {
         this.loadExtraPanels();
+        this.scrollToFragment();
+    }
+
+    /**
+     * Deep-link support, e.g. /account/settings#public-profile — lets the
+     * Creator Dashboard's "Edit profile" button jump straight to the public
+     * profile editor instead of dropping the user at the top of settings.
+     */
+    private scrollToFragment() {
+        const fragment = this.route.snapshot.fragment;
+        if (!fragment) {
+            return;
+        }
+        // Panels render asynchronously, so wait a tick before scrolling.
+        setTimeout(() => {
+            const el = document.getElementById(fragment);
+            if (el) {
+                el.scrollIntoView({behavior: 'smooth', block: 'start'});
+            }
+        }, 300);
     }
 
     public updateAccountSettings() {

@@ -1,0 +1,153 @@
+:host {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 1200;
+    display: block;
+}
+
+.fb-fab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    height: 44px;
+    border: none;
+    border-radius: 22px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--be-accent-default, #7b5cff);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .45);
+    transition: transform .15s ease, box-shadow .15s ease;
+
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, .55);
+    }
+
+    .mat-icon { width: 20px; height: 20px; font-size: 20px; }
+}
+
+.fb-panel {
+    position: absolute;
+    right: 0;
+    bottom: 56px;
+    width: min(92vw, 360px);
+    max-height: min(76vh, 560px);
+    overflow-y: auto;
+    background: var(--be-background-alternative, #1e1e24);
+    border: 1px solid var(--be-divider-default, rgba(255, 255, 255, .1));
+    border-radius: 10px;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, .6);
+    color: var(--be-text, #fff);
+}
+
+.fb-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid var(--be-divider-default, rgba(255, 255, 255, .08));
+
+    h3 { margin: 0; font-size: 15px; font-weight: 700; }
+
+    .fb-close {
+        background: none;
+        border: 0;
+        color: inherit;
+        opacity: .6;
+        cursor: pointer;
+        padding: 0;
+        line-height: 0;
+        &:hover { opacity: 1; }
+        .mat-icon { width: 18px; height: 18px; font-size: 18px; }
+    }
+}
+
+.fb-panel-body {
+    padding: 12px 14px;
+}
+
+.fb-context {
+    margin: 0 0 12px;
+    font-size: 12px;
+    opacity: .65;
+    overflow-wrap: anywhere;
+
+    strong { font-weight: 600; opacity: .95; }
+}
+
+.fb-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: .8;
+    margin: 10px 0 4px;
+
+    .fb-hint { font-weight: 400; opacity: .6; }
+}
+
+.fb-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    color: inherit;
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid var(--be-divider-default, rgba(255, 255, 255, .12));
+    border-radius: 6px;
+    outline: none;
+
+    &:focus { border-color: var(--be-accent-default, #7b5cff); }
+}
+
+.fb-textarea {
+    resize: vertical;
+    min-height: 84px;
+    line-height: 1.45;
+}
+
+.fb-panel-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 10px 14px 14px;
+}
+
+.fb-btn {
+    padding: 0 14px;
+    height: 34px;
+    border-radius: 6px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &[disabled] { opacity: .6; cursor: default; }
+}
+
+.fb-btn-ghost {
+    background: none;
+    color: inherit;
+    opacity: .75;
+    &:hover:not([disabled]) { opacity: 1; }
+}
+
+.fb-btn-primary {
+    background: var(--be-accent-default, #7b5cff);
+    color: #fff;
+}
+
+// Keep the label from crowding small screens — icon-only there.
+@media (max-width: 600px) {
+    :host { right: 12px; bottom: 12px; }
+    .fb-fab {
+        padding: 0;
+        width: 44px;
+        justify-content: center;
+        .fb-fab-label { display: none; }
+    }
+}

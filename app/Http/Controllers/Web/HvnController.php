@@ -546,9 +546,24 @@ class HvnController extends Controller
         $titles = Title::whereHas('videos', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
+            ->with(['videos' => function ($q) {
+                $q->where('approved', 1)->select('id', 'title_id', 'category');
+            }])
             ->orderByDesc('created_at')
             ->take(40)
-            ->get(['id', 'name', 'type', 'year', 'poster', 'tagline', 'runtime', 'genre', 'created_at']);
+            ->get(['id', 'name', 'type', 'year', 'poster', 'backdrop', 'tagline', 'runtime', 'genre', 'created_at']);
+
+        // Flag what the profile page can offer per title (watch / trailer) so
+        // it can show real actions instead of a single generic link.
+        $titles->each(function ($t) {
+            $videos = $t->relationLoaded('videos') ? $t->videos : collect();
+            $t->setAttribute(
+                'has_trailer',
+                $videos->contains(fn($v) => $v->category === 'trailer'),
+            );
+            $t->setAttribute('has_video', $videos->isNotEmpty());
+            $t->unsetRelation('videos');
+        });
 
         // Recent community posts by this creator (also a way of "showing
         // what they're up to" on the public profile).
