@@ -30,9 +30,10 @@
       <div class="inline-container">
         <div class="input-container">
           <label for="type" trans>Type</label>
-          <select formControlName="is_series" id="type" required>
-            <option [ngValue]="false" trans>Movie</option>
-            <option [ngValue]="true" trans>TV Series</option>
+          <select formControlName="type" id="type" required>
+            <option value="movie" trans>Movie</option>
+            <option value="series" trans>TV Series</option>
+            <option value="poc" trans>Proof of Concept (POC)</option>
           </select>
         </div>
 

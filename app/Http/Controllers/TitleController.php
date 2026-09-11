@@ -132,6 +132,8 @@ class TitleController extends BaseController
             'overrideWithEmptyValues' => true,
         ]);
 
+        $this->applyType($title);
+
         return $this->success(['title' => $title]);
     }
 
@@ -144,7 +146,24 @@ class TitleController extends BaseController
 
         $title = $this->title->create($this->request->all());
 
+        $this->applyType($title);
+
         return $this->success(['title' => $title]);
+    }
+
+    /**
+     * Persist the title `type` (movie | series | poc). The column is guarded so
+     * it isn't mass-assigned; set it explicitly and keep is_series consistent.
+     */
+    private function applyType(Title $title): void
+    {
+        $type = $this->request->get('type');
+        $valid = [Title::MOVIE_TYPE, Title::SERIES_TYPE, 'poc'];
+        if ($type && in_array($type, $valid, true)) {
+            $title->type = $type;
+            $title->is_series = $type === Title::SERIES_TYPE;
+            $title->save();
+        }
     }
 
     public function destroy()

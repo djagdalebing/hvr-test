@@ -40,6 +40,7 @@ export class PrimaryFactsPanelComponent implements OnInit {
         name: ['', [Validators.required, Validators.minLength(1)]],
         original_title: ['', [Validators.required, Validators.minLength(1)]],
         is_series: [false, [Validators.required]],
+        type: ['movie'],
         language: [''],
         tagline: ['', [Validators.minLength(1), Validators.maxLength(250)]],
         poster: ['', [Validators.minLength(1), Validators.maxLength(250)]],
@@ -76,10 +77,19 @@ export class PrimaryFactsPanelComponent implements OnInit {
             .subscribe(title => {
                 this.form.patchValue({
                     ...title,
+                    // Derive the Type selector from the stored type, falling back
+                    // to movie/series for titles saved before "type" existed.
+                    type: (title as any).type || (title.is_series ? 'series' : 'movie'),
                     release_date: title.release_date ? title.release_date.split('T')[0] : null,
                 });
                 this.poster$.next(title.poster);
             });
+
+        // Keep is_series consistent with the Type selector (POC/Movie are not
+        // series; TV Series is). The backend also enforces this.
+        this.form.get('type').valueChanges.subscribe(type => {
+            this.form.get('is_series').setValue(type === 'series', {emitEvent: false});
+        });
 
         this.form.get('poster').valueChanges.subscribe(value => {
             this.poster$.next(value);

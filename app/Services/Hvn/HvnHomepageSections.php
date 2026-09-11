@@ -49,6 +49,11 @@ class HvnHomepageSections
                 'description' => 'The most-watched titles on Her Vision Network right now.',
                 'style' => 'portrait',
             ],
+            'hvn-poc' => [
+                'name' => 'Proof of Concept',
+                'description' => 'Early proof-of-concept pitches and demos from HVN creators.',
+                'style' => 'portrait',
+            ],
         ];
     }
 
@@ -84,9 +89,22 @@ class HvnHomepageSections
                 return $this->editorPickIds($limit);
             case 'hvn-highest-viewed':
                 return $this->highestViewedIds($limit);
+            case 'hvn-poc':
+                return $this->pocIds($limit);
             default:
                 return [];
         }
+    }
+
+    /** Approved Proof-of-Concept titles, newest first. */
+    private function pocIds(int $limit): array
+    {
+        return Title::where('type', 'poc')
+            ->where('status', 'approved')
+            ->orderByRaw('COALESCE(approved_at, created_at) DESC')
+            ->limit($limit)
+            ->pluck('id')
+            ->all();
     }
 
     /** Newest-approved-first titles uploaded by creators on this platform. */
