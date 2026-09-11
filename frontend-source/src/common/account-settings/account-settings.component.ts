@@ -253,10 +253,18 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
         // role resolves), so poll briefly until the target exists rather than
         // guessing a single delay.
         let attempts = 0;
+        const scrollTo = (el: HTMLElement) =>
+            el.scrollIntoView({behavior: 'smooth', block: 'start'});
+
         const tryScroll = () => {
             const el = document.getElementById(fragment);
             if (el) {
-                el.scrollIntoView({behavior: 'smooth', block: 'start'});
+                // The router is configured with scrollPositionRestoration:'top',
+                // which scrolls to the top AFTER an in-app navigation — so
+                // re-assert the scroll a couple of times to land last.
+                scrollTo(el);
+                setTimeout(() => scrollTo(el), 350);
+                setTimeout(() => scrollTo(el), 800);
                 return;
             }
             if (++attempts < 25) {
