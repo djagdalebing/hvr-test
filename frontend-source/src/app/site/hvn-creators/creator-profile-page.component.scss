@@ -172,7 +172,8 @@
             }
         }
 
-        .text-toggle { margin: 0 0 8px; }
+        // Block so it doesn't collide with the "Visit ↗" link beside it.
+        .text-toggle { display: block; margin: 0 0 8px; }
         .project-link { font-size: 13px; color: var(--be-accent, #F65F54); text-decoration: none; }
         .project-link:hover { text-decoration: underline; }
     }
