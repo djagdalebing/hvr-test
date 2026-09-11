@@ -158,7 +158,8 @@ class TitleController extends BaseController
     private function applyType(Title $title): void
     {
         $type = $this->request->get('type');
-        $valid = [Title::MOVIE_TYPE, Title::SERIES_TYPE, 'poc'];
+        // Same set the creator dashboard offers, so both add-title forms agree.
+        $valid = [Title::MOVIE_TYPE, 'short', Title::SERIES_TYPE, 'documentary', 'poc'];
         if ($type && in_array($type, $valid, true)) {
             $title->type = $type;
             $title->is_series = $type === Title::SERIES_TYPE;

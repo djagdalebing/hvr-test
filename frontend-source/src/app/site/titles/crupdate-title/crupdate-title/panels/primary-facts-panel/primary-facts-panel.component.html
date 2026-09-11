@@ -30,9 +30,13 @@
       <div class="inline-container">
         <div class="input-container">
           <label for="type" trans>Type</label>
+          <!-- Keep these options in sync with the creator dashboard's
+               add-title form (creator-dashboard-page.component.html). -->
           <select formControlName="type" id="type" required>
             <option value="movie" trans>Movie</option>
-            <option value="series" trans>TV Series</option>
+            <option value="short" trans>Short</option>
+            <option value="series" trans>Series</option>
+            <option value="documentary" trans>Documentary</option>
             <option value="poc" trans>Proof of Concept (POC)</option>
           </select>
         </div>
