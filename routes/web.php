@@ -197,6 +197,9 @@ Route::group(['prefix' => 'secure'], function () {
     Route::get('creator/content',          [\App\Http\Controllers\CreatorContentController::class, 'index']);
     Route::post('creator/content/presign', [\App\Http\Controllers\CreatorContentController::class, 'presign']);
     Route::post('creator/content',         [\App\Http\Controllers\CreatorContentController::class, 'store']);
+    // Edit an existing title from the creator dashboard (same panel as upload).
+    // Numeric constraint keeps this from shadowing creator/content/presign.
+    Route::post('creator/content/{id}',    [\App\Http\Controllers\CreatorContentController::class, 'update'])->where('id', '[0-9]+');
     Route::delete('creator/content/{id}',  [\App\Http\Controllers\CreatorContentController::class, 'destroy'])->where('id', '[0-9]+');
 
     // Owner edit/delete (controller checks ownership; admin uses /secure/admin/*).
