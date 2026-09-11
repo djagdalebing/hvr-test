@@ -157,6 +157,21 @@ class HvnController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
+        // Be forgiving about scheme: creators naturally type "instagram.com/you",
+        // which would otherwise fail the |url rule and look like a silent
+        // failure to them.
+        $urlFields = ['website_url', 'youtube_url', 'twitter_url', 'instagram_url', 'facebook_url'];
+        $normalized = [];
+        foreach ($urlFields as $field) {
+            $value = trim((string) $request->input($field, ''));
+            if ($value !== '' && !preg_match('#^https?://#i', $value)) {
+                $normalized[$field] = 'https://' . ltrim($value, '/');
+            }
+        }
+        if (!empty($normalized)) {
+            $request->merge($normalized);
+        }
+
         $request->validate([
             'username'      => 'sometimes|required|string|min:3|max:30|alpha_dash|unique:users,username,' . $user->id,
             'display_name'  => 'nullable|string|max:100',

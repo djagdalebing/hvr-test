@@ -117,6 +117,8 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
     public hvnProfileForm = this.fb.group({
         display_name:  [''],
         bio:           [''],
+        website_url:   [''],
+        contact_email: [''],
         youtube_url:   [''],
         twitter_url:   [''],
         instagram_url: [''],
@@ -127,7 +129,7 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
         if (this.hvnSaving) return;
         const fd = new FormData();
         const v = this.hvnProfileForm.value as Record<string, any>;
-        const fields = ['display_name', 'bio',
+        const fields = ['display_name', 'bio', 'website_url', 'contact_email',
             'youtube_url', 'twitter_url', 'instagram_url', 'facebook_url'];
         fields.forEach(k => { if (v[k] !== null && v[k] !== undefined) fd.append(k, v[k]); });
         this.hvnSaving = true;
@@ -138,6 +140,8 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
                 this.hvnProfileForm.patchValue({
                     display_name:  p.display_name  || '',
                     bio:           p.bio           || '',
+                    website_url:   p.website_url   || '',
+                    contact_email: p.contact_email || '',
                     youtube_url:   p.youtube_url   || '',
                     twitter_url:   p.twitter_url   || '',
                     instagram_url: p.instagram_url || '',
@@ -182,6 +186,8 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
                         this.hvnProfileForm.patchValue({
                             display_name:  p.display_name  || '',
                             bio:           p.bio           || '',
+                            website_url:   p.website_url   || '',
+                            contact_email: p.contact_email || '',
                             youtube_url:   p.youtube_url   || '',
                             twitter_url:   p.twitter_url   || '',
                             instagram_url: p.instagram_url || '',
