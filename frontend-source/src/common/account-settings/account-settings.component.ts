@@ -249,13 +249,21 @@ export class AccountSettingsComponent implements OnInit, AfterViewInit {
         if (!fragment) {
             return;
         }
-        // Panels render asynchronously, so wait a tick before scrolling.
-        setTimeout(() => {
+        // Panels render asynchronously (the creator panel only appears once the
+        // role resolves), so poll briefly until the target exists rather than
+        // guessing a single delay.
+        let attempts = 0;
+        const tryScroll = () => {
             const el = document.getElementById(fragment);
             if (el) {
                 el.scrollIntoView({behavior: 'smooth', block: 'start'});
+                return;
             }
-        }, 300);
+            if (++attempts < 25) {
+                setTimeout(tryScroll, 200);
+            }
+        };
+        setTimeout(tryScroll, 200);
     }
 
     public updateAccountSettings() {
