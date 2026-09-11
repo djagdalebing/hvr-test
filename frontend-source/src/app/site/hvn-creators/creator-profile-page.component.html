@@ -76,7 +76,7 @@
         <section class="profile-section" *ngIf="projects.length">
             <h2>Previous work</h2>
             <ul class="project-grid">
-                <li *ngFor="let p of projects" class="project-card">
+                <li *ngFor="let p of projects; index as i" class="project-card">
                     <div class="project-thumb" [class.placeholder]="!projectImage(p)">
                         <img *ngIf="projectImage(p)" [src]="projectImage(p)" [alt]="p.title">
                     </div>
@@ -87,7 +87,14 @@
                             <span *ngIf="p.role && p.year"> · </span>
                             <span *ngIf="p.year">{{ p.year }}</span>
                         </div>
-                        <p class="project-desc" *ngIf="p.description">{{ p.description }}</p>
+                        <ng-container *ngIf="p.description">
+                            <p #projDesc class="project-desc" [class.clamped]="!projectExpanded[i]">{{ p.description }}</p>
+                            <button type="button" class="text-toggle" *ngIf="projectOverflows[i]"
+                                    (click)="toggleProject(i)"
+                                    [attr.aria-expanded]="!!projectExpanded[i]">
+                                {{ projectExpanded[i] ? 'Read less' : 'Read more' }}
+                            </button>
+                        </ng-container>
                         <a *ngIf="p.url" [href]="p.url" target="_blank" rel="noopener" class="project-link">Visit ↗</a>
                     </div>
                 </li>

@@ -115,6 +115,20 @@
     gap: 14px;
 }
 
+// Shared "Read more / Read less" link style (bio + project descriptions).
+.text-toggle {
+    display: inline-block;
+    padding: 0;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--be-accent-default, #F65F54);
+
+    &:hover { text-decoration: underline; }
+}
+
 .project-card {
     display: flex;
     gap: 14px;
@@ -145,9 +159,20 @@
             font-size: 13px;
             line-height: 1.5;
             opacity: .9;
-            margin: 0 0 8px;
+            margin: 0 0 4px;
             white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+
+            &.clamped {
+                display: -webkit-box;
+                -webkit-line-clamp: 3;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
         }
+
+        .text-toggle { margin: 0 0 8px; }
         .project-link { font-size: 13px; color: var(--be-accent, #F65F54); text-decoration: none; }
         .project-link:hover { text-decoration: underline; }
     }

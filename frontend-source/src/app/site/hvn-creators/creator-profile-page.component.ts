@@ -6,7 +6,9 @@ import {
     ElementRef,
     HostListener,
     OnInit,
+    QueryList,
     ViewChild,
+    ViewChildren,
     ViewEncapsulation,
 } from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -52,9 +54,11 @@ export class CreatorProfilePageComponent implements OnInit {
                 this.loading = false;
                 this.bioExpanded = false;
                 this.bioOverflows = false;
+                this.projectExpanded = {};
+                this.projectOverflows = {};
                 this.cd.markForCheck();
-                // Measure once the bio has actually rendered.
-                setTimeout(() => this.measureBio());
+                // Measure once the text has actually rendered.
+                setTimeout(() => { this.measureBio(); this.measureProjects(); });
             },
             () => { this.loading = false; this.notFound = true; this.cd.markForCheck(); },
         );
@@ -117,10 +121,49 @@ export class CreatorProfilePageComponent implements OnInit {
         }
     }
 
-    /** Re-check on resize: a bio that fits on desktop may clamp on mobile. */
+    // ----- previous work descriptions -----
+    /**
+     * Same treatment as the bio, but per project card: clamp long descriptions
+     * and only offer "Read more" where the text is genuinely cut off.
+     */
+    public projectExpanded: {[index: number]: boolean} = {};
+    public projectOverflows: {[index: number]: boolean} = {};
+
+    @ViewChildren('projDesc') private projDescEls?: QueryList<ElementRef<HTMLElement>>;
+
+    public toggleProject(index: number) {
+        this.projectExpanded[index] = !this.projectExpanded[index];
+        this.cd.markForCheck();
+    }
+
+    public measureProjects() {
+        if (!this.projDescEls) {
+            return;
+        }
+        let changed = false;
+        this.projDescEls.forEach((ref, index) => {
+            if (this.projectExpanded[index]) {
+                return;
+            }
+            const el = ref.nativeElement;
+            const overflowing = el.scrollHeight > el.clientHeight + 2;
+            if (overflowing !== !!this.projectOverflows[index]) {
+                this.projectOverflows[index] = overflowing;
+                changed = true;
+            }
+        });
+        if (changed) {
+            this.cd.markForCheck();
+        }
+    }
+
+    /** Re-check on resize: text that fits on desktop may clamp on mobile. */
     @HostListener('window:resize')
     public onWindowResize() {
-        setTimeout(() => this.measureBio());
+        setTimeout(() => {
+            this.measureBio();
+            this.measureProjects();
+        });
     }
 
     // ----- featured work -----
