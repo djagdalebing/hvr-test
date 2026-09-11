@@ -52,7 +52,7 @@ class CreatorContentController extends BaseController
 
         $this->validate($request, [
             'title'          => 'required|string|min:2|max:250',
-            'type'           => 'required|in:movie,short,series,documentary',
+            'type'           => 'required|in:movie,short,series,documentary,poc',
             'year'           => 'nullable|integer|min:1900|max:2099',
             'description'    => 'nullable|string|max:5000',
             'tagline'        => 'nullable|string|max:250',
