@@ -1,5 +1,14 @@
 // @ts-nocheck
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation} from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    ElementRef,
+    HostListener,
+    OnInit,
+    ViewChild,
+    ViewEncapsulation,
+} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {AppHttpClient} from '@common/core/http/app-http-client.service';
 
@@ -41,7 +50,11 @@ export class CreatorProfilePageComponent implements OnInit {
                 this.titles = res.titles || [];
                 this.posts = res.posts || [];
                 this.loading = false;
+                this.bioExpanded = false;
+                this.bioOverflows = false;
                 this.cd.markForCheck();
+                // Measure once the bio has actually rendered.
+                setTimeout(() => this.measureBio());
             },
             () => { this.loading = false; this.notFound = true; this.cd.markForCheck(); },
         );
@@ -77,12 +90,37 @@ export class CreatorProfilePageComponent implements OnInit {
     // ----- biography -----
     /** Long bios are collapsed behind a "Read more" toggle. */
     public bioExpanded = false;
-    private static readonly BIO_CLAMP_CHARS = 320;
 
-    public bioIsLong(): boolean {
-        const bio = this.profile?.bio || '';
-        return bio.length > CreatorProfilePageComponent.BIO_CLAMP_CHARS
-            || (bio.match(/\n/g) || []).length >= 4;
+    /**
+     * Whether the clamped bio is actually cut off. Measured from the DOM rather
+     * than guessed from character count — a character threshold disagreed with
+     * the line clamp, so "Read more" could appear on a bio that was already
+     * fully visible (and did nothing when clicked).
+     */
+    public bioOverflows = false;
+
+    @ViewChild('bioEl') private bioEl?: ElementRef<HTMLElement>;
+
+    public measureBio() {
+        const el = this.bioEl && this.bioEl.nativeElement;
+        if (!el) {
+            return;
+        }
+        // Only meaningful while clamped; once expanded the toggle must stay.
+        if (this.bioExpanded) {
+            return;
+        }
+        const overflowing = el.scrollHeight > el.clientHeight + 2;
+        if (overflowing !== this.bioOverflows) {
+            this.bioOverflows = overflowing;
+            this.cd.markForCheck();
+        }
+    }
+
+    /** Re-check on resize: a bio that fits on desktop may clamp on mobile. */
+    @HostListener('window:resize')
+    public onWindowResize() {
+        setTimeout(() => this.measureBio());
     }
 
     // ----- featured work -----

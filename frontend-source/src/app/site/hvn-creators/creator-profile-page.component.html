@@ -20,8 +20,8 @@
                 <h1>{{ displayName() }}</h1>
                 <div class="handle">{{ user.username }}</div>
                 <div class="bio-wrap" *ngIf="profile?.bio">
-                    <div class="bio" [class.clamped]="bioIsLong() && !bioExpanded">{{ profile.bio }}</div>
-                    <button type="button" class="bio-toggle" *ngIf="bioIsLong()"
+                    <div #bioEl class="bio" [class.clamped]="!bioExpanded">{{ profile.bio }}</div>
+                    <button type="button" class="bio-toggle" *ngIf="bioOverflows"
                             (click)="bioExpanded = !bioExpanded"
                             [attr.aria-expanded]="bioExpanded">
                         {{ bioExpanded ? 'Read less' : 'Read more' }}

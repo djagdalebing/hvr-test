@@ -1,0 +1,52 @@
+<div class="fba-wrap">
+    <div class="fba-head">
+        <div>
+            <h1 class="fba-title">Beta Feedback</h1>
+            <p class="fba-sub">Reports sent from the site-wide “Send Feedback” button, with the page the tester was on.</p>
+        </div>
+        <button type="button" class="fba-refresh" (click)="load()" [disabled]="loading">
+            {{ loading ? 'Loading…' : 'Refresh' }}
+        </button>
+    </div>
+
+    <div class="fba-filters">
+        <button type="button" *ngFor="let f of ['all','bug','confusing','suggestion','other']"
+                class="fba-chip" [class.active]="filter === f" (click)="filter = f">
+            {{ f === 'all' ? 'All' : (typeLabels[f] || f) }}
+            <span class="fba-count">{{ countOf(f) }}</span>
+        </button>
+    </div>
+
+    <div class="fba-empty" *ngIf="!loading && !visibleRows().length">
+        No feedback yet.
+    </div>
+
+    <div class="fba-list">
+        <div class="fba-item" *ngFor="let r of visibleRows()" [class.done]="r.status === 'done'">
+            <div class="fba-item-top">
+                <span class="fba-type" [attr.data-type]="r.type">{{ typeLabels[r.type] || r.type }}</span>
+                <span class="fba-page" [title]="r.page_url">{{ r.page_route || '—' }}</span>
+                <span class="fba-date">{{ r.created_at }}</span>
+            </div>
+
+            <p class="fba-message">{{ r.message }}</p>
+
+            <div class="fba-meta">
+                <span *ngIf="r.username">From <strong>{{ r.username }}</strong></span>
+                <span *ngIf="!r.username">From a guest</span>
+                <span *ngIf="r.contact_email">· replies to {{ r.contact_email }}</span>
+                <span *ngIf="r.page_title">· “{{ r.page_title }}”</span>
+            </div>
+
+            <div class="fba-actions">
+                <button type="button" class="fba-btn" *ngIf="r.status !== 'done'" (click)="setStatus(r, 'done')">
+                    Mark done
+                </button>
+                <button type="button" class="fba-btn" *ngIf="r.status === 'done'" (click)="setStatus(r, 'new')">
+                    Reopen
+                </button>
+                <button type="button" class="fba-btn fba-btn-danger" (click)="remove(r)">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>

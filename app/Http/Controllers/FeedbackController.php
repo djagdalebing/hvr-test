@@ -65,4 +65,41 @@ class FeedbackController extends BaseController
 
         return response()->json(['feedback' => $rows]);
     }
+
+    /** POST /secure/admin/feedback/{id} — mark handled / reopen. */
+    public function update(Request $request, int $id): JsonResponse
+    {
+        if (!$this->isAdmin($request)) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $this->validate($request, [
+            'status' => 'required|string|in:new,done',
+        ]);
+
+        DB::table('hvn_feedback')->where('id', $id)->update([
+            'status' => $request->input('status'),
+            'updated_at' => now(),
+        ]);
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    /** DELETE /secure/admin/feedback/{id} */
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        if (!$this->isAdmin($request)) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        DB::table('hvn_feedback')->where('id', $id)->delete();
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    private function isAdmin(Request $request): bool
+    {
+        $user = $request->user();
+        return $user && $user->hasPermission('admin');
+    }
 }

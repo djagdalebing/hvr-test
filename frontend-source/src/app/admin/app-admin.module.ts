@@ -7,6 +7,7 @@ import {CommunityAdminComponent} from './community-admin/community-admin.compone
 import {ModerationAdminComponent} from './moderation-admin/moderation-admin.component';
 import {AnnouncementsAdminComponent} from './announcements-admin/announcements-admin.component';
 import {EditorPicksAdminComponent} from './editor-picks-admin/editor-picks-admin.component';
+import {FeedbackAdminComponent} from './feedback-admin/feedback-admin.component';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatTabsModule} from '@angular/material/tabs';
@@ -68,6 +69,7 @@ import {SelectUserInputModule} from '@common/core/ui/select-user-input/select-us
         ModerationAdminComponent,
         AnnouncementsAdminComponent,
         EditorPicksAdminComponent,
+        FeedbackAdminComponent,
     ],
     providers: [Modal],
 })

@@ -171,6 +171,8 @@ Route::group(['prefix' => 'secure'], function () {
     // without signing in. Admin list is permission-checked in the controller.
     Route::post('feedback',               [\App\Http\Controllers\FeedbackController::class, 'store']);
     Route::get('admin/feedback',          [\App\Http\Controllers\FeedbackController::class, 'index']);
+    Route::post('admin/feedback/{id}',    [\App\Http\Controllers\FeedbackController::class, 'update'])->where('id', '[0-9]+');
+    Route::delete('admin/feedback/{id}',  [\App\Http\Controllers\FeedbackController::class, 'destroy'])->where('id', '[0-9]+');
 
     Route::get('creators',                [HvnController::class, 'apiCreatorsList']);
     Route::get('creators/{username}',     [HvnController::class, 'apiCreatorProfile'])->where('username', '[^/]+');
