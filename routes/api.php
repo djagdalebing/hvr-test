@@ -99,6 +99,9 @@ Route::group(['prefix' => 'v1'], function() {
             Route::post('creator/profile', [CreatorProfileController::class, 'store']);
             Route::get('creator/content', [CreatorContentController::class, 'index']);
             Route::post('creator/content', [CreatorContentController::class, 'store']);
+            // POST (not PUT) so the browser can send multipart/form-data for
+            // optional artwork replacement, same as store().
+            Route::post('creator/content/{id}', [CreatorContentController::class, 'update']);
             Route::delete('creator/content/{id}', [CreatorContentController::class, 'destroy']);
         });
     });

@@ -129,6 +129,14 @@
                 </div>
 
                 <div class="upload-panel" *ngIf="showUpload">
+                    <div class="upload-panel-head">
+                        <h3>{{ editingId ? 'Edit title' : 'Upload new title' }}</h3>
+                        <p class="upload-panel-sub">
+                            {{ editingId
+                                ? 'Update the details for this title. Leave the file fields empty to keep the current artwork and video.'
+                                : 'Tell us about your film. Fields marked * are required.' }}
+                        </p>
+                    </div>
                     <div class="upload-grid">
                         <div class="field full">
                             <label>Title <span class="req">*</span></label>
@@ -323,17 +331,23 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="field full">
+                        <!-- Video is set at upload time; editing covers details
+                             and artwork only, so these are hidden when editing. -->
+                        <div class="field full" *ngIf="!editingId">
                             <label>Video URL <span class="hint">— or upload a file below</span></label>
                             <input type="url" [(ngModel)]="form.video_url" placeholder="https://youtube.com/... or https://vimeo.com/...">
                         </div>
-                        <div class="field">
+                        <div class="field" *ngIf="!editingId">
                             <label>Video file <span class="hint">(MP4 recommended — plays everywhere. MOV/M4V accepted but may not play in every browser. Max 500MB)</span></label>
                             <input type="file" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-m4v,.mp4,.webm,.ogg,.mov,.m4v"
                                    (change)="onFile('video_file', $event)">
                         </div>
+                        <div class="field full" *ngIf="editingId">
+                            <p class="hint">The video for this title stays as uploaded. To change it, use the title's Videos panel.</p>
+                        </div>
                         <div class="field">
-                            <label>Cover / poster <span class="req">*</span> <span class="hint">(jpg/png/webp, max 5MB — portrait)</span></label>
+                            <label>Cover / poster <span class="req" *ngIf="!editingId">*</span>
+                                <span class="hint">(jpg/png/webp, max 5MB — portrait{{ editingId ? '. Leave empty to keep the current one' : '' }})</span></label>
                             <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFile('cover', $event)">
                         </div>
                         <div class="field">
@@ -346,9 +360,13 @@
                         <span>{{ uploadProgress > 0 ? (uploadProgress < 100 ? 'Uploading video · ' + uploadProgress + '%' : 'Finishing up…') : 'Preparing upload…' }}</span>
                     </div>
                     <div class="upload-actions">
-                        <button mat-button (click)="toggleUpload()" [disabled]="uploading">Cancel</button>
+                        <button mat-button (click)="closeForm()" [disabled]="uploading">Cancel</button>
                         <button mat-flat-button color="accent" (click)="submitUpload()" [disabled]="uploading">
-                            {{ uploading ? (uploadProgress > 0 && uploadProgress < 100 ? 'Uploading ' + uploadProgress + '%…' : 'Uploading…') : 'Upload' }}
+                            <ng-container *ngIf="!uploading">{{ editingId ? 'Save changes' : 'Upload' }}</ng-container>
+                            <ng-container *ngIf="uploading">
+                                {{ editingId ? 'Saving…'
+                                   : (uploadProgress > 0 && uploadProgress < 100 ? 'Uploading ' + uploadProgress + '%…' : 'Uploading…') }}
+                            </ng-container>
                         </button>
                     </div>
                 </div>
@@ -368,6 +386,9 @@
                             </span>
                             <span class="dash-list-type">{{ t.type || 'movie' }}</span>
                             <span class="dash-list-date">{{ t.created_at | date:'mediumDate' }}</span>
+                            <button mat-icon-button (click)="startEdit(t)" [matTooltip]="'Edit title' | trans">
+                                <mat-icon svgIcon="edit"></mat-icon>
+                            </button>
                             <button mat-icon-button color="warn" (click)="deleteTitle(t)" [matTooltip]="'Delete title' | trans">
                                 <mat-icon svgIcon="delete"></mat-icon>
                             </button>

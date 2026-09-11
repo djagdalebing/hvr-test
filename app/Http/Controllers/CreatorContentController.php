@@ -26,7 +26,7 @@ class CreatorContentController extends BaseController
             })
             ->with(['videos' => function ($q) use ($userId) {
                 $q->where('user_id', $userId)->select('id', 'title_id', 'url', 'type', 'category', 'source');
-            }])
+            }, 'credits'])
             ->orderByDesc('created_at')
             ->paginate(20);
 
@@ -372,6 +372,106 @@ class CreatorContentController extends BaseController
     /**
      * DELETE /api/v1/creator/content/{id}
      */
+    /**
+     * PUT /api/v1/creator/content/{id}
+     *
+     * Update a title the creator owns. Deliberately mirrors store() field for
+     * field so the dashboard can use ONE form for both adding and editing —
+     * previously creators had no edit at all and were sent to the admin CMS
+     * panel, which looks nothing like the upload form.
+     *
+     * Artwork is only replaced when a new file is supplied, and the moderation
+     * status is left untouched (a metadata edit shouldn't silently unpublish).
+     */
+    public function update(Request $request, int $titleId): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+        if (method_exists($user, 'isBlocked') && $user->isBlocked()) {
+            return response()->json(['message' => 'Your account is blocked.'], 403);
+        }
+        if ($user->role !== 'creator') {
+            return response()->json(['message' => 'Forbidden — creators only.'], 403);
+        }
+
+        // Ownership: the creator must own a video attached to this title.
+        $owns = Video::where('title_id', $titleId)
+            ->where('user_id', $user->id)
+            ->exists();
+        if (!$owns) {
+            return response()->json(['message' => 'Not found or unauthorized.'], 404);
+        }
+
+        $title = Title::withoutGlobalScope('approved')->find($titleId);
+        if (!$title) {
+            return response()->json(['message' => 'Not found.'], 404);
+        }
+
+        $this->validate($request, [
+            'title'          => 'required|string|min:2|max:250',
+            'type'           => 'required|in:movie,short,series,documentary,poc',
+            'year'           => 'nullable|integer|min:1900|max:2099',
+            'description'    => 'nullable|string|max:5000',
+            'tagline'        => 'nullable|string|max:250',
+            'runtime'        => 'nullable|integer|min:1|max:1440',
+            'genre'          => 'nullable|string|max:255',
+            'language'       => 'nullable|string|max:50',
+            'country'        => 'nullable|string|max:80',
+            'release_date'   => 'nullable|date',
+            'certification'  => 'nullable|string|max:10',
+            'original_title' => 'nullable|string|max:250',
+            'trailer'        => 'nullable|string|max:1000',
+            'budget'         => 'nullable|integer|min:0',
+            'revenue'        => 'nullable|integer|min:0',
+            'imdb_id'        => 'nullable|string|max:20',
+            'tmdb_id'        => 'nullable|integer|min:1',
+            'cover'          => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'backdrop_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:8192',
+        ]);
+
+        $type = $request->input('type');
+
+        $title->name           = $request->input('title');
+        $title->type           = $type;
+        $title->is_series      = $type === 'series';
+        $title->year           = $request->input('year');
+        $title->description    = $request->input('description');
+        $title->tagline        = $request->input('tagline');
+        $title->runtime        = $request->input('runtime');
+        $title->genre          = $request->input('genre');
+        $title->language       = $request->input('language');
+        $title->country        = $request->input('country');
+        $title->release_date   = $request->input('release_date');
+        $title->certification  = $request->input('certification');
+        $title->original_title = $request->input('original_title');
+        $title->trailer        = $request->input('trailer');
+        $title->budget  = $request->filled('budget') ? (int) $request->input('budget') : null;
+        $title->revenue = $request->filled('revenue') ? (int) $request->input('revenue') : null;
+        $title->imdb_id = $request->filled('imdb_id') ? $request->input('imdb_id') : null;
+        $title->tmdb_id = $request->filled('tmdb_id') ? (int) $request->input('tmdb_id') : null;
+
+        if ($request->hasFile('cover')) {
+            $posterPath = $request->file('cover')->store('creator_content/covers', 'public');
+            $title->poster = 'storage/' . $posterPath;
+        }
+        if ($request->hasFile('backdrop_image')) {
+            $backdropPath = $request->file('backdrop_image')->store('creator_content/backdrops', 'public');
+            $title->backdrop = 'storage/' . $backdropPath;
+        }
+
+        $title->save();
+
+        // The form is the source of truth for this title's people, and
+        // attachCredits() only ever attaches — so clear first to avoid
+        // duplicating the director/writer/cast on every save.
+        $title->credits()->detach();
+        $this->attachCredits($title, $request);
+
+        return response()->json(['status' => 'ok', 'title_id' => $title->id]);
+    }
+
     public function destroy(Request $request, int $titleId): JsonResponse
     {
         $user = $request->user();

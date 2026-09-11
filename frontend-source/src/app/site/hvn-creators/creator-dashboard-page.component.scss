@@ -219,6 +219,26 @@ creator-dashboard-page {
     padding: 18px;
     margin-bottom: 16px;
 
+    .upload-panel-head {
+        margin: 0 0 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--be-divider-default, rgba(255,255,255,0.06));
+
+        h3 {
+            margin: 0 0 4px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--be-text, #fff);
+        }
+
+        .upload-panel-sub {
+            margin: 0;
+            font-size: .85rem;
+            line-height: 1.45;
+            opacity: .6;
+        }
+    }
+
     .upload-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;

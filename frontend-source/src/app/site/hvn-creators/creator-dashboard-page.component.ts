@@ -223,7 +223,75 @@ export class CreatorDashboardPageComponent implements OnInit {
         );
     }
 
-    public toggleUpload() { this.showUpload = !this.showUpload; }
+    /**
+     * Id of the title currently being edited, or null when adding a new one.
+     * The same form/panel serves both so add and edit look identical.
+     */
+    public editingId: number | null = null;
+
+    public toggleUpload() {
+        if (this.showUpload) {
+            this.closeForm();
+        } else {
+            this.editingId = null;
+            this.form = this.blankForm();
+            this.peopleSearch = {};
+            this.showUpload = true;
+        }
+    }
+
+    public closeForm() {
+        this.showUpload = false;
+        this.editingId = null;
+        this.form = this.blankForm();
+        this.peopleSearch = {};
+    }
+
+    /** Open the same panel pre-filled with an existing title. */
+    public startEdit(t: any) {
+        const credits = t.credits || [];
+        const byDept = (d: string) => credits.filter((c: any) => c?.pivot?.department === d);
+        const director = byDept('directing')[0];
+        const writer = byDept('writing')[0];
+
+        this.form = {
+            ...this.blankForm(),
+            title: t.name || '',
+            type: t.type || (t.is_series ? 'series' : 'movie'),
+            year: t.year ?? null,
+            description: t.description || '',
+            tagline: t.tagline || '',
+            runtime: t.runtime ?? null,
+            genre: t.genre || '',
+            language: t.language || '',
+            country: t.country || '',
+            release_date: t.release_date ? String(t.release_date).split('T')[0] : '',
+            certification: t.certification || '',
+            original_title: t.original_title || '',
+            trailer: t.trailer || '',
+            budget: t.budget ?? null,
+            revenue: t.revenue ?? null,
+            imdb_id: t.imdb_id || '',
+            tmdb_id: t.tmdb_id ?? null,
+            director: director ? {person_id: director.id, name: director.name} : {person_id: null, name: ''},
+            writer: writer ? {person_id: writer.id, name: writer.name} : {person_id: null, name: ''},
+            cast: byDept('cast').map((c: any) => ({
+                person_id: c.id,
+                name: c.name,
+                character: c?.pivot?.character || '',
+            })),
+        };
+        // Seed the picker search boxes so the chosen people are visible.
+        this.peopleSearch = {};
+        if (director) this.pickerState('director').q = director.name;
+        if (writer) this.pickerState('writer').q = writer.name;
+        this.form.cast.forEach((c: any, i: number) => {
+            this.pickerState('cast-' + i).q = c.name;
+        });
+
+        this.editingId = t.id;
+        this.showUpload = true;
+    }
 
     public onFile(field: 'video_file' | 'cover', ev: Event) {
         const input = ev.target as HTMLInputElement;
@@ -236,6 +304,15 @@ export class CreatorDashboardPageComponent implements OnInit {
         if (this.uploading) return;
         const f = this.form;
         if (!f.title || !f.title.trim()) { this.toast.open('Title is required.'); return; }
+
+        // When editing, artwork and video already exist — they're only replaced
+        // if the creator picks new files, so don't demand them again.
+        if (this.editingId) {
+            this.uploading = true;
+            this.saveContent(f, null);
+            return;
+        }
+
         if (!f.cover) { this.toast.open('Cover image is required.'); return; }
         if (!f.video_url && !f.video_file) {
             this.toast.open('Provide a video URL or upload a video file.'); return;
@@ -329,23 +406,25 @@ export class CreatorDashboardPageComponent implements OnInit {
         if (cast.length) fd.append('cast', JSON.stringify(cast));
         if (r2Url) fd.append('r2_video_url', r2Url);
         else if (f.video_file) fd.append('video_file', f.video_file);
-        fd.append('cover', f.cover);
+        // Artwork: required on create, optional on edit (kept unless replaced).
+        if (f.cover) fd.append('cover', f.cover);
         if (f.backdrop_image) fd.append('backdrop_image', f.backdrop_image);
 
-        this.http.post('creator/content', fd).subscribe(
+        const editing = this.editingId;
+        const uri = editing ? 'creator/content/' + editing : 'creator/content';
+
+        this.http.post(uri, fd).subscribe(
             () => {
                 this.uploading = false;
                 this.uploadProgress = 0;
-                this.toast.open('Title uploaded.');
-                this.form = this.blankForm();
-                this.peopleSearch = {};
-                this.showUpload = false;
+                this.toast.open(editing ? 'Changes saved.' : 'Title uploaded.');
+                this.closeForm();
                 this.load();
             },
             (err: any) => {
                 this.uploading = false;
                 this.uploadProgress = 0;
-                this.toast.open(this.firstError(err) || 'Upload failed.');
+                this.toast.open(this.firstError(err) || (editing ? 'Save failed.' : 'Upload failed.'));
             },
         );
     }
