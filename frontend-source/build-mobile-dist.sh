@@ -21,7 +21,7 @@
 #
 set -euo pipefail
 
-BACKEND="https://aqua-narwhal-640720.hostingersite.com"
+BACKEND="https://hervisionnetwork.com"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 DIST="$HERE/mobile-dist"
 PUB="$HERE/../public/client"
@@ -110,7 +110,7 @@ inject = '''    <script>
         new MutationObserver(function(m){for(var i=0;i<m.length;i++){var a=m[i].addedNodes;if(a)for(var j=0;j<a.length;j++){var n=a[j];if(n.nodeType===1){if(n.tagName==='IMG'||n.tagName==='SOURCE')fix(n);scan(n);}}if(m[i].type==='attributes'&&m[i].target)fix(m[i].target);}}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src']});
     })();
     </script>
-'''.replace('BACKEND_URL', "https://aqua-narwhal-640720.hostingersite.com")
+'''.replace('BACKEND_URL', "https://hervisionnetwork.com")
 html = html.replace('</head>', inject + '</head>', 1)
 open(sys.argv[2], 'w', encoding='utf-8').write(html)
 PY

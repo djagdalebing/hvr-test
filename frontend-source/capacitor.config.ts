@@ -25,7 +25,7 @@ const config: CapacitorConfig = {
         androidScheme: 'https',
         iosScheme: 'capacitor',
         // Phase 1 (internal/TestFlight) loaded the live site directly:
-        //   url: 'https://aqua-narwhal-640720.hostingersite.com',
+        //   url: 'https://hervisionnetwork.com',
         // Phase 2 bundles the assets instead — no server.url.
         cleartext: false,
     },

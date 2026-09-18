@@ -10,7 +10,7 @@
  *
  * Set this to your production API origin before shipping a store build.
  */
-export const MOBILE_BACKEND_URL = 'https://aqua-narwhal-640720.hostingersite.com';
+export const MOBILE_BACKEND_URL = 'https://hervisionnetwork.com';
 
 /** localStorage key holding the mobile bearer token (Sanctum personal token). */
 export const MOBILE_TOKEN_KEY = 'hvn_mobile_token';
