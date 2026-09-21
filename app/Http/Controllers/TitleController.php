@@ -216,9 +216,15 @@ class TitleController extends BaseController
             ->delete();
 
         // videos
-        $videoIds = app(Video::class)
+        $videoModels = app(Video::class)
             ->whereIn('title_id', $titleIds)
-            ->pluck('id');
+            ->get();
+        $videoIds = $videoModels->pluck('id');
+
+        // Remove the stored media too. Without this, deleting a title from the
+        // admin area left every creator upload sitting in the R2 bucket.
+        app(\App\Services\Hvn\DeleteVideoMedia::class)->execute($videoModels);
+
         app(Video::class)
             ->whereIn('id', $videoIds)
             ->delete();

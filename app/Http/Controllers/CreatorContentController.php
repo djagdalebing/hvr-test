@@ -491,11 +491,11 @@ class CreatorContentController extends BaseController
             return response()->json(['message' => 'Not found or unauthorized.'], 404);
         }
 
+        // Drop the underlying media (local disk AND R2) before the rows go,
+        // otherwise the bucket keeps paying to store files nothing can reach.
+        app(\App\Services\Hvn\DeleteVideoMedia::class)->execute($videos);
+
         foreach ($videos as $video) {
-            if ($video->source === 'local' && $video->url) {
-                $rel = ltrim(str_replace('/storage/', '', $video->url), '/');
-                Storage::disk('public')->delete($rel);
-            }
             $video->delete();
         }
 

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Listeners\CreateWatchlist;
 use App\Listeners\DeleteUserLists;
 use Common\Auth\Events\UserCreated;
+use App\Listeners\TakeDownDeletedCreatorContent;
 use Common\Auth\Events\UsersDeleted;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -20,7 +21,8 @@ class EventServiceProvider extends ServiceProvider
             CreateWatchlist::class,
         ],
         UsersDeleted::class => [
-            DeleteUserLists::class
+            DeleteUserLists::class,
+            TakeDownDeletedCreatorContent::class,
         ],
     ];
 

@@ -44,6 +44,22 @@ class LoginController extends BaseController
 
     protected function authenticated(Request $request, User $user)
     {
+        // HVN: a blocked account must not be able to sign in at all.
+        // Checked here rather than in credentials() so the person gets a
+        // clear reason instead of a generic "credentials don't match".
+        if (method_exists($user, 'isBlocked') && $user->isBlocked()) {
+            Auth::logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+            return $this->error(
+                'Your account has been blocked. Contact support if you think this is a mistake.',
+                [],
+                403,
+            );
+        }
+
         if ($this->settings->get('single_device_login')) {
             Auth::logoutOtherDevices($request->get('password'));
         }

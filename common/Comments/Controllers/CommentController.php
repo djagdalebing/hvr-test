@@ -64,6 +64,14 @@ class CommentController extends BaseController
     {
         $this->authorize('store', Comment::class);
 
+        // HVN: a blocked account is write-locked. Gated here rather than by
+        // route middleware because apiResource registers reads and writes
+        // together, and a blocked user should still be able to READ the
+        // comments on a title -- otherwise the page just looks broken.
+        if ($blocked = $this->blockedResponse()) {
+            return $blocked;
+        }
+
         $comment = app(CrupdateComment::class)->execute($request->all());
 
         return $this->success(['comment' => $comment]);
@@ -74,6 +82,10 @@ class CommentController extends BaseController
         CrupdateCommentRequest $request
     ): Response {
         $this->authorize('store', $comment);
+
+        if ($blocked = $this->blockedResponse()) {
+            return $blocked;
+        }
 
         $comment = app(CrupdateComment::class)->execute(
             $request->all(),
@@ -138,5 +150,24 @@ class CommentController extends BaseController
             ->update(['deleted' => false]);
 
         return $this->success();
+    }
+
+    /**
+     * 403 response when the current user is blocked, otherwise null.
+     */
+    private function blockedResponse()
+    {
+        $user = request()->user();
+        if ($user && method_exists($user, 'isBlocked') && $user->isBlocked()) {
+            return response()->json(
+                [
+                    'message' =>
+                        'Your account is blocked. Contact support if you think this is a mistake.',
+                    'errors' => [],
+                ],
+                403,
+            );
+        }
+        return null;
     }
 }

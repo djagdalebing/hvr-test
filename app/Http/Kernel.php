@@ -94,5 +94,6 @@ class Kernel extends HttpKernel
         'verified' => EnsureEmailIsVerified::class,
         'prerenderIfCrawler' => PrerenderIfCrawler::class,
         'role' => \App\Http\Middleware\RequireRole::class,
+        'not.blocked' => \App\Http\Middleware\EnsureUserNotBlocked::class,
     ];
 }

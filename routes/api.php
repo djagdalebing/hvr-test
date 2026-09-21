@@ -67,8 +67,8 @@ Route::group(['prefix' => 'v1'], function() {
         Route::post('lists/{id}/remove', [ListItemController::class, 'remove']);
 
         // reviews
-        Route::post('reviews', [ReviewController::class, 'store']);
-        Route::put('reviews/{id}', [ReviewController::class, 'update']);
+        Route::post('reviews', [ReviewController::class, 'store'])->middleware('not.blocked');
+        Route::put('reviews/{id}', [ReviewController::class, 'update'])->middleware('not.blocked');
         Route::delete('reviews/{id}', [ReviewController::class, 'destroy']);
 
         // news
@@ -89,9 +89,9 @@ Route::group(['prefix' => 'v1'], function() {
         // COMMUNITY — accessible to all authenticated users
         Route::get('community/posts', [CommunityController::class, 'index']);
         Route::get('community/posts/{postId}', [CommunityController::class, 'show']);
-        Route::post('community/posts', [CommunityController::class, 'store']);
-        Route::post('community/posts/{postId}/comments', [CommunityController::class, 'addComment']);
-        Route::post('community/posts/{postId}/like', [CommunityController::class, 'toggleLike']);
+        Route::post('community/posts', [CommunityController::class, 'store'])->middleware('not.blocked');
+        Route::post('community/posts/{postId}/comments', [CommunityController::class, 'addComment'])->middleware('not.blocked');
+        Route::post('community/posts/{postId}/like', [CommunityController::class, 'toggleLike'])->middleware('not.blocked');
 
         // CREATOR — restricted to creator role only
         Route::middleware('role:creator')->group(function () {

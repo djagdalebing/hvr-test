@@ -64,8 +64,8 @@ Route::group(['prefix' => 'secure'], function () {
 
     // reviews
     Route::get('reviews', 'ReviewController@index');
-    Route::post('reviews', 'ReviewController@store');
-    Route::put('reviews/{id}', 'ReviewController@update');
+    Route::post('reviews', 'ReviewController@store')->middleware('not.blocked');
+    Route::put('reviews/{id}', 'ReviewController@update')->middleware('not.blocked');
     Route::delete('reviews/{id}', 'ReviewController@destroy');
 
     // news
@@ -81,7 +81,7 @@ Route::group(['prefix' => 'secure'], function () {
     Route::post('videos', 'VideosController@store');
     Route::put('videos/{id}', 'VideosController@update');
     Route::delete('videos/{ids}', 'VideosController@destroy');
-    Route::post('videos/{id}/rate', 'VideoRatingController@rate');
+    Route::post('videos/{id}/rate', 'VideoRatingController@rate')->middleware('not.blocked');
     Route::post('videos/{video}/approve', 'VideoApproveController@approve');
     Route::post('videos/{video}/disapprove', 'VideoApproveController@disapprove');
     Route::post('videos/{video}/report', 'VideoReportController@report');

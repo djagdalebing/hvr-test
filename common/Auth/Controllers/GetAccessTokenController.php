@@ -22,6 +22,20 @@ class GetAccessTokenController extends BaseController
 
     protected function sendLoginResponse(Request $request)
     {
+        // HVN: same block as the web login. This controller overrides
+        // sendLoginResponse outright, so AuthenticatesUsers never calls
+        // authenticated() here -- the check has to live in this method or the
+        // mobile app would happily hand a blocked account a bearer token.
+        $user = $this->guard()->user();
+        if ($user && method_exists($user, 'isBlocked') && $user->isBlocked()) {
+            $this->guard()->logout();
+            return $this->error(
+                'Your account has been blocked. Contact support if you think this is a mistake.',
+                [],
+                403,
+            );
+        }
+
         $bootstrapData = app(MobileBootstrapData::class)
             ->init()
             ->refreshToken($request->get('token_name'))
