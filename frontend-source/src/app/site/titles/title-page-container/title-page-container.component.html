@@ -9,15 +9,17 @@
 <div class="container">
   <title-primary-details-panel></title-primary-details-panel>
   <current-next-episode-panel *ngIf="titlePage.title.is_series"></current-next-episode-panel>
-  <title-secondary-details-panel></title-secondary-details-panel>
 
-  <!-- Series pages otherwise offered nothing but two tiny season numbers in
-       the panel above, with the episode list buried at /season/{n}. -->
+  <!-- Above the secondary details on purpose: for a series the episodes are
+       the point, and the artwork column below is tall enough to bury them. -->
   <hvn-series-episodes
     *ngIf="titlePage.title.is_series && !titlePage.activeEpisode"
     [titleId]="titlePage.title.id"
     [titleName]="titlePage.title.name"
   ></hvn-series-episodes>
+
+  <title-secondary-details-panel></title-secondary-details-panel>
+
 
   <title-videos
     *ngIf="titlePage.title.show_videos || settings.get('titles.video_panel_mode')"
