@@ -69,6 +69,13 @@ export class TitlePageService {
     }
 
     public playVideo(video: Video) {
+        // HVN: full-length videos are members-only. Send logged-out visitors to
+        // login (not billing) and bring them back to this title afterwards.
+        // Trailers and clips stay open to everyone.
+        if (video.category === 'full' && !this.currentUser.isLoggedIn()) {
+            this.currentUser.redirectUri = this.router.url;
+            return this.router.navigate(['/login']);
+        }
         if ( ! this.currentUser.hasPermission('videos.play')) {
             return this.router.navigate(['billing/upgrade']);
         }
@@ -106,8 +113,14 @@ export class TitlePageService {
         // inline even when they were saved as type 'external' (older creator
         // uploads stored them that way) — so don't exclude those, otherwise the
         // title shows no Play button and the video appears unplayable.
+        // A video whose URL the server withheld (full-length, viewer not signed
+        // in) still counts as playable so the Play button stays on the page --
+        // clicking it sends the visitor to login instead of dead-ending them on
+        // a title with no play affordance at all.
         const playable = (video) =>
-            video.type !== 'external' || this.isEmbeddable(video.url);
+            video.requires_auth ||
+            video.type !== 'external' ||
+            this.isEmbeddable(video.url);
         if (this.settings.get('streaming.prefer_full')) {
             this.primaryVideo = this.title.videos.find(video => video.category === 'full' && playable(video));
         } else {

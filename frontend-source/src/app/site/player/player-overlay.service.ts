@@ -21,6 +21,14 @@ export class PlayerOverlayService {
     ) {}
 
     public open(video: Video, mediaItem?: Title|Episode) {
+        // HVN: last line of defence in the client -- any other entry point into
+        // the player (deep links, autoplay params, related videos) lands here.
+        // The server withholds the URL for guests anyway; this keeps them from
+        // reaching an empty player.
+        if (video?.category === 'full' && !this.currentUser.isLoggedIn()) {
+            this.currentUser.redirectUri = this.router.url;
+            return this.router.navigate(['/login']);
+        }
         if ( ! this.currentUser.hasPermission('videos.play')) {
             return this.router.navigate(['billing/upgrade']);
         }

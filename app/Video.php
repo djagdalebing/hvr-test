@@ -4,6 +4,7 @@ namespace App;
 
 use Common\Search\Searchable;
 use DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -152,5 +153,53 @@ class Video extends Model
     public static function getModelTypeAttribute(): string
     {
         return self::MODEL_TYPE;
+    }
+
+    /**
+     * HVN: full-length videos are for signed-in members only.
+     *
+     * The permission check used to live only in the Angular client, which meant
+     * anyone could read the playable URL straight out of the JSON for
+     * /secure/titles/{id} without logging in. Withholding the URL here covers
+     * every endpoint that serialises a Video at once, instead of each
+     * controller having to remember to do it.
+     *
+     * Trailers and clips stay open on purpose so titles remain browsable and
+     * shareable to logged-out visitors -- only the feature itself is gated.
+     * Internal PHP reads of $video->url are untouched, so deletion, playback
+     * logging and the creator dashboard keep working.
+     */
+    public function toArray()
+    {
+        $data = parent::toArray();
+
+        if (
+            ($data['category'] ?? null) === 'full' &&
+            !$this->viewerMayPlayFullVideo()
+        ) {
+            $data['url'] = null;
+            $data['requires_auth'] = true;
+        }
+
+        return $data;
+    }
+
+    private function viewerMayPlayFullVideo(): bool
+    {
+        $user = Auth::user();
+
+        // Guests never get the URL, regardless of what the guests role happens
+        // to be configured with in the admin area.
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->hasPermission('videos.play')) {
+            return true;
+        }
+
+        // A creator can always reach their own upload, even if their role
+        // somehow lacks videos.play.
+        return (int) ($this->attributes['user_id'] ?? 0) === (int) $user->id;
     }
 }
