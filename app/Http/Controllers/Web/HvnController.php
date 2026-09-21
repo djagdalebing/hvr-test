@@ -327,16 +327,14 @@ class HvnController extends Controller
     /**
      * GET /secure/titles/{id}/episode-guide
      *
-     * Seasons and episodes for a series, shaped for the public title page.
+     * A season index for the series page: one row per season with how many
+     * episodes it holds. Deliberately counts only -- listing every episode
+     * inline does not survive a show with a hundred of them, so the page links
+     * out to the per-season page instead of rendering the lot.
      *
-     * The main title payload returns seasons without their episodes unless
-     * asked, and the per-season page is the only place that lists them -- which
-     * left a series page with nothing but two tiny season numbers and no way to
-     * reach an episode. This is the one request that panel needs.
-     *
-     * `playable` reflects whether an approved video is actually attached, so a
-     * viewer is not offered an episode that cannot play. Admins and the
-     * uploading creator see everything, matching the rest of the site.
+     * `playable_count` reflects episodes with an approved video attached, so a
+     * season that is uploaded but not yet reviewed reads honestly. Admins and
+     * the uploading creator see their own unapproved work, as elsewhere.
      */
     public function apiTitleEpisodeGuide(Request $request, int $titleId)
     {
@@ -354,7 +352,6 @@ class HvnController extends Controller
             method_exists($user, 'hasPermission') &&
             $user->hasPermission('admin');
 
-        // Which episodes have something to play.
         $videoQuery = \App\Video::where('title_id', $titleId)->whereNotNull(
             'episode_num',
         );
@@ -371,54 +368,37 @@ class HvnController extends Controller
             ->map(fn($v) => $v->season_num . ':' . $v->episode_num)
             ->flip();
 
-        $episodes = \App\Episode::where('title_id', $titleId)
-            ->orderBy('season_number')
-            ->orderBy('episode_number')
-            ->get([
-                'id',
-                'name',
-                'description',
-                'poster',
-                'season_number',
-                'episode_number',
-            ]);
+        $episodes = \App\Episode::where('title_id', $titleId)->get([
+            'season_number',
+            'episode_number',
+        ]);
 
         $seasons = \App\Season::where('title_id', $titleId)
             ->orderBy('number')
-            ->get(['id', 'number'])
+            ->get(['number'])
             ->map(function ($season) use ($episodes, $playable) {
+                $inSeason = $episodes->where('season_number', $season->number);
+
                 return [
                     'number' => (int) $season->number,
-                    'episodes' => $episodes
-                        ->where('season_number', $season->number)
-                        ->values()
-                        ->map(function ($ep) use ($playable) {
-                            $attrs = $ep->getAttributes();
-                            return [
-                                'id' => $ep->id,
-                                'number' => (int) $ep->episode_number,
-                                'season' => (int) $ep->season_number,
-                                'name' =>
-                                    $attrs['name'] ??
-                                    'Episode ' . $ep->episode_number,
-                                'description' => $attrs['description'] ?? null,
-                                'poster' => $attrs['poster'] ?? null,
-                                'playable' => $playable->has(
-                                    $ep->season_number .
-                                        ':' .
-                                        $ep->episode_number,
-                                ),
-                            ];
-                        }),
+                    'episode_count' => $inSeason->count(),
+                    'playable_count' => $inSeason
+                        ->filter(
+                            fn($ep) => $playable->has(
+                                $ep->season_number . ':' . $ep->episode_number,
+                            ),
+                        )
+                        ->count(),
                 ];
             })
             // An empty season is noise on the public page.
-            ->filter(fn($s) => count($s['episodes']) > 0)
+            ->filter(fn($s) => $s['episode_count'] > 0)
             ->values();
 
         return response()->json([
             'title' => ['id' => $title->id, 'name' => $title->name],
             'seasons' => $seasons,
+            'total_episodes' => $seasons->sum('episode_count'),
         ]);
     }
 

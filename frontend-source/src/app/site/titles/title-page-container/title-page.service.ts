@@ -142,6 +142,19 @@ export class TitlePageService {
             image = image?.url;
         }
 
+        // Creator uploads copy the poster into backdrop when no separate hero
+        // image was supplied. The cover box is a landscape slot, so a portrait
+        // poster stretched into it rendered enormous — a second, taller copy of
+        // the poster already shown to its left. Fall through to the empty state
+        // instead of showing the same image twice.
+        let poster: any = this.title.poster;
+        if (typeof poster !== 'string') {
+            poster = poster?.url;
+        }
+        if (image && poster && image === poster) {
+            image = null;
+        }
+
         this.videoCoverImage = image;
     }
 

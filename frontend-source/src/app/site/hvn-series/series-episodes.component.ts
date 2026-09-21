@@ -2,17 +2,19 @@ import {ChangeDetectorRef, Component, Input, OnInit, ViewEncapsulation} from '@a
 import {AppHttpClient} from '@common/core/http/app-http-client.service';
 
 /**
- * Season + episode guide for a series page.
+ * Season index for a series page.
  *
  * The stock title page showed a series as two tiny season numbers in the
- * secondary details panel, with the actual episode list reachable only at
- * /season/{n}. There was no way to tell a series had episodes, let alone
- * reach one, so this panel puts them on the page itself.
+ * details panel, with the episode list reachable only at /season/{n} and
+ * nothing pointing there. This puts a real, obvious way in on the page.
  *
- * Its own component rather than an edit to title-page-container's siblings
- * because extract-component-css.php regenerates every original component's
- * SCSS from the shipped bundle before each build -- styles on an HVN
- * component are the ones that survive.
+ * It lists seasons, not episodes, on purpose: a show with a hundred episodes
+ * would bury the rest of the page, and the per-season page already renders
+ * them properly. Each row links straight to its season.
+ *
+ * Its own component rather than an edit to the sibling panels because
+ * extract-component-css.php regenerates every original component's SCSS from
+ * the shipped bundle before each build -- styles on an HVN component survive.
  */
 @Component({
     selector: 'hvn-series-episodes',
@@ -25,7 +27,7 @@ export class SeriesEpisodesComponent implements OnInit {
     @Input() titleName: string;
 
     public seasons: any[] = [];
-    public active: any = null;
+    public totalEpisodes = 0;
     public loading = true;
 
     constructor(private http: AppHttpClient, private cd: ChangeDetectorRef) {}
@@ -35,7 +37,7 @@ export class SeriesEpisodesComponent implements OnInit {
         this.http.get(`titles/${this.titleId}/episode-guide`).subscribe(
             (res: any) => {
                 this.seasons = res?.seasons || [];
-                this.active = this.seasons.length ? this.seasons[0] : null;
+                this.totalEpisodes = res?.total_episodes || 0;
                 this.loading = false;
                 this.cd.markForCheck();
             },
@@ -43,22 +45,17 @@ export class SeriesEpisodesComponent implements OnInit {
         );
     }
 
-    public selectSeason(s: any) {
-        this.active = s;
-        this.cd.markForCheck();
+    public seasonLink(season: any): any[] {
+        return ['/titles', this.titleId, this.titleName || '-', 'season', season.number];
     }
 
-    public episodeLink(ep: any): any[] {
-        return [
-            '/titles', this.titleId, this.titleName || '-',
-            'season', ep.season, 'episode', ep.number,
-        ];
-    }
-
-    public posterFor(ep: any): string | null {
-        const p = ep?.poster;
-        if (!p) return null;
-        if (/^https?:\/\//.test(p)) return p;
-        return p.charAt(0) === '/' ? p : '/' + p;
+    public countLabel(season: any): string {
+        const n = season.episode_count;
+        const base = `${n} episode${n === 1 ? '' : 's'}`;
+        // Only worth mentioning when some of the season is still unreleased.
+        if (season.playable_count < n) {
+            return `${base} · ${season.playable_count} available`;
+        }
+        return base;
     }
 }
