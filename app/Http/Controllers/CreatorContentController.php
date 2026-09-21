@@ -238,13 +238,15 @@ class CreatorContentController extends BaseController
                 'allow_update' => 0,
             ]);
 
+            // NB: the episodes table renamed title->name and plot->description
+            // back in 2018_10_13_125603_update_episodes_table_to_v2.
             $episode = Episode::create([
                 'title_id' => $title->id,
                 'season_id' => $season->id,
                 'season_number' => 1,
                 'episode_number' => 1,
-                'title' => $request->input('episode_title') ?: 'Episode 1',
-                'plot' => $request->input('description'),
+                'name' => $request->input('episode_title') ?: 'Episode 1',
+                'description' => $request->input('description'),
                 'allow_update' => 0,
             ]);
 
@@ -327,7 +329,7 @@ class CreatorContentController extends BaseController
         $episodes = Episode::where('title_id', $titleId)
             ->orderBy('season_number')
             ->orderBy('episode_number')
-            ->get(['id', 'title', 'plot', 'season_number', 'episode_number']);
+            ->get(['id', 'name', 'description', 'season_number', 'episode_number']);
 
         $videos = Video::where('title_id', $titleId)
             ->whereNotNull('episode_num')
@@ -347,8 +349,8 @@ class CreatorContentController extends BaseController
             $video = $videos->get($ep->id);
             return [
                 'id' => $ep->id,
-                'title' => $ep->title,
-                'plot' => $ep->plot,
+                'title' => $ep->getAttributes()['name'] ?? null,
+                'plot' => $ep->getAttributes()['description'] ?? null,
                 'season_number' => $ep->season_number,
                 'episode_number' => $ep->episode_number,
                 'has_video' => (bool) $video,
@@ -369,7 +371,7 @@ class CreatorContentController extends BaseController
             ],
             'seasons' => Season::where('title_id', $titleId)
                 ->orderBy('number')
-                ->get(['id', 'number', 'title']),
+                ->get(['id', 'number']),
             'episodes' => $rows,
         ]);
     }
@@ -460,14 +462,19 @@ class CreatorContentController extends BaseController
 
         [$videoUrl, $source, $videoType] = $this->resolveUploadedVideo($request);
 
+        // Held in a local rather than read back off the model: Episode has a
+        // title() belongsTo relation, so $episode->title would hand back the
+        // parent Title and stringify it into the video's name as JSON.
+        $episodeName =
+            $request->input('episode_title') ?: "Episode {$episodeNumber}";
+
         $episode = Episode::create([
             'title_id' => $titleId,
             'season_id' => $season->id,
             'season_number' => $seasonNumber,
             'episode_number' => $episodeNumber,
-            'title' =>
-                $request->input('episode_title') ?: "Episode {$episodeNumber}",
-            'plot' => $request->input('plot'),
+            'name' => $episodeName,
+            'description' => $request->input('plot'),
             'allow_update' => 0,
         ]);
 
@@ -475,7 +482,7 @@ class CreatorContentController extends BaseController
             'title_id' => $titleId,
             'episode_id' => $episode->id,
             'user_id' => $user->id,
-            'name' => $episode->title,
+            'name' => $episodeName,
             'url' => $videoUrl,
             'type' => $videoType,
             'category' => 'full',
