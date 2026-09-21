@@ -428,6 +428,14 @@
                             </h4>
                             <ul class="dash-list">
                                 <li *ngFor="let ep of episodesInSeason(sn.number)" class="dash-list-row">
+                                    <label class="ep-thumb" [matTooltip]="'Set episode thumbnail' | trans">
+                                        <img *ngIf="episodeThumb(ep)" [src]="episodeThumb(ep)" [alt]="ep.title">
+                                        <span class="ep-thumb-empty" *ngIf="!episodeThumb(ep)">
+                                            <mat-icon svgIcon="add-photo-alternate"></mat-icon>
+                                        </span>
+                                        <input type="file" accept="image/jpeg,image/png,image/webp"
+                                               (change)="onExistingEpisodeThumbnail(ep, $event)">
+                                    </label>
                                     <span class="dash-list-title">
                                         {{ ep.episode_number }}. {{ ep.title }}
                                     </span>
@@ -480,6 +488,11 @@
                                 <label>Video URL</label>
                                 <input type="url" [(ngModel)]="epForm.video_url"
                                        placeholder="https://youtube.com/... or https://vimeo.com/...">
+                            </div>
+                            <div class="field full">
+                                <label>Episode thumbnail <span class="hint">— landscape works best</span></label>
+                                <input type="file" accept="image/jpeg,image/png,image/webp"
+                                       (change)="onEpisodeThumbnail($event)">
                             </div>
                             <div class="field full">
                                 <label>…or upload a video file</label>

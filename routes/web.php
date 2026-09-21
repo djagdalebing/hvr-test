@@ -217,6 +217,7 @@ Route::group(['prefix' => 'secure'], function () {
     Route::post('creator/content/{id}/episodes',   [\App\Http\Controllers\CreatorContentController::class, 'storeEpisode'])->where('id', '[0-9]+');
     Route::delete('creator/content/{id}/episodes/{episodeId}', [\App\Http\Controllers\CreatorContentController::class, 'destroyEpisode'])->where(['id' => '[0-9]+', 'episodeId' => '[0-9]+']);
     Route::delete('creator/content/{id}/seasons/{number}', [\App\Http\Controllers\CreatorContentController::class, 'destroySeason'])->where(['id' => '[0-9]+', 'number' => '[0-9]+']);
+    Route::post('creator/content/{id}/episodes/{episodeId}/thumbnail', [\App\Http\Controllers\CreatorContentController::class, 'updateEpisodeThumbnail'])->where(['id' => '[0-9]+', 'episodeId' => '[0-9]+']);
 
     // Owner edit/delete (controller checks ownership; admin uses /secure/admin/*).
     Route::put('community/{id}',          [HvnController::class, 'apiUpdateOwnPost'])->where('id', '[0-9]+');

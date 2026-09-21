@@ -572,3 +572,43 @@ creator-dashboard-page {
     background: rgba(255, 255, 255, .08);
     opacity: .8;
 }
+
+// Episode thumbnail: the whole tile is the file input's label, so clicking
+// the artwork replaces it.
+.ep-thumb {
+    position: relative;
+    flex: 0 0 auto;
+    width: 72px;
+    height: 41px;
+    margin-right: 12px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, .06);
+    border: 1px dashed rgba(255, 255, 255, .16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    &:hover { border-color: rgba(255, 255, 255, .4); }
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    input[type='file'] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+}
+
+.ep-thumb-empty {
+    display: flex;
+    opacity: .45;
+
+    .mat-icon { width: 18px; height: 18px; font-size: 18px; }
+}

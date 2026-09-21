@@ -314,6 +314,7 @@ export class CreatorDashboardPageComponent implements OnInit {
         plot: '',
         video_url: '',
         video_file: null,
+        thumbnail: null,
     };
 
     public isSeries(t: any): boolean {
@@ -342,6 +343,7 @@ export class CreatorDashboardPageComponent implements OnInit {
             plot: '',
             video_url: '',
             video_file: null,
+            thumbnail: null,
         };
         this.epProgress = 0;
     }
@@ -411,6 +413,39 @@ export class CreatorDashboardPageComponent implements OnInit {
     public onEpisodeFile(ev: Event) {
         const input = ev.target as HTMLInputElement;
         this.epForm.video_file = input.files && input.files.length ? input.files[0] : null;
+    }
+
+    public onEpisodeThumbnail(ev: Event) {
+        const input = ev.target as HTMLInputElement;
+        this.epForm.thumbnail = input.files && input.files.length ? input.files[0] : null;
+    }
+
+    /**
+     * Set or replace the artwork on an episode that already exists. Episode 1
+     * is created with the series itself and never passes through the add form,
+     * so without this it could never get a thumbnail at all.
+     */
+    public onExistingEpisodeThumbnail(ep: any, ev: Event) {
+        const input = ev.target as HTMLInputElement;
+        const file = input.files && input.files.length ? input.files[0] : null;
+        input.value = '';
+        if (!file || !this.episodesFor) return;
+
+        const fd = new FormData();
+        fd.append('thumbnail', file);
+        this.http.post(
+            `creator/content/${this.episodesFor.id}/episodes/${ep.id}/thumbnail`, fd,
+        ).subscribe(
+            () => { this.toast.open('Thumbnail updated.'); this.loadEpisodes(); },
+            (err: any) => this.toast.open(this.firstError(err) || 'Could not save thumbnail.'),
+        );
+    }
+
+    public episodeThumb(ep: any): string | null {
+        const p = ep?.poster;
+        if (!p) return null;
+        if (/^https?:\/\//.test(p)) return p;
+        return p.charAt(0) === '/' ? p : '/' + p;
     }
 
     public submitEpisode() {
@@ -488,6 +523,7 @@ export class CreatorDashboardPageComponent implements OnInit {
         if (f.episode_number) fd.append('episode_number', String(f.episode_number));
         if (f.episode_title) fd.append('episode_title', f.episode_title);
         if (f.plot) fd.append('plot', f.plot);
+        if (f.thumbnail) fd.append('thumbnail', f.thumbnail);
         if (r2Url) {
             fd.append('r2_video_url', r2Url);
         } else if (f.video_file) {

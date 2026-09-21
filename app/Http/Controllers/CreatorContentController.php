@@ -329,7 +329,14 @@ class CreatorContentController extends BaseController
         $episodes = Episode::where('title_id', $titleId)
             ->orderBy('season_number')
             ->orderBy('episode_number')
-            ->get(['id', 'name', 'description', 'season_number', 'episode_number']);
+            ->get([
+                'id',
+                'name',
+                'description',
+                'poster',
+                'season_number',
+                'episode_number',
+            ]);
 
         $videos = Video::where('title_id', $titleId)
             ->whereNotNull('episode_num')
@@ -351,6 +358,7 @@ class CreatorContentController extends BaseController
                 'id' => $ep->id,
                 'title' => $ep->getAttributes()['name'] ?? null,
                 'plot' => $ep->getAttributes()['description'] ?? null,
+                'poster' => $ep->getAttributes()['poster'] ?? null,
                 'season_number' => $ep->season_number,
                 'episode_number' => $ep->episode_number,
                 'has_video' => (bool) $video,
@@ -400,6 +408,7 @@ class CreatorContentController extends BaseController
             'r2_video_url' => 'nullable|string|max:1000',
             'video_file' =>
                 'nullable|file|mimetypes:video/mp4,video/webm,video/ogg,video/quicktime,video/x-m4v|max:512000',
+            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
         if (
@@ -475,6 +484,7 @@ class CreatorContentController extends BaseController
             'episode_number' => $episodeNumber,
             'name' => $episodeName,
             'description' => $request->input('plot'),
+            'poster' => $this->storeEpisodeThumbnail($request),
             'allow_update' => 0,
         ]);
 
@@ -516,6 +526,82 @@ class CreatorContentController extends BaseController
         }
 
         return response()->json(['episode' => $episode], 201);
+    }
+
+    /**
+     * Store an uploaded episode thumbnail, or null when none was supplied.
+     *
+     * Landscape artwork -- the season page renders it in a landscape slot, the
+     * same one that made a portrait poster look enormous on the title page.
+     */
+    private function storeEpisodeThumbnail(Request $request): ?string
+    {
+        if (!$request->hasFile('thumbnail')) {
+            return null;
+        }
+
+        $path = $request
+            ->file('thumbnail')
+            ->store('creator_content/episodes', 'public');
+
+        return 'storage/' . $path;
+    }
+
+    /**
+     * Remove an episode's stored thumbnail, if it is one of ours.
+     */
+    private function deleteEpisodeThumbnail($poster): void
+    {
+        if (!$poster || strpos($poster, 'creator_content/episodes') === false) {
+            return;
+        }
+
+        try {
+            Storage::disk('public')->delete(
+                ltrim(str_replace('storage/', '', $poster), '/'),
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Episode thumbnail delete failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /secure/creator/content/{id}/episodes/{episodeId}/thumbnail
+     *
+     * Set or replace an episode's thumbnail. Separate from adding the episode
+     * so artwork can be added after the fact -- including for episode 1, which
+     * is created alongside the series itself and so never passes through the
+     * add-episode form.
+     */
+    public function updateEpisodeThumbnail(
+        Request $request,
+        int $titleId,
+        int $episodeId
+    ): JsonResponse {
+        $resolved = $this->requireOwnedSeries($request, $titleId);
+        if ($resolved instanceof JsonResponse) {
+            return $resolved;
+        }
+
+        $request->validate([
+            'thumbnail' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+
+        $episode = Episode::where('title_id', $titleId)
+            ->where('id', $episodeId)
+            ->first();
+        if (!$episode) {
+            return response()->json(['message' => 'Not found.'], 404);
+        }
+
+        $previous = $episode->getAttributes()['poster'] ?? null;
+        $episode->poster = $this->storeEpisodeThumbnail($request);
+        $episode->save();
+
+        // Only once the new one is safely saved.
+        $this->deleteEpisodeThumbnail($previous);
+
+        return response()->json(['poster' => $episode->poster]);
     }
 
     /**
@@ -564,6 +650,13 @@ class CreatorContentController extends BaseController
             ->where('season_num', $seasonNumber)
             ->delete();
 
+        $doomed = Episode::where('title_id', $titleId)
+            ->where('season_number', $seasonNumber)
+            ->get();
+        foreach ($doomed as $ep) {
+            $this->deleteEpisodeThumbnail($ep->getAttributes()['poster'] ?? null);
+        }
+
         Episode::where('title_id', $titleId)
             ->where('season_number', $seasonNumber)
             ->delete();
@@ -610,6 +703,7 @@ class CreatorContentController extends BaseController
             ->delete();
 
         $seasonNumber = $episode->season_number;
+        $this->deleteEpisodeThumbnail($episode->getAttributes()['poster'] ?? null);
         $episode->delete();
 
         $remaining = Episode::where('title_id', $titleId)
