@@ -64,10 +64,12 @@ class HomepageContentController extends BaseController
             $sliderItemCount,
             $homepageLists
         ) {
-            $list->items = app(LoadListContent::class)->execute($list, [
-                'limit' =>
-                    $index === 0 ? $sliderItemCount : min($itemCount, 30),
-            ]);
+            $list->items = $this->onlyPublished(
+                app(LoadListContent::class)->execute($list, [
+                    'limit' =>
+                        $index === 0 ? $sliderItemCount : min($itemCount, 30),
+                ]),
+            );
             return $list;
         });
 
@@ -108,6 +110,31 @@ class HomepageContentController extends BaseController
      * The three computed HVN homepage rows, built by the shared service so the
      * same sections can also render a full "showcase" page via /lists/{slug}.
      */
+    /**
+     * Drop anything that is not publicly visible from a homepage row.
+     *
+     * Title's 'approved' global scope exempts admins and the creator who
+     * uploaded a title, which is right for the moderation screen and the
+     * title page but wrong here: the homepage is a curated public surface and
+     * should look the same to everyone. Without this an admin sees rejected
+     * titles sitting in "Highest Viewed" and in manually curated rows.
+     *
+     * Imported catalogue titles predate the status column and carry NULL, so
+     * NULL counts as published.
+     */
+    private function onlyPublished($items)
+    {
+        return $items
+            ->filter(function ($item) {
+                if (!array_key_exists('status', $item->getAttributes())) {
+                    return true; // not a Title (person, episode, ...)
+                }
+                $status = $item->getAttributes()['status'];
+                return $status === null || $status === 'approved';
+            })
+            ->values();
+    }
+
     private function hvnSections(): array
     {
         // Homepage carousels are capped at 10; the full showcase page

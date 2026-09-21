@@ -121,6 +121,11 @@ class LoadListContent
 
         if ($model === Title::class) {
             $fields = array_merge($fields, [
+                // Needed so callers can tell a published title from a pending
+                // or rejected one -- Title's global scope exempts admins and
+                // the uploading creator, so the row being present is not by
+                // itself proof that it is public.
+                'status',
                 'is_series',
                 'year',
                 'tmdb_vote_average',

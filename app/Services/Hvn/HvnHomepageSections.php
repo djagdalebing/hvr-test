@@ -139,17 +139,39 @@ class HvnHomepageSections
     /** Most-viewed titles. */
     private function highestViewedIds(int $limit): array
     {
-        return Title::orderBy('views', 'desc')
+        return $this->onlyPublished(Title::orderBy('views', 'desc'))
             ->limit($limit)
             ->pluck('id')
             ->all();
     }
 
     /**
+     * The same visibility predicate as Title's 'approved' global scope, but
+     * without its admin and creator-owner exemptions.
+     *
+     * Homepage rows are a curated public surface, so an admin or the
+     * uploading creator should see exactly what a viewer sees there rather
+     * than their own pending or rejected titles -- previewing those belongs
+     * on the moderation screen and the title page, not in "Highest Viewed".
+     *
+     * Imported catalogue titles predate the status column and carry NULL, so
+     * NULL counts as visible; filtering on status = 'approved' alone would
+     * drop most of the library.
+     */
+    private function onlyPublished($query)
+    {
+        return $query->where(function ($w) {
+            $w->where('titles.status', 'approved')->orWhereNull(
+                'titles.status',
+            );
+        });
+    }
+
+    /**
      * Load Title models for the given ordered ids, shaped like normal list
      * items (same select fields + genres + videos). Order is preserved and
-     * anything not visible to the current viewer (global 'approved' scope) is
-     * dropped.
+     * anything not publicly published is dropped -- see onlyPublished(), which
+     * is stricter than the global scope on purpose.
      */
     public function loadTitles(array $ids): Collection
     {
@@ -159,7 +181,9 @@ class HvnHomepageSections
 
         $preferFull = $this->settings->get('streaming.prefer_full');
 
-        $titles = Title::whereIn('id', $ids)->get([
+        // Safety net for every section, not just the computed ones: an
+        // editor's pick that was later rejected must drop out of the row too.
+        $titles = $this->onlyPublished(Title::whereIn('id', $ids))->get([
             'id', 'name', 'poster', 'description', 'is_series', 'year',
             'tmdb_vote_average', 'backdrop', 'runtime', 'release_date',
             'popularity', 'local_vote_average',
