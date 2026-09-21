@@ -5,6 +5,8 @@ namespace App;
 use Common\Search\Searchable;
 use DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -179,9 +181,79 @@ class Video extends Model
         ) {
             $data['url'] = null;
             $data['requires_auth'] = true;
+
+            return $data;
         }
 
+        $data['url'] = $this->signedR2Url($data['url'] ?? null);
+
         return $data;
+    }
+
+    /**
+     * Swap a stored R2 object URL for a short-lived signed one.
+     *
+     * The bucket is served from a public URL, which makes every stored link a
+     * permanent, shareable, crawlable handle on the file. Signing at read time
+     * means the URL in the API response stops working within hours, so a link
+     * pasted somewhere public dies instead of living forever.
+     *
+     * Deliberately derived from the stored URL rather than from a new column:
+     * the existing rows already encode the object key, so no backfill is
+     * needed and old and new uploads behave identically.
+     *
+     * Anything that is not an R2 object (YouTube, Vimeo, external links, files
+     * on local disk) is returned untouched.
+     */
+    private function signedR2Url(?string $url): ?string
+    {
+        if (!$url) {
+            return $url;
+        }
+
+        $base = rtrim((string) config('filesystems.disks.r2.url'), '/');
+        $isR2 =
+            ($this->attributes['source'] ?? null) === 'r2' ||
+            ($base && Str::startsWith($url, $base . '/'));
+
+        if (!$isR2) {
+            return $url;
+        }
+
+        if ($base && Str::startsWith($url, $base . '/')) {
+            $key = substr($url, strlen($base) + 1);
+        } else {
+            // R2_PUBLIC_URL may have changed since the row was written. The
+            // path component is the object key for both the r2.dev subdomain
+            // and a custom domain bound to the bucket.
+            $key = ltrim((string) parse_url($url, PHP_URL_PATH), '/');
+        }
+
+        if ($key === '') {
+            return $url;
+        }
+
+        try {
+            return Storage::disk('r2')->temporaryUrl(
+                $key,
+                now()->addHours(
+                    (int) config('filesystems.disks.r2.signed_url_hours', 6),
+                ),
+            );
+        } catch (\Throwable $e) {
+            // Fall back to the stored URL rather than handing the player a
+            // null and breaking playback outright. Once public access is off
+            // this will 403, so make sure the failure is visible in the log
+            // instead of silently degrading.
+            \Log::warning(
+                'R2 signing failed for video ' .
+                    ($this->attributes['id'] ?? '?') .
+                    ': ' .
+                    $e->getMessage(),
+            );
+
+            return $url;
+        }
     }
 
     private function viewerMayPlayFullVideo(): bool

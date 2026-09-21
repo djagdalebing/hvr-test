@@ -70,8 +70,15 @@ return [
             'endpoint'                => env('R2_ENDPOINT'),
             'use_path_style_endpoint' => true,
             // Public base URL for serving objects (R2.dev subdomain or a
-            // custom domain bound to the bucket).
+            // custom domain bound to the bucket). Still used to build the
+            // stored video URL on upload; playback no longer serves it
+            // directly -- see Video::toArray().
             'url'                     => env('R2_PUBLIC_URL'),
+            // How long a signed playback URL stays valid. Long enough that it
+            // cannot expire part-way through a viewing (an expired URL makes
+            // the next seek fail), short enough that a re-shared link dies the
+            // same day.
+            'signed_url_hours'        => (int) env('R2_SIGNED_URL_HOURS', 6),
         ],
     ],
 
