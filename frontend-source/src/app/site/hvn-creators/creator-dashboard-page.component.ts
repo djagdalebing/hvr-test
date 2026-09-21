@@ -293,6 +293,200 @@ export class CreatorDashboardPageComponent implements OnInit {
         this.showUpload = true;
     }
 
+    // ---------------------------------------------------------------
+    // Series episodes
+    //
+    // A series is not one video. The add-title form carries episode 1; the
+    // rest are added here, one at a time, because each is its own large
+    // upload and a creator releases them over weeks, not in one submit.
+    // ---------------------------------------------------------------
+
+    public episodesFor: any = null;
+    public episodeRows: any[] = [];
+    public episodeSeasons: any[] = [];
+    public episodesLoading = false;
+    public epUploading = false;
+    public epProgress = 0;
+    public epForm: any = {
+        season_number: 1,
+        episode_number: null,
+        episode_title: '',
+        plot: '',
+        video_url: '',
+        video_file: null,
+    };
+
+    public isSeries(t: any): boolean {
+        return (t && t.type) === 'series';
+    }
+
+    public manageEpisodes(t: any) {
+        this.closeForm();
+        this.episodesFor = t;
+        this.resetEpisodeForm();
+        this.loadEpisodes();
+    }
+
+    public closeEpisodes() {
+        this.episodesFor = null;
+        this.episodeRows = [];
+        this.episodeSeasons = [];
+        this.cd.markForCheck();
+    }
+
+    private resetEpisodeForm() {
+        this.epForm = {
+            season_number: 1,
+            episode_number: null,
+            episode_title: '',
+            plot: '',
+            video_url: '',
+            video_file: null,
+        };
+        this.epProgress = 0;
+    }
+
+    private loadEpisodes() {
+        if (!this.episodesFor) return;
+        this.episodesLoading = true;
+        this.cd.markForCheck();
+        this.http.get('creator/content/' + this.episodesFor.id + '/episodes').subscribe(
+            (res: any) => {
+                this.episodeRows = res.episodes || [];
+                this.episodeSeasons = res.seasons || [];
+                // Default to the latest season, which is almost always the
+                // one they are adding to.
+                if (this.episodeSeasons.length) {
+                    this.epForm.season_number =
+                        this.episodeSeasons[this.episodeSeasons.length - 1].number;
+                }
+                this.episodesLoading = false;
+                this.cd.markForCheck();
+            },
+            (err: any) => {
+                this.episodesLoading = false;
+                this.toast.open(this.firstError(err) || 'Could not load episodes.');
+                this.cd.markForCheck();
+            },
+        );
+    }
+
+    public episodesInSeason(n: number): any[] {
+        return this.episodeRows.filter(e => e.season_number === n);
+    }
+
+    public onEpisodeFile(ev: Event) {
+        const input = ev.target as HTMLInputElement;
+        this.epForm.video_file = input.files && input.files.length ? input.files[0] : null;
+    }
+
+    public submitEpisode() {
+        if (this.epUploading || !this.episodesFor) return;
+        const f = this.epForm;
+
+        if (!f.season_number || f.season_number < 1) {
+            this.toast.open('Season number is required.');
+            return;
+        }
+        if (!f.video_url && !f.video_file) {
+            this.toast.open('Provide a video URL or upload a video file.');
+            return;
+        }
+
+        // Same route as the main upload: straight to R2 when it is a file, so
+        // the PHP request-size limit never applies.
+        if (f.video_file) {
+            this.epUploading = true;
+            this.epProgress = 0;
+            this.cd.markForCheck();
+            this.http.post('creator/content/presign', {
+                filename: f.video_file.name,
+                content_type: f.video_file.type || 'video/mp4',
+            }).subscribe(
+                (res: any) => this.epPutToR2(res),
+                (err: any) => {
+                    if (err?.status === 503) {
+                        this.toast.open('Cloud storage not set up; trying direct upload…');
+                        this.saveEpisode(null);
+                    } else {
+                        this.epUploading = false;
+                        this.toast.open(this.firstError(err) || 'Could not start upload.');
+                        this.cd.markForCheck();
+                    }
+                },
+            );
+        } else {
+            this.epUploading = true;
+            this.saveEpisode(null);
+        }
+    }
+
+    private epPutToR2(presign: any) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', presign.upload_url, true);
+        xhr.setRequestHeader('Content-Type', presign.content_type || 'video/mp4');
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                this.epProgress = Math.round((e.loaded / e.total) * 100);
+                this.cd.markForCheck();
+            }
+        };
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                this.saveEpisode(presign.public_url);
+            } else {
+                this.epUploading = false;
+                this.toast.open('Video upload to storage failed (' + xhr.status + ').');
+                this.cd.markForCheck();
+            }
+        };
+        xhr.onerror = () => {
+            this.epUploading = false;
+            this.toast.open('Network error while uploading video.');
+            this.cd.markForCheck();
+        };
+        xhr.send(this.epForm.video_file);
+    }
+
+    private saveEpisode(r2Url: string | null) {
+        const f = this.epForm;
+        const fd = new FormData();
+        fd.append('season_number', String(f.season_number));
+        if (f.episode_number) fd.append('episode_number', String(f.episode_number));
+        if (f.episode_title) fd.append('episode_title', f.episode_title);
+        if (f.plot) fd.append('plot', f.plot);
+        if (r2Url) {
+            fd.append('r2_video_url', r2Url);
+        } else if (f.video_file) {
+            fd.append('video_file', f.video_file);
+        } else {
+            fd.append('video_url', f.video_url);
+        }
+
+        this.http.post('creator/content/' + this.episodesFor.id + '/episodes', fd).subscribe(
+            () => {
+                this.epUploading = false;
+                this.toast.open('Episode added — it will appear once an admin approves it.');
+                this.resetEpisodeForm();
+                this.loadEpisodes();
+            },
+            (err: any) => {
+                this.epUploading = false;
+                this.toast.open(this.firstError(err) || 'Could not add episode.');
+                this.cd.markForCheck();
+            },
+        );
+    }
+
+    public deleteEpisode(ep: any) {
+        if (!this.episodesFor) return;
+        if (!confirm('Delete "' + ep.title + '"? The video file is removed too and this cannot be undone.')) return;
+        this.http.delete('creator/content/' + this.episodesFor.id + '/episodes/' + ep.id).subscribe(
+            () => { this.toast.open('Episode deleted.'); this.loadEpisodes(); },
+            (err: any) => this.toast.open(this.firstError(err) || 'Could not delete episode.'),
+        );
+    }
+
     public onFile(field: 'video_file' | 'cover', ev: Event) {
         const input = ev.target as HTMLInputElement;
         this.form[field] = input.files && input.files.length ? input.files[0] : null;
@@ -377,6 +571,9 @@ export class CreatorDashboardPageComponent implements OnInit {
         const fd = new FormData();
         fd.append('title', f.title.trim());
         fd.append('type', f.type || 'movie');
+        // Only meaningful for a series -- it names the episode the initial
+        // submission becomes.
+        if (f.episode_title) fd.append('episode_title', f.episode_title);
         // Optional metadata — only append when the user filled it in.
         const textFields = [
             'year', 'description', 'tagline', 'runtime', 'genre',

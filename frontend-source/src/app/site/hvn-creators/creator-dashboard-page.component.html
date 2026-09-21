@@ -353,8 +353,18 @@
                         </div>
                         <!-- Video is set at upload time; editing covers details
                              and artwork only, so these are hidden when editing. -->
+                        <!-- For a series this submission IS episode 1; the rest are
+                             added from "Manage episodes" afterwards. Say so, or the
+                             creator has no idea where the other episodes go. -->
+                        <div class="field full" *ngIf="!editingId && form.type === 'series'">
+                            <label>Episode 1 title <span class="hint">— add the remaining episodes after this</span></label>
+                            <input type="text" maxlength="255" [(ngModel)]="form.episode_title" placeholder="Episode 1">
+                        </div>
                         <div class="field full" *ngIf="!editingId">
-                            <label>Video URL <span class="hint">— or upload a file below</span></label>
+                            <label>
+                                {{ form.type === 'series' ? 'Episode 1 video URL' : 'Video URL' }}
+                                <span class="hint">— or upload a file below</span>
+                            </label>
                             <input type="url" [(ngModel)]="form.video_url" placeholder="https://youtube.com/... or https://vimeo.com/...">
                         </div>
                         <div class="field" *ngIf="!editingId">
@@ -391,6 +401,94 @@
                     </div>
                 </div>
 
+                <!-- Series episodes. Each episode is its own upload, so this is a
+                     separate surface from the add-title form rather than more
+                     rows inside it. -->
+                <div class="upload-panel" *ngIf="episodesFor">
+                    <div class="upload-panel-head">
+                        <h3>Episodes — {{ episodesFor.name }}</h3>
+                        <button mat-icon-button (click)="closeEpisodes()" [matTooltip]="'Close' | trans">
+                            <mat-icon svgIcon="close"></mat-icon>
+                        </button>
+                    </div>
+
+                    <div class="dash-empty" *ngIf="episodesLoading">Loading episodes…</div>
+
+                    <ng-container *ngIf="!episodesLoading">
+                        <div class="dash-empty" *ngIf="!episodeRows.length">No episodes yet.</div>
+
+                        <div class="ep-season" *ngFor="let sn of episodeSeasons">
+                            <h4 class="ep-season-head">Season {{ sn.number }}</h4>
+                            <ul class="dash-list">
+                                <li *ngFor="let ep of episodesInSeason(sn.number)" class="dash-list-row">
+                                    <span class="dash-list-title">
+                                        {{ ep.episode_number }}. {{ ep.title }}
+                                    </span>
+                                    <div class="dash-list-meta">
+                                        <span class="status-chip"
+                                              [class.pending]="!ep.approved"
+                                              [class.approved]="ep.approved">
+                                            {{ ep.approved ? 'Live' : 'Pending review' }}
+                                        </span>
+                                        <span class="dash-list-type" *ngIf="!ep.has_video">No video</span>
+                                        <button mat-icon-button color="warn" (click)="deleteEpisode(ep)"
+                                                [matTooltip]="'Delete episode' | trans">
+                                            <mat-icon svgIcon="delete"></mat-icon>
+                                        </button>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <h4 class="ep-season-head">Add an episode</h4>
+                        <div class="upload-grid">
+                            <div class="field">
+                                <label>Season</label>
+                                <input type="number" min="1" max="100" [(ngModel)]="epForm.season_number">
+                            </div>
+                            <div class="field">
+                                <label>Episode number</label>
+                                <input type="number" min="1" max="1000" [(ngModel)]="epForm.episode_number"
+                                       placeholder="Next in season">
+                            </div>
+                            <div class="field">
+                                <label>Episode title</label>
+                                <input type="text" maxlength="255" [(ngModel)]="epForm.episode_title"
+                                       placeholder="Episode 2">
+                            </div>
+                            <div class="field full">
+                                <label>Description</label>
+                                <textarea rows="2" maxlength="5000" [(ngModel)]="epForm.plot"></textarea>
+                            </div>
+                            <div class="field full">
+                                <label>Video URL</label>
+                                <input type="url" [(ngModel)]="epForm.video_url"
+                                       placeholder="https://youtube.com/... or https://vimeo.com/...">
+                            </div>
+                            <div class="field full">
+                                <label>…or upload a video file</label>
+                                <input type="file"
+                                       accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-m4v,.mp4,.webm,.ogg,.mov,.m4v"
+                                       (change)="onEpisodeFile($event)">
+                            </div>
+                        </div>
+
+                        <div class="upload-progress" *ngIf="epUploading && epProgress > 0">
+                            Uploading… {{ epProgress }}%
+                        </div>
+
+                        <div class="upload-actions">
+                            <button mat-raised-button color="accent" [disabled]="epUploading" (click)="submitEpisode()">
+                                {{ epUploading ? 'Uploading…' : 'Add episode' }}
+                            </button>
+                        </div>
+                        <p class="upload-panel-sub">
+                            New episodes stay hidden until an admin approves them. The rest of the
+                            series keeps playing in the meantime.
+                        </p>
+                    </ng-container>
+                </div>
+
                 <div *ngIf="content.length === 0 && !showUpload" class="dash-empty">No content uploaded yet.</div>
                 <ul class="dash-list" *ngIf="content.length">
                     <li *ngFor="let t of content" class="dash-list-row">
@@ -406,6 +504,10 @@
                             </span>
                             <span class="dash-list-type">{{ t.type || 'movie' }}</span>
                             <span class="dash-list-date">{{ t.created_at | date:'mediumDate' }}</span>
+                            <button mat-icon-button *ngIf="isSeries(t)" (click)="manageEpisodes(t)"
+                                    [matTooltip]="'Manage episodes' | trans">
+                                <mat-icon svgIcon="list"></mat-icon>
+                            </button>
                             <button mat-icon-button (click)="startEdit(t)" [matTooltip]="'Edit title' | trans">
                                 <mat-icon svgIcon="edit"></mat-icon>
                             </button>

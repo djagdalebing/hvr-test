@@ -542,3 +542,20 @@ creator-dashboard-page {
         }
     }
 }
+
+// Series episode manager. Everything else reuses the upload panel's own
+// grid/field/actions classes -- only the per-season grouping is new.
+.ep-season {
+    margin-bottom: 18px;
+
+    .dash-list { margin-top: 4px; }
+}
+
+.ep-season-head {
+    margin: 18px 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    opacity: .7;
+}

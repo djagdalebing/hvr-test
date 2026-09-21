@@ -103,6 +103,11 @@ Route::group(['prefix' => 'v1'], function() {
             // optional artwork replacement, same as store().
             Route::post('creator/content/{id}', [CreatorContentController::class, 'update']);
             Route::delete('creator/content/{id}', [CreatorContentController::class, 'destroy']);
+            // Series episodes (see routes/web.php for why these are
+            // creator-scoped rather than reusing Season/EpisodeController).
+            Route::get('creator/content/{id}/episodes', [CreatorContentController::class, 'episodes']);
+            Route::post('creator/content/{id}/episodes', [CreatorContentController::class, 'storeEpisode']);
+            Route::delete('creator/content/{id}/episodes/{episodeId}', [CreatorContentController::class, 'destroyEpisode']);
         });
     });
 

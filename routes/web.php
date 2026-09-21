@@ -208,6 +208,12 @@ Route::group(['prefix' => 'secure'], function () {
     // Numeric constraint keeps this from shadowing creator/content/presign.
     Route::post('creator/content/{id}',    [\App\Http\Controllers\CreatorContentController::class, 'update'])->where('id', '[0-9]+');
     Route::delete('creator/content/{id}',  [\App\Http\Controllers\CreatorContentController::class, 'destroy'])->where('id', '[0-9]+');
+    // Series episodes — creator-scoped. The admin Season/Episode controllers
+    // authorize on titles.update / titles.create, which creators do not have,
+    // so a creator could not build a multi-episode series at all.
+    Route::get('creator/content/{id}/episodes',    [\App\Http\Controllers\CreatorContentController::class, 'episodes'])->where('id', '[0-9]+');
+    Route::post('creator/content/{id}/episodes',   [\App\Http\Controllers\CreatorContentController::class, 'storeEpisode'])->where('id', '[0-9]+');
+    Route::delete('creator/content/{id}/episodes/{episodeId}', [\App\Http\Controllers\CreatorContentController::class, 'destroyEpisode'])->where(['id' => '[0-9]+', 'episodeId' => '[0-9]+']);
 
     // Owner edit/delete (controller checks ownership; admin uses /secure/admin/*).
     Route::put('community/{id}',          [HvnController::class, 'apiUpdateOwnPost'])->where('id', '[0-9]+');
