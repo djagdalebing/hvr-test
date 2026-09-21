@@ -30,7 +30,8 @@
             </tr>
         </thead>
         <tbody>
-            <tr *ngFor="let t of rows">
+            <ng-container *ngFor="let t of rows">
+            <tr>
                 <td data-label="Title">
                     <div class="mod-title-cell">
                         <img class="mod-thumb" *ngIf="posterUrl(t)" [src]="posterUrl(t)" alt="">
@@ -113,6 +114,7 @@
                     </div>
                 </td>
             </tr>
+            </ng-container>
         </tbody>
     </table>
 
