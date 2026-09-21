@@ -54,6 +54,14 @@ export class ModerationAdminComponent implements OnInit {
             (res: any) => {
                 const p = res?.pagination || {};
                 this.rows = p.data || [];
+                // Open any series that has an episode waiting. The per-episode
+                // actions were behind a small toggle, so a queued episode
+                // looked like a finished title until you thought to click it.
+                this.rows.forEach(t => {
+                    if (this.isSeries(t) && this.pendingEpisodes(t).length) {
+                        this.expanded[t.id] = true;
+                    }
+                });
                 this.page = p.current_page || 1;
                 this.lastPage = p.last_page || 1;
                 this.total = p.total || this.rows.length;

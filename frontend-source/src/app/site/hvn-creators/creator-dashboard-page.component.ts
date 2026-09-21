@@ -360,6 +360,7 @@ export class CreatorDashboardPageComponent implements OnInit {
                     this.epForm.season_number =
                         this.episodeSeasons[this.episodeSeasons.length - 1].number;
                 }
+                this.epSeasonChoice = String(this.epForm.season_number || 1);
                 this.episodesLoading = false;
                 this.cd.markForCheck();
             },
@@ -373,6 +374,38 @@ export class CreatorDashboardPageComponent implements OnInit {
 
     public episodesInSeason(n: number): any[] {
         return this.episodeRows.filter(e => e.season_number === n);
+    }
+
+    // A free-text season number meant "add to season 1" was possible but
+    // invisible -- you had to know to type it. The picker lists what exists
+    // and keeps "New season" as an explicit choice.
+    public epSeasonChoice = '1';
+
+    public onSeasonChoice(value: string) {
+        this.epSeasonChoice = value;
+        if (value === 'new') {
+            const highest = this.episodeSeasons.length
+                ? Math.max(...this.episodeSeasons.map(s => +s.number))
+                : 0;
+            this.epForm.season_number = highest + 1;
+        } else {
+            this.epForm.season_number = +value;
+        }
+        this.cd.markForCheck();
+    }
+
+    public deleteSeason(sn: any) {
+        if (!this.episodesFor) return;
+        const count = this.episodesInSeason(sn.number).length;
+        const msg = count
+            ? `Delete season ${sn.number} and its ${count} episode${count === 1 ? '' : 's'}? The video files are removed too and this cannot be undone.`
+            : `Delete the empty season ${sn.number}?`;
+        if (!confirm(msg)) return;
+
+        this.http.delete('creator/content/' + this.episodesFor.id + '/seasons/' + sn.number).subscribe(
+            () => { this.toast.open('Season deleted.'); this.loadEpisodes(); },
+            (err: any) => this.toast.open(this.firstError(err) || 'Could not delete season.'),
+        );
     }
 
     public onEpisodeFile(ev: Event) {

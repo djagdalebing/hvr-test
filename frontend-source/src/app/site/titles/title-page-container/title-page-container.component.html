@@ -11,6 +11,14 @@
   <current-next-episode-panel *ngIf="titlePage.title.is_series"></current-next-episode-panel>
   <title-secondary-details-panel></title-secondary-details-panel>
 
+  <!-- Series pages otherwise offered nothing but two tiny season numbers in
+       the panel above, with the episode list buried at /season/{n}. -->
+  <hvn-series-episodes
+    *ngIf="titlePage.title.is_series && !titlePage.activeEpisode"
+    [titleId]="titlePage.title.id"
+    [titleName]="titlePage.title.name"
+  ></hvn-series-episodes>
+
   <title-videos
     *ngIf="titlePage.title.show_videos || settings.get('titles.video_panel_mode')"
   ></title-videos>

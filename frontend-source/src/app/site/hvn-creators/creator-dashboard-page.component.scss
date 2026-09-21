@@ -552,10 +552,23 @@ creator-dashboard-page {
 }
 
 .ep-season-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin: 18px 0 6px;
     font-size: 13px;
     font-weight: 600;
     letter-spacing: .04em;
     text-transform: uppercase;
     opacity: .7;
+}
+
+.ep-season-empty {
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    background: rgba(255, 255, 255, .08);
+    opacity: .8;
 }

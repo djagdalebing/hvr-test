@@ -88,6 +88,7 @@ import {SearchInputModule} from './search/seach-input/search-input.module';
 import {KnowForWidgetModule} from './people/known-for-widget/know-for-widget.module';
 import {ChipsModule} from '@common/core/ui/chips/chips.module';
 import {SelectTitleInputModule} from '../admin/video-index/select-title-input/select-title-input.module';
+import {SeriesEpisodesModule} from './hvn-series/series-episodes.module';
 import {TitleDetailItemComponent} from './shared/media-view/title/title-detail-item/title-detail-item.component';
 import {MediaViewPlayButtonComponent} from './shared/media-view/media-view-play-button/media-view-play-button.component';
 import {TitlePortraitItemComponent} from './shared/media-view/title/title-portrait-item/title-portrait-item.component';
@@ -109,6 +110,7 @@ import {CommunityPostPageComponent} from './hvn-community/community-post-page.co
 
 @NgModule({
     imports: [
+        SeriesEpisodesModule,
         CommonModule,
         SiteRoutingModule,
         ChipsModule,

@@ -10,6 +10,8 @@ Route::group(['prefix' => 'secure'], function () {
     Route::get('series/{id}', 'TitleController@show');
     Route::get('titles/{id}', 'TitleController@show');
     Route::get('titles/{id}/related', 'RelatedTitlesController@index');
+    // Season/episode guide for the series page's episode panel.
+    Route::get('titles/{id}/episode-guide', [\App\Http\Controllers\Web\HvnController::class, 'apiTitleEpisodeGuide'])->where('id', '[0-9]+');
     Route::get('titles', 'TitleController@index');
     Route::post('titles', 'TitleController@store');
     Route::post('titles/credits', 'TitleCreditController@store');
@@ -214,6 +216,7 @@ Route::group(['prefix' => 'secure'], function () {
     Route::get('creator/content/{id}/episodes',    [\App\Http\Controllers\CreatorContentController::class, 'episodes'])->where('id', '[0-9]+');
     Route::post('creator/content/{id}/episodes',   [\App\Http\Controllers\CreatorContentController::class, 'storeEpisode'])->where('id', '[0-9]+');
     Route::delete('creator/content/{id}/episodes/{episodeId}', [\App\Http\Controllers\CreatorContentController::class, 'destroyEpisode'])->where(['id' => '[0-9]+', 'episodeId' => '[0-9]+']);
+    Route::delete('creator/content/{id}/seasons/{number}', [\App\Http\Controllers\CreatorContentController::class, 'destroySeason'])->where(['id' => '[0-9]+', 'number' => '[0-9]+']);
 
     // Owner edit/delete (controller checks ownership; admin uses /secure/admin/*).
     Route::put('community/{id}',          [HvnController::class, 'apiUpdateOwnPost'])->where('id', '[0-9]+');

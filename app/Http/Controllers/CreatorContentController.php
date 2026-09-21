@@ -519,6 +519,65 @@ class CreatorContentController extends BaseController
     }
 
     /**
+     * DELETE /secure/creator/content/{id}/seasons/{number}
+     *
+     * Remove a whole season, its episodes and their media.
+     *
+     * Deleting the last episode of a season used to leave the season behind as
+     * an empty shell that nothing could remove -- it kept showing on the title
+     * page as a season number leading nowhere.
+     */
+    public function destroySeason(
+        Request $request,
+        int $titleId,
+        int $seasonNumber
+    ): JsonResponse {
+        $resolved = $this->requireOwnedSeries($request, $titleId);
+        if ($resolved instanceof JsonResponse) {
+            return $resolved;
+        }
+        [$user, $title] = $resolved;
+
+        $season = Season::where('title_id', $titleId)
+            ->where('number', $seasonNumber)
+            ->first();
+        if (!$season) {
+            return response()->json(['message' => 'Season not found.'], 404);
+        }
+
+        if (Season::where('title_id', $titleId)->count() <= 1) {
+            return response()->json(
+                [
+                    'message' =>
+                        'A series needs at least one season. Delete the title instead.',
+                ],
+                422,
+            );
+        }
+
+        $videos = Video::where('title_id', $titleId)
+            ->where('season_num', $seasonNumber)
+            ->get();
+
+        app(\App\Services\Hvn\DeleteVideoMedia::class)->execute($videos);
+        Video::where('title_id', $titleId)
+            ->where('season_num', $seasonNumber)
+            ->delete();
+
+        Episode::where('title_id', $titleId)
+            ->where('season_number', $seasonNumber)
+            ->delete();
+
+        $season->delete();
+
+        $title->season_count = Season::where('title_id', $titleId)->count();
+        $title->episode_count = Episode::where('title_id', $titleId)->count();
+        $title->save();
+
+        return response()->json(['deleted' => true]);
+    }
+
+    /**
      * DELETE /secure/creator/content/{id}/episodes/{episodeId}
      */
     public function destroyEpisode(
@@ -553,14 +612,24 @@ class CreatorContentController extends BaseController
         $seasonNumber = $episode->season_number;
         $episode->delete();
 
-        Season::where('title_id', $titleId)
-            ->where('number', $seasonNumber)
-            ->update([
-                'episode_count' => Episode::where('title_id', $titleId)
-                    ->where('season_number', $seasonNumber)
-                    ->count(),
-            ]);
+        $remaining = Episode::where('title_id', $titleId)
+            ->where('season_number', $seasonNumber)
+            ->count();
 
+        // Drop the season with its last episode rather than leaving an empty
+        // one behind, unless it is the only season the series has.
+        $seasonCount = Season::where('title_id', $titleId)->count();
+        if ($remaining === 0 && $seasonCount > 1) {
+            Season::where('title_id', $titleId)
+                ->where('number', $seasonNumber)
+                ->delete();
+        } else {
+            Season::where('title_id', $titleId)
+                ->where('number', $seasonNumber)
+                ->update(['episode_count' => $remaining]);
+        }
+
+        $title->season_count = Season::where('title_id', $titleId)->count();
         $title->episode_count = Episode::where('title_id', $titleId)->count();
         $title->save();
 

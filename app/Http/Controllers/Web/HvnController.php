@@ -325,6 +325,104 @@ class HvnController extends Controller
     }
 
     /**
+     * GET /secure/titles/{id}/episode-guide
+     *
+     * Seasons and episodes for a series, shaped for the public title page.
+     *
+     * The main title payload returns seasons without their episodes unless
+     * asked, and the per-season page is the only place that lists them -- which
+     * left a series page with nothing but two tiny season numbers and no way to
+     * reach an episode. This is the one request that panel needs.
+     *
+     * `playable` reflects whether an approved video is actually attached, so a
+     * viewer is not offered an episode that cannot play. Admins and the
+     * uploading creator see everything, matching the rest of the site.
+     */
+    public function apiTitleEpisodeGuide(Request $request, int $titleId)
+    {
+        $title = \App\Title::withoutGlobalScope('approved')
+            ->where('id', $titleId)
+            ->first(['id', 'name', 'is_series']);
+
+        if (!$title) {
+            return response()->json(['message' => 'Not found.'], 404);
+        }
+
+        $user = $request->user();
+        $isAdmin =
+            $user &&
+            method_exists($user, 'hasPermission') &&
+            $user->hasPermission('admin');
+
+        // Which episodes have something to play.
+        $videoQuery = \App\Video::where('title_id', $titleId)->whereNotNull(
+            'episode_num',
+        );
+        if (!$isAdmin) {
+            $videoQuery->where(function ($w) use ($user) {
+                $w->where('approved', 1);
+                if ($user) {
+                    $w->orWhere('user_id', $user->id);
+                }
+            });
+        }
+        $playable = $videoQuery
+            ->get(['season_num', 'episode_num'])
+            ->map(fn($v) => $v->season_num . ':' . $v->episode_num)
+            ->flip();
+
+        $episodes = \App\Episode::where('title_id', $titleId)
+            ->orderBy('season_number')
+            ->orderBy('episode_number')
+            ->get([
+                'id',
+                'name',
+                'description',
+                'poster',
+                'season_number',
+                'episode_number',
+            ]);
+
+        $seasons = \App\Season::where('title_id', $titleId)
+            ->orderBy('number')
+            ->get(['id', 'number'])
+            ->map(function ($season) use ($episodes, $playable) {
+                return [
+                    'number' => (int) $season->number,
+                    'episodes' => $episodes
+                        ->where('season_number', $season->number)
+                        ->values()
+                        ->map(function ($ep) use ($playable) {
+                            $attrs = $ep->getAttributes();
+                            return [
+                                'id' => $ep->id,
+                                'number' => (int) $ep->episode_number,
+                                'season' => (int) $ep->season_number,
+                                'name' =>
+                                    $attrs['name'] ??
+                                    'Episode ' . $ep->episode_number,
+                                'description' => $attrs['description'] ?? null,
+                                'poster' => $attrs['poster'] ?? null,
+                                'playable' => $playable->has(
+                                    $ep->season_number .
+                                        ':' .
+                                        $ep->episode_number,
+                                ),
+                            ];
+                        }),
+                ];
+            })
+            // An empty season is noise on the public page.
+            ->filter(fn($s) => count($s['episodes']) > 0)
+            ->values();
+
+        return response()->json([
+            'title' => ['id' => $title->id, 'name' => $title->name],
+            'seasons' => $seasons,
+        ]);
+    }
+
+    /**
      * Resolve the current user, return null if anonymous, OR a 403
      * JSON response if the user is blocked. Caller does:
      *   $user = $this->requireActiveUser($r); if ($user instanceof JsonResponse) return $user;

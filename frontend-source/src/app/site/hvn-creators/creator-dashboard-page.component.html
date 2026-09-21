@@ -418,7 +418,14 @@
                         <div class="dash-empty" *ngIf="!episodeRows.length">No episodes yet.</div>
 
                         <div class="ep-season" *ngFor="let sn of episodeSeasons">
-                            <h4 class="ep-season-head">Season {{ sn.number }}</h4>
+                            <h4 class="ep-season-head">
+                                <span>Season {{ sn.number }}</span>
+                                <span class="ep-season-empty" *ngIf="!episodesInSeason(sn.number).length">empty</span>
+                                <button mat-icon-button color="warn" *ngIf="episodeSeasons.length > 1"
+                                        (click)="deleteSeason(sn)" [matTooltip]="'Delete season' | trans">
+                                    <mat-icon svgIcon="delete"></mat-icon>
+                                </button>
+                            </h4>
                             <ul class="dash-list">
                                 <li *ngFor="let ep of episodesInSeason(sn.number)" class="dash-list-row">
                                     <span class="dash-list-title">
@@ -446,6 +453,13 @@
                         <div class="upload-grid">
                             <div class="field">
                                 <label>Season</label>
+                                <select [ngModel]="epSeasonChoice" (ngModelChange)="onSeasonChoice($event)">
+                                    <option *ngFor="let s of episodeSeasons" [value]="s.number">Season {{ s.number }}</option>
+                                    <option value="new">New season…</option>
+                                </select>
+                            </div>
+                            <div class="field" *ngIf="epSeasonChoice === 'new'">
+                                <label>New season number</label>
                                 <input type="number" min="1" max="100" [(ngModel)]="epForm.season_number">
                             </div>
                             <div class="field">

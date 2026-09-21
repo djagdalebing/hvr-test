@@ -43,7 +43,7 @@
                             <button type="button" class="ep-toggle" *ngIf="isSeries(t) && episodeVideos(t).length"
                                     (click)="toggleExpanded(t)">
                                 {{ expanded[t.id] ? '▾' : '▸' }}
-                                {{ episodeVideos(t).length }} episode{{ episodeVideos(t).length === 1 ? '' : 's' }}
+                                {{ expanded[t.id] ? 'Hide' : 'Show' }} {{ episodeVideos(t).length }} episode{{ episodeVideos(t).length === 1 ? '' : 's' }}
                                 <span class="ep-badge" *ngIf="pendingEpisodes(t).length">
                                     {{ pendingEpisodes(t).length }} awaiting review
                                 </span>
