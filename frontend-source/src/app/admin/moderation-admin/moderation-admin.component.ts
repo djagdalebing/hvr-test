@@ -48,6 +48,7 @@ export class ModerationAdminComponent implements OnInit {
     public load(page = 1) {
         this.loading = true;
         this.rejectingId = null;
+        this.rejectingEpisodeId = null;
         this.cd.markForCheck();
         this.http.get(this.uri(), {status: this.status, page, perPage: this.perPage}).subscribe(
             (res: any) => {
@@ -91,6 +92,73 @@ export class ModerationAdminComponent implements OnInit {
 
     public creator(t: any): any {
         return t?.videos && t.videos[0] && t.videos[0].user ? t.videos[0].user : null;
+    }
+
+    // ---- episodes ----
+    //
+    // A series is reviewed more than once. The title-level buttons act on the
+    // whole submission; these act on one episode, so an admin can pass
+    // episode 6 without also publishing episode 7 sitting behind it.
+
+    public expanded: {[id: number]: boolean} = {};
+    public rejectingEpisodeId: number | null = null;
+    public episodeRejectReason = '';
+
+    public isSeries(t: any): boolean {
+        return (t && t.type) === 'series';
+    }
+
+    /** Creator-uploaded episode videos on this title, in running order. */
+    public episodeVideos(t: any): any[] {
+        return (t?.videos || [])
+            .filter(v => v.episode_num)
+            .sort((a, b) =>
+                (a.season_num - b.season_num) || (a.episode_num - b.episode_num));
+    }
+
+    /** Episodes still awaiting a decision — what puts the title in the queue. */
+    public pendingEpisodes(t: any): any[] {
+        return this.episodeVideos(t).filter(v => !v.approved && !v.rejected_at);
+    }
+
+    public episodeState(v: any): string {
+        if (v.rejected_at) return 'Rejected';
+        return v.approved ? 'Live' : 'Pending review';
+    }
+
+    public toggleExpanded(t: any) {
+        this.expanded[t.id] = !this.expanded[t.id];
+        this.cd.markForCheck();
+    }
+
+    public approveEpisode(t: any, v: any) {
+        this.http.post('admin/moderation/episode/' + v.id + '/approve', {}).subscribe(
+            () => { this.toast.open('Episode approved.'); this.load(this.page); },
+            () => this.toast.open('Failed to approve episode'),
+        );
+    }
+
+    public openEpisodeReject(v: any) {
+        this.rejectingEpisodeId = v.id;
+        this.episodeRejectReason = '';
+    }
+
+    public cancelEpisodeReject() {
+        this.rejectingEpisodeId = null;
+        this.episodeRejectReason = '';
+    }
+
+    public confirmEpisodeReject(v: any) {
+        const reason = (this.episodeRejectReason || '').trim();
+        this.http.post('admin/moderation/episode/' + v.id + '/reject', {reason}).subscribe(
+            () => {
+                this.rejectingEpisodeId = null;
+                this.episodeRejectReason = '';
+                this.toast.open('Episode rejected.');
+                this.load(this.page);
+            },
+            () => this.toast.open('Failed to reject episode'),
+        );
     }
 
     // ---- content (titles) ----

@@ -427,11 +427,30 @@ class HvnAdminController extends Controller
         $search  = trim((string) $request->input('query', ''));
 
         $q = \App\Title::withoutGlobalScope('approved')
-            ->where('status', $status)
             // Only show creator-uploaded titles — anything with a video that
             // has a user_id (TMDB imports have no user_id on their videos).
             ->whereHas('videos', function ($vq) {
                 $vq->whereNotNull('user_id');
+            })
+            ->where(function ($w) use ($status) {
+                $w->where('status', $status);
+
+                // A series is reviewed more than once. Episode 6 can be
+                // waiting while episodes 1-5 are live, and the title's own
+                // status stays 'approved' throughout -- so filtering on that
+                // alone left new episodes invisible to the queue forever.
+                if ($status === 'pending') {
+                    $w->orWhere(function ($o) {
+                        $o->where('status', 'approved')->whereHas(
+                            'videos',
+                            function ($vq) {
+                                $vq->whereNotNull('user_id')
+                                    ->where('approved', 0)
+                                    ->whereNull('rejected_at');
+                            },
+                        );
+                    });
+                }
             })
             ->with(['videos' => function ($vq) {
                 $vq->whereNotNull('user_id')->with('user:id,username,email');
@@ -460,8 +479,13 @@ class HvnAdminController extends Controller
 
         // Flip the linked creator video(s) to approved so /admin/videos
         // shows a tick and the title-page video player will load.
+        //
+        // An episode that was explicitly rejected stays rejected -- approving
+        // the series must not quietly undo a decision already made about one
+        // of its episodes. Use the per-episode Approve for that.
         \App\Video::where('title_id', $title->id)
             ->whereNotNull('user_id')
+            ->whereNull('rejected_at')
             ->update(['approved' => 1]);
 
         // Notify the uploading creator.
@@ -502,6 +526,48 @@ class HvnAdminController extends Controller
         }
 
         return ['status' => 'success', 'title' => $title];
+    }
+
+    /**
+     * POST /secure/admin/moderation/episode/{videoId}/approve
+     *
+     * Approve a single episode without touching the rest of the series.
+     * The title-level Approve is deliberately not reused here: it sweeps
+     * every video on the title, which would publish any other episode still
+     * queued behind this one.
+     */
+    public function apiApproveEpisode(Request $request, int $videoId)
+    {
+        $this->apiAdminOrAbort();
+
+        $video = \App\Video::whereNotNull('user_id')->findOrFail($videoId);
+        $video->approved = 1;
+        $video->rejected_at = null;
+        $video->rejection_reason = null;
+        $video->save();
+
+        return ['status' => 'success', 'video_id' => $video->id];
+    }
+
+    /**
+     * POST /secure/admin/moderation/episode/{videoId}/reject
+     *
+     * Turn a single episode down. The row is kept rather than deleted so the
+     * creator can see it was reviewed, and rejected_at is what stops it
+     * sitting in the pending queue forever looking unreviewed.
+     */
+    public function apiRejectEpisode(Request $request, int $videoId)
+    {
+        $this->apiAdminOrAbort();
+        $request->validate(['reason' => 'nullable|string|max:1000']);
+
+        $video = \App\Video::whereNotNull('user_id')->findOrFail($videoId);
+        $video->approved = 0;
+        $video->rejected_at = now();
+        $video->rejection_reason = $request->input('reason');
+        $video->save();
+
+        return ['status' => 'success', 'video_id' => $video->id];
     }
 
     // -----------------------------------------------------------------

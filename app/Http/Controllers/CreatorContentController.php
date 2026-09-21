@@ -331,7 +331,16 @@ class CreatorContentController extends BaseController
 
         $videos = Video::where('title_id', $titleId)
             ->whereNotNull('episode_num')
-            ->get(['id', 'episode_id', 'url', 'type', 'source', 'approved'])
+            ->get([
+                'id',
+                'episode_id',
+                'url',
+                'type',
+                'source',
+                'approved',
+                'rejected_at',
+                'rejection_reason',
+            ])
             ->keyBy('episode_id');
 
         $rows = $episodes->map(function ($ep) use ($videos) {
@@ -347,6 +356,8 @@ class CreatorContentController extends BaseController
                 // approved series stays hidden until an admin approves it,
                 // so the series keeps playing while the new one waits.
                 'approved' => $video ? (bool) $video->approved : false,
+                'rejected' => $video ? (bool) $video->rejected_at : false,
+                'rejection_reason' => $video ? $video->rejection_reason : null,
             ];
         });
 

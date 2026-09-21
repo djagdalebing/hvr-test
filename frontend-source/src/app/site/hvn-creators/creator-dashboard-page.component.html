@@ -426,9 +426,11 @@
                                     </span>
                                     <div class="dash-list-meta">
                                         <span class="status-chip"
-                                              [class.pending]="!ep.approved"
-                                              [class.approved]="ep.approved">
-                                            {{ ep.approved ? 'Live' : 'Pending review' }}
+                                              [class.pending]="!ep.approved && !ep.rejected"
+                                              [class.rejected]="ep.rejected"
+                                              [class.approved]="ep.approved"
+                                              [matTooltip]="ep.rejected && ep.rejection_reason ? ep.rejection_reason : null">
+                                            {{ ep.approved ? 'Live' : (ep.rejected ? 'Rejected' : 'Pending review') }}
                                         </span>
                                         <span class="dash-list-type" *ngIf="!ep.has_video">No video</span>
                                         <button mat-icon-button color="warn" (click)="deleteEpisode(ep)"

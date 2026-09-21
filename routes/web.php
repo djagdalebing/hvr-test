@@ -239,6 +239,10 @@ Route::group(['prefix' => 'secure/admin'], function () {
     Route::get('moderation',               [HvnAdminController::class, 'apiModerationList']);
     Route::post('moderation/{id}/approve', [HvnAdminController::class, 'apiApproveContent'])->where('id', '[0-9]+');
     Route::post('moderation/{id}/reject',  [HvnAdminController::class, 'apiRejectContent'])->where('id', '[0-9]+');
+    // Per-episode review. A series is approved more than once: the title-level
+    // routes above act on the whole thing, these act on one episode's video.
+    Route::post('moderation/episode/{videoId}/approve', [HvnAdminController::class, 'apiApproveEpisode'])->where('videoId', '[0-9]+');
+    Route::post('moderation/episode/{videoId}/reject',  [HvnAdminController::class, 'apiRejectEpisode'])->where('videoId', '[0-9]+');
     // People moderation (Phase 2)
     Route::get('people-moderation',               [HvnAdminController::class, 'apiPeopleModerationList']);
     Route::post('people-moderation/{id}/approve', [HvnAdminController::class, 'apiApprovePerson'])->where('id', '[0-9]+');

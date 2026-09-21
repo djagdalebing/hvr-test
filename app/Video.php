@@ -41,6 +41,15 @@ class Video extends Model
     public function getModerationStatusAttribute(): string
     {
         if (empty($this->attributes['user_id'])) return 'approved';
+
+        // An episode is reviewed in its own right -- episode 6 can be pending
+        // while the series it belongs to is long since approved -- so its own
+        // state wins over the title's.
+        if (!empty($this->attributes['episode_num'])) {
+            if (!empty($this->attributes['rejected_at'])) return 'rejected';
+            return !empty($this->attributes['approved']) ? 'approved' : 'pending';
+        }
+
         // bypass Title's "approved" global scope so the lookup works
         // for pending/rejected titles too.
         $status = Title::withoutGlobalScope('approved')

@@ -39,6 +39,14 @@
                             <a class="mod-link" [routerLink]="['/titles', t.id, t.name || '-']" target="_blank">{{ t.name || '(untitled)' }}</a>
                             <div class="muted ellipsis" *ngIf="t.description">{{ t.description }}</div>
                             <div class="rejection" *ngIf="status==='rejected' && t.rejection_reason">Reason: {{ t.rejection_reason }}</div>
+                            <button type="button" class="ep-toggle" *ngIf="isSeries(t) && episodeVideos(t).length"
+                                    (click)="toggleExpanded(t)">
+                                {{ expanded[t.id] ? '▾' : '▸' }}
+                                {{ episodeVideos(t).length }} episode{{ episodeVideos(t).length === 1 ? '' : 's' }}
+                                <span class="ep-badge" *ngIf="pendingEpisodes(t).length">
+                                    {{ pendingEpisodes(t).length }} awaiting review
+                                </span>
+                            </button>
                         </div>
                     </div>
                 </td>
@@ -65,6 +73,42 @@
                         <div class="reject-actions">
                             <button mat-button (click)="cancelReject()">Cancel</button>
                             <button mat-flat-button color="warn" (click)="confirmReject(t)">Confirm</button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <!-- Per-episode review. Approving the title sweeps every episode on
+                 it, which would publish anything still queued behind the one
+                 actually being looked at — so each episode gets its own row. -->
+            <tr class="ep-row" *ngIf="isSeries(t) && expanded[t.id]">
+                <td colspan="5">
+                    <div class="ep-list">
+                        <div class="ep-item" *ngFor="let v of episodeVideos(t)">
+                            <span class="ep-num">S{{ v.season_num }}E{{ v.episode_num }}</span>
+                            <span class="ep-name">{{ v.name }}</span>
+                            <span class="ep-state"
+                                  [class.live]="v.approved"
+                                  [class.pending]="!v.approved && !v.rejected_at"
+                                  [class.rejected]="v.rejected_at">
+                                {{ episodeState(v) }}
+                            </span>
+                            <span class="ep-reason" *ngIf="v.rejected_at && v.rejection_reason">
+                                {{ v.rejection_reason }}
+                            </span>
+                            <span class="ep-actions" *ngIf="rejectingEpisodeId !== v.id">
+                                <button mat-button color="accent" *ngIf="!v.approved" (click)="approveEpisode(t, v)">
+                                    {{ v.rejected_at ? 'Restore' : 'Approve' }}
+                                </button>
+                                <button mat-button color="warn" *ngIf="!v.rejected_at" (click)="openEpisodeReject(v)">
+                                    {{ v.approved ? 'Take down' : 'Reject' }}
+                                </button>
+                            </span>
+                            <span class="reject-form" *ngIf="rejectingEpisodeId === v.id">
+                                <input type="text" maxlength="1000" [(ngModel)]="episodeRejectReason"
+                                       placeholder="Optional reason (visible to creator)…">
+                                <button mat-button (click)="cancelEpisodeReject()">Cancel</button>
+                                <button mat-flat-button color="warn" (click)="confirmEpisodeReject(v)">Confirm</button>
+                            </span>
                         </div>
                     </div>
                 </td>
