@@ -95,9 +95,12 @@ export class ModerationAdminComponent implements OnInit {
 
     // ---- content (titles) ----
     public approve(t: any) {
-        if (!confirm('Approve "' + t.name + '"? It will become visible to viewers.')) return;
+        const msg = this.status === 'rejected'
+            ? 'Restore "' + t.name + '"? It will become visible to viewers again.'
+            : 'Approve "' + t.name + '"? It will become visible to viewers.';
+        if (!confirm(msg)) return;
         this.http.post('admin/moderation/' + t.id + '/approve', {}).subscribe(
-            () => { this.toast.open('Approved.'); this.load(this.page); },
+            () => { this.toast.open(this.status === 'rejected' ? 'Restored.' : 'Approved.'); this.load(this.page); },
             () => this.toast.open('Failed to approve'),
         );
     }
@@ -106,23 +109,29 @@ export class ModerationAdminComponent implements OnInit {
     public confirmReject(t: any) {
         const reason = (this.rejectReason || '').trim();
         this.http.post('admin/moderation/' + t.id + '/reject', {reason}).subscribe(
-            () => { this.rejectingId = null; this.rejectReason = ''; this.toast.open('Rejected.'); this.load(this.page); },
+            () => { this.rejectingId = null; this.rejectReason = ''; this.toast.open(this.status === 'approved' ? 'Taken down.' : 'Rejected.'); this.load(this.page); },
             () => this.toast.open('Failed to reject'),
         );
     }
 
     // ---- people ----
     public approvePerson(p: any) {
-        if (!confirm('Approve "' + p.name + '"? They will appear on public pages.')) return;
+        const msg = this.status === 'rejected'
+            ? 'Restore "' + p.name + '"? They will appear on public pages and in credits again.'
+            : 'Approve "' + p.name + '"? They will appear on public pages.';
+        if (!confirm(msg)) return;
         this.http.post('admin/people-moderation/' + p.id + '/approve', {}).subscribe(
-            () => { this.toast.open('Approved.'); this.load(this.page); },
+            () => { this.toast.open(this.status === 'rejected' ? 'Restored.' : 'Approved.'); this.load(this.page); },
             () => this.toast.open('Failed to approve'),
         );
     }
     public rejectPerson(p: any) {
-        if (!confirm('Reject "' + p.name + '"? They will be removed from any titles.')) return;
+        const msg = this.status === 'approved'
+            ? 'Take "' + p.name + '" down? They are currently live and will stop showing on public pages and in credits.'
+            : 'Reject "' + p.name + '"? They will be hidden from public pages and credits.';
+        if (!confirm(msg)) return;
         this.http.post('admin/people-moderation/' + p.id + '/reject', {}).subscribe(
-            () => { this.toast.open('Rejected.'); this.load(this.page); },
+            () => { this.toast.open(this.status === 'approved' ? 'Taken down.' : 'Rejected.'); this.load(this.page); },
             () => this.toast.open('Failed to reject'),
         );
     }

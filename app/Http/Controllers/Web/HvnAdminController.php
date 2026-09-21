@@ -614,13 +614,16 @@ class HvnAdminController extends Controller
     {
         $this->apiAdminOrAbort();
         $person = \App\Person::withoutGlobalScope('approved')->findOrFail($personId);
-        // Reject = mark rejected and detach from any titles so the bad entry
-        // stops showing in credits. We keep the row (not hard-delete) so the
+        // Reject = mark rejected. We keep the row (not hard-delete) so the
         // creator sees it was reviewed rather than silently vanishing.
+        //
+        // The credit links are deliberately left in place: Person's 'approved'
+        // global scope already hides a rejected person from public pages,
+        // search and title credits, so deleting the creditables rows bought
+        // nothing and made rejection irreversible -- restoring the person
+        // could not bring back which titles they were credited on.
         $person->status = 'rejected';
         $person->save();
-        // Detach from any titles so the bad entry stops showing in credits.
-        \DB::table('creditables')->where('person_id', $person->id)->delete();
         return ['status' => 'success', 'person' => $person];
     }
 

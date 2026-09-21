@@ -52,12 +52,13 @@
                 <td data-label="Type" class="capitalize">{{ t.type || 'movie' }}</td>
                 <td data-label="Submitted" class="muted">{{ t.created_at | date:'mediumDate' }}</td>
                 <td class="edit-column">
-                    <ng-container *ngIf="status==='pending' && rejectingId !== t.id">
-                        <button mat-flat-button color="accent" (click)="approve(t)"><mat-icon svgIcon="check"></mat-icon><span>Approve</span></button>
-                        <button mat-button color="warn" (click)="openReject(t)"><mat-icon svgIcon="cancel"></mat-icon><span>Reject</span></button>
-                    </ng-container>
-                    <ng-container *ngIf="status!=='pending' && rejectingId !== t.id">
-                        <a mat-button [routerLink]="['/titles', t.id, t.name || '-']" target="_blank">Open</a>
+                    <!-- Moderation is reversible: an approved title can still be
+                         taken down and a rejected one restored. Only the action
+                         that would be a no-op for the current tab is hidden. -->
+                    <ng-container *ngIf="rejectingId !== t.id">
+                        <a mat-button *ngIf="status!=='pending'" [routerLink]="['/titles', t.id, t.name || '-']" target="_blank">Open</a>
+                        <button mat-flat-button color="accent" *ngIf="status!=='approved'" (click)="approve(t)"><mat-icon svgIcon="check"></mat-icon><span>{{ status==='rejected' ? 'Restore' : 'Approve' }}</span></button>
+                        <button mat-button color="warn" *ngIf="status!=='rejected'" (click)="openReject(t)"><mat-icon svgIcon="cancel"></mat-icon><span>{{ status==='approved' ? 'Take down' : 'Reject' }}</span></button>
                     </ng-container>
                     <div class="reject-form" *ngIf="rejectingId === t.id">
                         <input type="text" maxlength="1000" [(ngModel)]="rejectReason" placeholder="Optional reason (visible to creator)…">
@@ -104,13 +105,9 @@
                 <td data-label="Known for">{{ p.known_for || '—' }}</td>
                 <td data-label="Submitted" class="muted">{{ p.created_at | date:'mediumDate' }}</td>
                 <td class="edit-column">
-                    <ng-container *ngIf="status==='pending'">
-                        <button mat-flat-button color="accent" (click)="approvePerson(p)"><mat-icon svgIcon="check"></mat-icon><span>Approve</span></button>
-                        <button mat-button color="warn" (click)="rejectPerson(p)"><mat-icon svgIcon="cancel"></mat-icon><span>Reject</span></button>
-                    </ng-container>
-                    <ng-container *ngIf="status!=='pending'">
-                        <a mat-button [routerLink]="['/people', p.id, p.name || '-']" target="_blank">Open</a>
-                    </ng-container>
+                    <a mat-button *ngIf="status!=='pending'" [routerLink]="['/people', p.id, p.name || '-']" target="_blank">Open</a>
+                    <button mat-flat-button color="accent" *ngIf="status!=='approved'" (click)="approvePerson(p)"><mat-icon svgIcon="check"></mat-icon><span>{{ status==='rejected' ? 'Restore' : 'Approve' }}</span></button>
+                    <button mat-button color="warn" *ngIf="status!=='rejected'" (click)="rejectPerson(p)"><mat-icon svgIcon="cancel"></mat-icon><span>{{ status==='approved' ? 'Take down' : 'Reject' }}</span></button>
                 </td>
             </tr>
         </tbody>
