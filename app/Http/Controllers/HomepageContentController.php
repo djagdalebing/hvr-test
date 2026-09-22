@@ -37,15 +37,20 @@ class HomepageContentController extends BaseController
 
     public function show()
     {
-        $homepageLists = $this->settings->getJson('homepage.lists');
-        if (!$homepageLists) {
-            return ['lists' => []];
-        }
+        // NB: deliberately no early return when homepage.lists is empty. The
+        // computed HVN rows below do not depend on it, and bailing out here
+        // meant that deleting the user who happened to own the curated lists
+        // took the entire homepage down with them -- DeleteLists strips the
+        // ids from this setting, and every row vanished, computed ones
+        // included.
+        $homepageLists = $this->settings->getJson('homepage.lists') ?: [];
 
-        $lists = $this->list
-            ->whereIn('id', $homepageLists)
-            ->where('system', false)
-            ->get();
+        $lists = $homepageLists
+            ? $this->list
+                ->whereIn('id', $homepageLists)
+                ->where('system', false)
+                ->get()
+            : collect();
         $itemCount = $this->settings->get('homepage.list_items_count', 10);
         $sliderItemCount = $this->settings->get(
             'homepage.slider_items_count',

@@ -54,6 +54,26 @@ class HvnHomepageSections
                 'description' => 'Early proof-of-concept pitches and demos from HVN creators.',
                 'style' => 'portrait',
             ],
+            'hvn-now-streaming' => [
+                'name' => 'Now Streaming on HVN',
+                'description' => 'Everything available to watch right now.',
+                'style' => 'portrait',
+            ],
+            'hvn-films' => [
+                'name' => 'Indie Films',
+                'description' => 'Feature films and documentaries from independent creators.',
+                'style' => 'portrait',
+            ],
+            'hvn-series' => [
+                'name' => 'Indie Series',
+                'description' => 'Multi-episode series made by HVN creators.',
+                'style' => 'portrait',
+            ],
+            'hvn-shorts' => [
+                'name' => 'Short Films',
+                'description' => 'Short-form work you can watch in one sitting.',
+                'style' => 'portrait',
+            ],
         ];
     }
 
@@ -91,6 +111,14 @@ class HvnHomepageSections
                 return $this->highestViewedIds($limit);
             case 'hvn-poc':
                 return $this->pocIds($limit);
+            case 'hvn-now-streaming':
+                return $this->streamableIds($limit);
+            case 'hvn-films':
+                return $this->typeIds(['movie', 'documentary'], $limit);
+            case 'hvn-series':
+                return $this->typeIds(['series'], $limit);
+            case 'hvn-shorts':
+                return $this->typeIds(['short'], $limit);
             default:
                 return [];
         }
@@ -101,6 +129,47 @@ class HvnHomepageSections
     {
         return Title::where('type', 'poc')
             ->where('status', 'approved')
+            ->orderByRaw('COALESCE(approved_at, created_at) DESC')
+            ->limit($limit)
+            ->pluck('id')
+            ->all();
+    }
+
+    /**
+     * Everything with an approved creator video attached, newest first.
+     *
+     * These rows are computed from the catalogue rather than stored as curated
+     * lists on purpose. The homepage used to be built from list records owned
+     * by a user account, so deleting that user deleted the lists, their item
+     * associations and their ids in the homepage.lists setting -- the whole
+     * homepage, in one action, unrecoverably. Nothing here belongs to anyone.
+     */
+    private function streamableIds(int $limit): array
+    {
+        return Title::where('status', 'approved')
+            ->whereExists(function ($q) {
+                $q->selectRaw('1')
+                    ->from('videos')
+                    ->whereColumn('videos.title_id', 'titles.id')
+                    ->where('videos.approved', 1);
+            })
+            ->orderByRaw('COALESCE(approved_at, created_at) DESC')
+            ->limit($limit)
+            ->pluck('id')
+            ->all();
+    }
+
+    /** Approved titles of the given type(s), newest first. */
+    private function typeIds(array $types, int $limit): array
+    {
+        return Title::whereIn('type', $types)
+            ->where('status', 'approved')
+            ->whereExists(function ($q) {
+                $q->selectRaw('1')
+                    ->from('videos')
+                    ->whereColumn('videos.title_id', 'titles.id')
+                    ->where('videos.approved', 1);
+            })
             ->orderByRaw('COALESCE(approved_at, created_at) DESC')
             ->limit($limit)
             ->pluck('id')
