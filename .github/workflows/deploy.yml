@@ -186,8 +186,12 @@ jobs:
                php artisan view:clear || true && \
                php artisan route:clear || true && \
                php artisan config:clear || true && \
-               php artisan cache:clear || true && \
                php artisan migrate --force || true && \
+               # cache:clear AFTER migrate, not before. Settings are cached for
+               # a day under 'settings.public', so clearing first meant any
+               # migration that changed a setting left the stale value serving
+               # until the cache expired on its own.
+               php artisan cache:clear || true && \
                # Force-recreate the storage symlink so /storage/* serves
                # files from storage/app/public. If public/storage is a
                # stale real directory it shadows the symlink and Apache
