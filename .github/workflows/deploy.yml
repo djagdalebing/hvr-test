@@ -28,7 +28,11 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    # Pinned, not ubuntu-latest: the rolling image moved to Python 3.11+, which
+    # removed the 'rU' file mode that the old node-gyp bundled with this Node 16
+    # toolchain still uses. sharp then falls back to building from source and
+    # the whole deploy fails on `npm install`.
+    runs-on: ubuntu-22.04
     timeout-minutes: 20
 
     steps:
