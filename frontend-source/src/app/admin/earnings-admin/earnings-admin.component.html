@@ -75,6 +75,7 @@
         <button type="button" class="mod-pill" [class.active]="tab==='creators'" (click)="switchTab('creators')">By creator</button>
         <button type="button" class="mod-pill" [class.active]="tab==='titles'" (click)="switchTab('titles')">By title</button>
         <button type="button" class="mod-pill" [class.active]="tab==='payouts'" (click)="switchTab('payouts')">Payouts</button>
+        <button type="button" class="mod-pill" [class.active]="tab==='activity'" (click)="switchTab('activity')">Recent activity</button>
     </div>
 
     <!-- By creator -->
@@ -181,8 +182,31 @@
         </tbody>
     </table>
 
+    <!-- Recent activity: why each play did or did not earn. -->
+    <table class="material-table" *ngIf="!loading && tab==='activity' && plays.length">
+        <thead>
+            <tr>
+                <th trans>Title</th><th trans>Viewer</th><th trans>Watched</th>
+                <th trans>Earned</th><th trans>Reason</th><th trans>When</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let p of plays">
+                <td data-label="Title">{{ p.title }}<span class="muted"> · {{ p.category }}</span></td>
+                <td data-label="Viewer">{{ p.viewer }}</td>
+                <td data-label="Watched">{{ p.seconds_watched }}s</td>
+                <td data-label="Earned">
+                    <span *ngIf="p.earned !== null">{{ money(p.earned, 4) }}</span>
+                    <span class="muted" *ngIf="p.earned === null">—</span>
+                </td>
+                <td data-label="Reason" class="muted">{{ p.reason }}</td>
+                <td data-label="When" class="muted">{{ p.created_at | date:'short' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
     <no-results-message svgImage="awards.svg"
-        *ngIf="!loading && ((tab==='creators' && !creators.length) || (tab==='titles' && !titles.length) || (tab==='payouts' && !payouts.length))">
+        *ngIf="!loading && ((tab==='creators' && !creators.length) || (tab==='titles' && !titles.length) || (tab==='payouts' && !payouts.length) || (tab==='activity' && !plays.length))">
         <span primary-text trans>Nothing here yet</span>
         <span secondary-text trans>Earnings appear as soon as viewers start watching creator titles.</span>
     </no-results-message>

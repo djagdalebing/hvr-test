@@ -18,7 +18,7 @@ import {CurrentUser} from '@common/auth/current-user';
     encapsulation: ViewEncapsulation.None,
 })
 export class EarningsAdminComponent implements OnInit {
-    public tab: 'creators' | 'titles' | 'payouts' = 'creators';
+    public tab: 'creators' | 'titles' | 'payouts' | 'activity' = 'creators';
     public loading = true;
     public saving = false;
 
@@ -27,6 +27,7 @@ export class EarningsAdminComponent implements OnInit {
     public creators: any[] = [];
     public titles: any[] = [];
     public payouts: any[] = [];
+    public plays: any[] = [];
     public minPayout = 0;
 
     public payingId: number | null = null;
@@ -56,11 +57,12 @@ export class EarningsAdminComponent implements OnInit {
         );
     }
 
-    public switchTab(t: 'creators' | 'titles' | 'payouts') {
+    public switchTab(t: 'creators' | 'titles' | 'payouts' | 'activity') {
         this.tab = t;
         this.payingId = null;
         const uri = t === 'creators' ? 'admin/earnings/creators'
             : t === 'titles' ? 'admin/earnings/titles'
+            : t === 'activity' ? 'admin/earnings/recent-plays'
             : 'admin/earnings/payouts';
 
         this.http.get(uri).subscribe(
@@ -70,6 +72,8 @@ export class EarningsAdminComponent implements OnInit {
                     this.minPayout = res.min_payout || 0;
                 } else if (t === 'titles') {
                     this.titles = res.titles || [];
+                } else if (t === 'activity') {
+                    this.plays = res.plays || [];
                 } else {
                     this.payouts = res.payouts || [];
                 }

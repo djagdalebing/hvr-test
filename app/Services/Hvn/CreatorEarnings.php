@@ -75,45 +75,96 @@ class CreatorEarnings
     }
 
     /**
+     * Why a play did or did not earn.
+     *
+     * Split out from assess() so admins can see the reason for any play
+     * without changing anything. "It did not credit" is useless on its own --
+     * the first question is always which rule stopped it, and the answer is
+     * usually that the viewer was staff or the creator themselves.
+     *
+     * @return array{eligible: bool, reason: string, settled: bool}
+     */
+    public function evaluate(VideoPlay $play): array
+    {
+        $no = fn(string $why, bool $settled = true) => [
+            'eligible' => false,
+            'reason' => $why,
+            // settled = this can never change, so stop re-checking it.
+            'settled' => $settled,
+        ];
+
+        if (!$this->enabled()) {
+            return $no('Earnings programme is switched off', false);
+        }
+
+        $video = Video::find($play->video_id);
+        if (!$video) {
+            return $no('Video no longer exists');
+        }
+        if (!$video->user_id) {
+            return $no('Not creator-uploaded (imported catalogue title)');
+        }
+        if (($video->category ?? null) !== 'full') {
+            return $no('Not a full-length video — trailers and clips do not earn');
+        }
+
+        $title = Title::withoutGlobalScope('approved')->find($video->title_id);
+        if (!$title) {
+            return $no('Title no longer exists');
+        }
+        if ($title->status !== 'approved') {
+            return $no("Title is {$title->status}, not approved");
+        }
+
+        $threshold = $this->threshold($title);
+        if ((int) $play->seconds_watched < $threshold) {
+            return $no(
+                "Watched {$play->seconds_watched}s of the {$threshold}s required",
+                false,
+            );
+        }
+
+        if (!$play->user_id) {
+            return $no('Viewer was not signed in');
+        }
+        if ((int) $play->user_id === (int) $video->user_id) {
+            return $no('Creator watching their own title');
+        }
+        if ($this->viewerIsStaff((int) $play->user_id)) {
+            return $no('Viewer is staff, and staff views are excluded');
+        }
+        if ($this->alreadyCreditedRecently($play, $video)) {
+            $hours = (int) $this->settings->get('earnings.dedupe_hours', 24);
+            return $no("Already counted for this viewer within {$hours}h");
+        }
+
+        return ['eligible' => true, 'reason' => 'Eligible', 'settled' => true];
+    }
+
+    /**
      * Assess a play and credit it if it qualifies.
      *
      * Returns true only when a new ledger row was written.
      */
     public function assess(VideoPlay $play): bool
     {
-        if (!$this->enabled() || $play->assessed_at) {
+        if ($play->assessed_at) {
+            return false;
+        }
+
+        $verdict = $this->evaluate($play);
+
+        if (!$verdict['eligible']) {
+            // Only stop re-checking when the answer can never change. A play
+            // short of the threshold must stay open so a later heartbeat can
+            // still qualify it.
+            if ($verdict['settled']) {
+                $this->markAssessed($play);
+            }
             return false;
         }
 
         $video = Video::find($play->video_id);
-        if (!$video || !$video->user_id) {
-            // Not creator-uploaded (TMDB imports carry no user_id).
-            return $this->markAssessed($play);
-        }
-
-        // Only the feature itself earns. Trailers and clips are marketing.
-        if (($video->category ?? null) !== 'full') {
-            return $this->markAssessed($play);
-        }
-
-        $title = Title::withoutGlobalScope('approved')->find($video->title_id);
-        if (!$title || $title->status !== 'approved') {
-            return $this->markAssessed($play);
-        }
-
-        if ((int) $play->seconds_watched < $this->threshold($title)) {
-            // Not yet -- leave unassessed so a later heartbeat can qualify it.
-            return false;
-        }
-
-        if (!$this->viewerCounts($play, $video)) {
-            return $this->markAssessed($play);
-        }
-
-        if ($this->alreadyCreditedRecently($play, $video)) {
-            return $this->markAssessed($play);
-        }
-
         $rate = $this->rate();
 
         try {
@@ -140,31 +191,17 @@ class CreatorEarnings
         return true;
     }
 
-    /**
-     * Anonymous views, the creator's own views and staff views do not earn.
-     */
-    private function viewerCounts(VideoPlay $play, Video $video): bool
+    private function viewerIsStaff(int $userId): bool
     {
-        if (!$play->user_id) {
+        if (!(bool) $this->settings->get('earnings.exclude_staff', true)) {
             return false;
         }
 
-        if ((int) $play->user_id === (int) $video->user_id) {
-            return false;
-        }
+        $viewer = User::find($userId);
 
-        if ((bool) $this->settings->get('earnings.exclude_staff', true)) {
-            $viewer = User::find($play->user_id);
-            if (
-                $viewer &&
-                method_exists($viewer, 'hasPermission') &&
-                $viewer->hasPermission('admin')
-            ) {
-                return false;
-            }
-        }
-
-        return true;
+        return $viewer &&
+            method_exists($viewer, 'hasPermission') &&
+            $viewer->hasPermission('admin');
     }
 
     /**

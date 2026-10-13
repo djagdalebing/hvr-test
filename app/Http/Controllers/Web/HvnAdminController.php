@@ -647,6 +647,66 @@ class HvnAdminController extends Controller
         return ['status' => 'success'];
     }
 
+    /**
+     * GET /secure/admin/earnings/recent-plays
+     *
+     * Recent plays of creator videos with the reason each did or did not
+     * earn. Without this, "nothing showed up" is unanswerable without
+     * database access -- and the answer is usually a rule working correctly.
+     */
+    public function apiRecentPlays(Request $request)
+    {
+        $this->apiAdminOrAbort();
+
+        $plays = \App\VideoPlay::join('videos', 'videos.id', '=', 'video_plays.video_id')
+            ->whereNotNull('videos.user_id')
+            ->orderByDesc('video_plays.created_at')
+            ->limit(40)
+            ->get([
+                'video_plays.id',
+                'video_plays.video_id',
+                'video_plays.user_id',
+                'video_plays.seconds_watched',
+                'video_plays.assessed_at',
+                'video_plays.created_at',
+                'videos.title_id',
+                'videos.category',
+            ]);
+
+        $engine = app(\App\Services\Hvn\CreatorEarnings::class);
+
+        $titles = \App\Title::withoutGlobalScope('approved')
+            ->whereIn('id', $plays->pluck('title_id'))
+            ->pluck('name', 'id');
+        $viewers = \App\User::whereIn('id', $plays->pluck('user_id')->filter())
+            ->pluck('username', 'id');
+        $credited = \DB::table('creator_earnings')
+            ->whereIn('play_id', $plays->pluck('id'))
+            ->pluck('amount', 'play_id');
+
+        return [
+            'plays' => $plays->map(function ($p) use ($engine, $titles, $viewers, $credited) {
+                $verdict = $engine->evaluate($p);
+                return [
+                    'play_id' => $p->id,
+                    'title' => $titles[$p->title_id] ?? 'Unknown',
+                    'category' => $p->category,
+                    'viewer' => $p->user_id
+                        ? ($viewers[$p->user_id] ?? ('User #' . $p->user_id))
+                        : 'Signed out',
+                    'seconds_watched' => (int) $p->seconds_watched,
+                    'earned' => isset($credited[$p->id])
+                        ? (float) $credited[$p->id]
+                        : null,
+                    'reason' => isset($credited[$p->id])
+                        ? 'Eligible — credited'
+                        : $verdict['reason'],
+                    'created_at' => $p->created_at,
+                ];
+            }),
+        ];
+    }
+
     public function apiEarningsByCreator(Request $request)
     {
         $this->apiAdminOrAbort();

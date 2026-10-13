@@ -257,6 +257,7 @@ Route::group(['prefix' => 'secure/admin'], function () {
     Route::post('earnings/settings',       [HvnAdminController::class, 'apiSaveEarningsSettings']);
     Route::get('earnings/creators',        [HvnAdminController::class, 'apiEarningsByCreator']);
     Route::get('earnings/titles',          [HvnAdminController::class, 'apiEarningsByTitle']);
+    Route::get('earnings/recent-plays',    [HvnAdminController::class, 'apiRecentPlays']);
     Route::get('earnings/payouts',         [HvnAdminController::class, 'apiListPayouts']);
     Route::post('earnings/payouts',        [HvnAdminController::class, 'apiCreatePayout']);
     Route::post('earnings/payouts/{id}',   [HvnAdminController::class, 'apiUpdatePayout'])->where('id', '[0-9]+');
