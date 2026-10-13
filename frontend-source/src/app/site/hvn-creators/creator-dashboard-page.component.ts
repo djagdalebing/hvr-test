@@ -29,7 +29,10 @@ export class CreatorDashboardPageComponent implements OnInit {
         private cd: ChangeDetectorRef,
     ) {}
 
-    ngOnInit() { this.load(); }
+    ngOnInit() {
+        this.load();
+        this.loadEarnings();
+    }
 
     private load() {
         this.loading = true; this.denied = false;
@@ -291,6 +294,52 @@ export class CreatorDashboardPageComponent implements OnInit {
 
         this.editingId = t.id;
         this.showUpload = true;
+    }
+
+    // ---------------------------------------------------------------
+    // Creator Earnings Program
+    // ---------------------------------------------------------------
+
+    public earnings: any = null;
+    public earningsLoading = true;
+    public earningsHelpOpen = false;
+
+    private loadEarnings() {
+        this.http.get('creator/earnings').subscribe(
+            (res: any) => {
+                this.earnings = res;
+                this.earningsLoading = false;
+                this.cd.markForCheck();
+            },
+            () => { this.earningsLoading = false; this.cd.markForCheck(); },
+        );
+    }
+
+    /** Money, to the cent. Sub-cent balances are real and must not read as $0.00. */
+    public money(amount: number): string {
+        const n = Number(amount || 0);
+        if (n > 0 && n < 0.01) return '<$0.01';
+        return '$' + n.toFixed(2);
+    }
+
+    /** The per-view rate needs more precision than currency formatting gives. */
+    public rateLabel(): string {
+        const r = Number(this.earnings?.rate || 0);
+        return '$' + r.toFixed(r < 0.01 ? 4 : 2);
+    }
+
+    /** Views still needed before the payout threshold is reachable. */
+    public viewsToThreshold(): number {
+        if (!this.earnings) return 0;
+        const rate = Number(this.earnings.rate || 0);
+        if (rate <= 0) return 0;
+        const remaining = Number(this.earnings.min_payout || 0) - Number(this.earnings.totals?.unpaid || 0);
+        return remaining <= 0 ? 0 : Math.ceil(remaining / rate);
+    }
+
+    public toggleEarningsHelp() {
+        this.earningsHelpOpen = !this.earningsHelpOpen;
+        this.cd.markForCheck();
     }
 
     // ---------------------------------------------------------------

@@ -518,6 +518,105 @@
                     </ng-container>
                 </div>
 
+                <!-- Creator Earnings Program -->
+                <div class="earn-panel" *ngIf="!earningsLoading && earnings?.enabled">
+                    <div class="earn-head">
+                        <h3>Earnings</h3>
+                        <button type="button" class="earn-help-toggle" (click)="toggleEarningsHelp()">
+                            {{ earningsHelpOpen ? 'Hide' : 'How is this calculated?' }}
+                        </button>
+                    </div>
+
+                    <div class="earn-stats">
+                        <div class="earn-stat">
+                            <span class="earn-value">{{ earnings.totals.total_views | number }}</span>
+                            <span class="earn-label">Total views</span>
+                        </div>
+                        <div class="earn-stat">
+                            <span class="earn-value">{{ earnings.totals.eligible_views | number }}</span>
+                            <span class="earn-label">Eligible views</span>
+                        </div>
+                        <div class="earn-stat earn-stat-accent">
+                            <span class="earn-value">{{ money(earnings.totals.unpaid) }}</span>
+                            <span class="earn-label">Current balance</span>
+                        </div>
+                        <div class="earn-stat">
+                            <span class="earn-value">{{ money(earnings.totals.total_earned) }}</span>
+                            <span class="earn-label">Earned all time</span>
+                        </div>
+                        <div class="earn-stat">
+                            <span class="earn-value">{{ rateLabel() }}</span>
+                            <span class="earn-label">Per eligible view</span>
+                        </div>
+                    </div>
+
+                    <p class="earn-threshold" *ngIf="viewsToThreshold() > 0">
+                        Payouts are made once your balance reaches {{ money(earnings.min_payout) }} —
+                        about {{ viewsToThreshold() | number }} more eligible views at the current rate.
+                    </p>
+                    <p class="earn-threshold earn-ready" *ngIf="viewsToThreshold() === 0 && earnings.totals.unpaid > 0">
+                        Your balance has reached the {{ money(earnings.min_payout) }} payout threshold.
+                    </p>
+
+                    <!-- Transparency: exactly how the number above is reached. -->
+                    <div class="earn-help" *ngIf="earningsHelpOpen">
+                        <p>
+                            You earn <strong>{{ rateLabel() }}</strong> for every eligible view of your
+                            full-length titles. A view is eligible when:
+                        </p>
+                        <ul>
+                            <li>the viewer is <strong>signed in</strong>;</li>
+                            <li>they watch at least <strong>{{ earnings.min_seconds }} seconds</strong> of
+                                actual playback — skipping ahead does not count;</li>
+                            <li>the title is <strong>approved</strong> and the video is the full feature,
+                                not a trailer or clip;</li>
+                            <li>it is their <strong>first view of that title in {{ earnings.dedupe_hours }} hours</strong> —
+                                rewatching does not earn again;</li>
+                            <li>the viewer is not you, and not HVN staff.</li>
+                        </ul>
+                        <p>
+                            The rate is recorded at the moment of each view, so if HVN raises it later,
+                            your past earnings stay exactly as shown and new views earn the new rate.
+                            "Total views" counts every play; "Eligible views" is the subset that earned.
+                        </p>
+                    </div>
+
+                    <ng-container *ngIf="earnings.by_title?.length">
+                        <h4 class="earn-sub">By title</h4>
+                        <ul class="dash-list">
+                            <li *ngFor="let t of earnings.by_title" class="dash-list-row">
+                                <a class="dash-list-title" [routerLink]="['/titles', t.title_id, t.name || '-']">{{ t.name }}</a>
+                                <div class="dash-list-meta">
+                                    <span class="dash-list-type">{{ t.eligible_views | number }} eligible views</span>
+                                    <span class="earn-amount">{{ money(t.earned) }}</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </ng-container>
+
+                    <ng-container *ngIf="earnings.payouts?.length">
+                        <h4 class="earn-sub">Payouts</h4>
+                        <ul class="dash-list">
+                            <li *ngFor="let p of earnings.payouts" class="dash-list-row">
+                                <span class="dash-list-title">{{ money(p.amount) }}</span>
+                                <div class="dash-list-meta">
+                                    <span class="status-chip"
+                                          [class.approved]="p.status === 'paid'"
+                                          [class.pending]="p.status === 'pending'"
+                                          [class.rejected]="p.status === 'failed' || p.status === 'cancelled'">
+                                        {{ p.status | titlecase }}
+                                    </span>
+                                    <span class="dash-list-date">{{ (p.paid_at || p.created_at) | date:'mediumDate' }}</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </ng-container>
+
+                    <p class="dash-empty" *ngIf="!earnings.totals.eligible_views">
+                        No eligible views yet. Earnings start accruing as soon as people watch your titles.
+                    </p>
+                </div>
+
                 <div *ngIf="content.length === 0 && !showUpload" class="dash-empty">No content uploaded yet.</div>
                 <ul class="dash-list" *ngIf="content.length">
                     <li *ngFor="let t of content" class="dash-list-row">

@@ -43,6 +43,7 @@ export const MTDB_CONFIG: AppConfig = {
             {name: 'announcements', icon: 'notifications', route: 'announcements', permission: 'admin'},
             {name: "editor's picks", icon: 'star', route: 'editor-picks', permission: 'admin'},
             {name: 'feedback', icon: 'comment', route: 'feedback', permission: 'admin'},
+            {name: 'earnings', icon: 'credit-card', route: 'earnings', permission: 'admin'},
             {name: 'videos', icon: 'slow-motion-video', route: 'videos', permission: 'videos.view'},
             {name: 'lists', icon: 'format-list-numbered', route: 'lists', permission: 'lists.view'},
             {name: 'reviews', icon: 'rate-review', route: 'reviews', permission: 'reviews.view'},

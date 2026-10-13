@@ -1,0 +1,189 @@
+<div class="earn-admin">
+    <h1 trans>Creator Earnings</h1>
+
+    <mat-progress-bar class="loading-bar" mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>
+
+    <!-- Totals -->
+    <div class="earn-admin-stats" *ngIf="!loading">
+        <div class="earn-admin-stat">
+            <span class="v">{{ totals.eligible_views | number }}</span><span class="l">Eligible views</span>
+        </div>
+        <div class="earn-admin-stat">
+            <span class="v">{{ money(totals.total_earned) }}</span><span class="l">Earned all time</span>
+        </div>
+        <div class="earn-admin-stat accent">
+            <span class="v">{{ money(totals.unpaid) }}</span><span class="l">Owed to creators</span>
+        </div>
+        <div class="earn-admin-stat">
+            <span class="v">{{ money(totals.paid_out) }}</span><span class="l">Paid out</span>
+        </div>
+        <div class="earn-admin-stat">
+            <span class="v">{{ totals.creators_earning | number }}</span><span class="l">Creators earning</span>
+        </div>
+    </div>
+
+    <!-- Programme settings -->
+    <div class="earn-admin-card" *ngIf="!loading">
+        <h3>Programme settings</h3>
+        <p class="earn-admin-note">
+            Changing the rate affects <strong>future views only</strong>. Every view already recorded keeps
+            the rate it was earned at, so creators' past statements never move.
+        </p>
+        <div class="earn-admin-grid">
+            <label class="f">
+                <span>Rate per eligible view ($)</span>
+                <input type="number" step="0.0001" min="0" [(ngModel)]="settings.rate_per_view">
+            </label>
+            <label class="f">
+                <span>Minimum watch time (seconds)</span>
+                <input type="number" min="1" [(ngModel)]="settings.min_seconds">
+            </label>
+            <label class="f">
+                <span>Minimum payout ($)</span>
+                <input type="number" min="0" step="1" [(ngModel)]="settings.min_payout">
+            </label>
+            <label class="f">
+                <span>One view per viewer per title (hours)</span>
+                <input type="number" min="0" [(ngModel)]="settings.dedupe_hours">
+            </label>
+            <label class="f">
+                <span>Also require % of runtime <em>(0 = off)</em></span>
+                <input type="number" min="0" max="100" step="1" [(ngModel)]="settings.min_percent">
+            </label>
+            <label class="f">
+                <span>Cap that % at (seconds)</span>
+                <input type="number" min="1" [(ngModel)]="settings.percent_cap_seconds">
+            </label>
+            <label class="f checkbox">
+                <input type="checkbox" [(ngModel)]="settings.enabled">
+                <span>Programme enabled</span>
+            </label>
+            <label class="f checkbox">
+                <input type="checkbox" [(ngModel)]="settings.exclude_staff">
+                <span>Exclude staff views from earnings</span>
+            </label>
+        </div>
+        <div class="earn-admin-actions">
+            <button mat-flat-button color="accent" [disabled]="saving" (click)="saveSettings()">
+                {{ saving ? 'Saving…' : 'Save settings' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="earn-admin-tabs" *ngIf="!loading">
+        <button type="button" class="mod-pill" [class.active]="tab==='creators'" (click)="switchTab('creators')">By creator</button>
+        <button type="button" class="mod-pill" [class.active]="tab==='titles'" (click)="switchTab('titles')">By title</button>
+        <button type="button" class="mod-pill" [class.active]="tab==='payouts'" (click)="switchTab('payouts')">Payouts</button>
+    </div>
+
+    <!-- By creator -->
+    <table class="material-table" *ngIf="!loading && tab==='creators' && creators.length">
+        <thead>
+            <tr>
+                <th trans>Creator</th>
+                <th trans>Eligible views</th>
+                <th trans>Earned</th>
+                <th trans>Unpaid</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <ng-container *ngFor="let c of creators">
+            <tr>
+                <td data-label="Creator">
+                    <div class="earn-admin-user">
+                        <strong>{{ c.username || ('User #' + c.creator_id) }}</strong>
+                        <span class="muted">{{ c.email }}</span>
+                    </div>
+                </td>
+                <td data-label="Eligible views">{{ c.eligible_views | number }}</td>
+                <td data-label="Earned">{{ money(c.total_earned) }}</td>
+                <td data-label="Unpaid">
+                    {{ money(c.unpaid) }}
+                    <span class="earn-admin-below" *ngIf="belowThreshold(c) && c.unpaid > 0">below threshold</span>
+                </td>
+                <td class="edit-column">
+                    <button mat-button color="accent" *ngIf="c.unpaid > 0 && payingId !== c.creator_id"
+                            (click)="openPay(c)">Record payout</button>
+                </td>
+            </tr>
+            <tr *ngIf="payingId === c.creator_id">
+                <td colspan="5">
+                    <div class="earn-admin-payform">
+                        <p>
+                            Records a payout of <strong>{{ money(c.unpaid) }}</strong> covering all unpaid
+                            earnings for {{ c.username }}. This does not move money — log it here after
+                            paying them.
+                        </p>
+                        <div class="earn-admin-grid">
+                            <label class="f"><span>Method</span>
+                                <input type="text" maxlength="40" [(ngModel)]="payForm.method" placeholder="PayPal, bank transfer…"></label>
+                            <label class="f"><span>Reference</span>
+                                <input type="text" maxlength="190" [(ngModel)]="payForm.reference" placeholder="Transaction ID"></label>
+                            <label class="f"><span>Notes</span>
+                                <input type="text" maxlength="2000" [(ngModel)]="payForm.notes"></label>
+                        </div>
+                        <div class="earn-admin-actions">
+                            <button mat-button (click)="cancelPay()">Cancel</button>
+                            <button mat-flat-button color="accent" (click)="confirmPay(c)">Record payout</button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            </ng-container>
+        </tbody>
+    </table>
+
+    <!-- By title -->
+    <table class="material-table" *ngIf="!loading && tab==='titles' && titles.length">
+        <thead>
+            <tr><th trans>Title</th><th trans>Eligible views</th><th trans>Earned</th></tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let t of titles">
+                <td data-label="Title">
+                    <a [routerLink]="['/titles', t.title_id, t.name || '-']" target="_blank">{{ t.name }}</a>
+                </td>
+                <td data-label="Eligible views">{{ t.eligible_views | number }}</td>
+                <td data-label="Earned">{{ money(t.total_earned) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Payouts -->
+    <table class="material-table" *ngIf="!loading && tab==='payouts' && payouts.length">
+        <thead>
+            <tr>
+                <th trans>Creator</th><th trans>Amount</th><th trans>Status</th>
+                <th trans>Method</th><th trans>Date</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let p of payouts">
+                <td data-label="Creator">{{ p.username || ('User #' + p.creator_id) }}</td>
+                <td data-label="Amount">{{ money(p.amount) }}</td>
+                <td data-label="Status">
+                    <span class="status-chip"
+                          [class.approved]="p.status === 'paid'"
+                          [class.pending]="p.status === 'pending'"
+                          [class.rejected]="p.status === 'failed' || p.status === 'cancelled'">
+                        {{ p.status | titlecase }}
+                    </span>
+                </td>
+                <td data-label="Method" class="muted">{{ p.method || '—' }}</td>
+                <td data-label="Date" class="muted">{{ (p.paid_at || p.created_at) | date:'mediumDate' }}</td>
+                <td class="edit-column">
+                    <button mat-button color="accent" *ngIf="p.status === 'pending'" (click)="setStatus(p, 'paid')">Mark paid</button>
+                    <button mat-button color="warn" *ngIf="p.status === 'pending'" (click)="setStatus(p, 'cancelled')">Cancel</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <no-results-message svgImage="awards.svg"
+        *ngIf="!loading && ((tab==='creators' && !creators.length) || (tab==='titles' && !titles.length) || (tab==='payouts' && !payouts.length))">
+        <span primary-text trans>Nothing here yet</span>
+        <span secondary-text trans>Earnings appear as soon as viewers start watching creator titles.</span>
+    </no-results-message>
+</div>

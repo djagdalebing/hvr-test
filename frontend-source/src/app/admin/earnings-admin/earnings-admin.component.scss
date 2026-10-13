@@ -1,0 +1,115 @@
+.earn-admin {
+    padding: 20px;
+
+    h1 { margin: 0 0 20px; font-size: 22px; font-weight: 600; }
+}
+
+.earn-admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.earn-admin-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, .04);
+
+    &.accent {
+        background: rgba(246, 95, 84, .12);
+        border: 1px solid rgba(246, 95, 84, .3);
+    }
+
+    .v { font-size: 20px; font-weight: 600; line-height: 1.2; }
+    .l { font-size: 11px; opacity: .65; }
+}
+
+.earn-admin-card {
+    margin-bottom: 22px;
+    padding: 18px 20px;
+    border: 1px solid var(--be-divider-lighter);
+    border-radius: 8px;
+
+    h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+}
+
+.earn-admin-note {
+    margin: 0 0 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    opacity: .7;
+}
+
+.earn-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+
+    .f {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 12px;
+
+        > span { opacity: .75; em { opacity: .6; font-style: normal; } }
+
+        input[type='text'], input[type='number'] {
+            padding: 7px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--be-divider-lighter);
+            background: transparent;
+            color: inherit;
+            font: inherit;
+        }
+
+        &.checkbox {
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+            align-self: end;
+            padding-bottom: 7px;
+        }
+    }
+}
+
+.earn-admin-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.earn-admin-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.earn-admin-user {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .muted { font-size: 12px; opacity: .6; }
+}
+
+.earn-admin-below {
+    margin-left: 8px;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    background: rgba(249, 168, 37, .18);
+    color: #f9a825;
+}
+
+.earn-admin-payform {
+    padding: 14px 16px;
+    border-left: 2px solid var(--be-accent-default, #F65F54);
+
+    p { margin: 0 0 14px; font-size: 13px; line-height: 1.6; }
+}
