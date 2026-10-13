@@ -26,6 +26,7 @@ export class PlyrStrategyService {
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 this.logTimeWatched();
+                this.flushWatchTime();
             }
         });
     }
@@ -60,6 +61,8 @@ export class PlyrStrategyService {
 
     destroy() {
         this.logTimeWatched();
+        this.flushWatchTime();
+        this.stopWatchTimer();
         this.player && this.player.destroy();
         this.player = null;
         this.video = null;
@@ -68,6 +71,7 @@ export class PlyrStrategyService {
     stop() {
         if (this.player) {
             this.logTimeWatched();
+            this.flushWatchTime();
             this.player.stop();
         }
     }
@@ -136,8 +140,10 @@ export class PlyrStrategyService {
 
                 this.player = new Plyr(videoEl, plyrOptions);
                 this.player.on('ended', () => {
+                    this.flushWatchTime();
                     this.playbackEnded$.next();
                 });
+                this.trackWatchTime();
             });
         }
     }
@@ -197,6 +203,69 @@ export class PlyrStrategyService {
 
     private embedSupportedByPlyr(url: string): boolean {
         return this.isYoutube(url) || this.isVimeo(url);
+    }
+
+    // ---------------------------------------------------------------
+    // Watch time for the Creator Earnings Program.
+    //
+    // Accumulated seconds ACTUALLY PLAYED, not the playhead position: dragging
+    // the scrubber to the end must not look like a complete view. We add the
+    // delta between timeupdate events only when it is small enough to be real
+    // playback, which naturally discards seeks.
+    //
+    // Kept separate from logTimeWatched(), which maintains the resume pointer
+    // and writes 0 on completion -- unusable for deciding what to pay.
+    // ---------------------------------------------------------------
+
+    private watchedSeconds = 0;
+    private lastTimeUpdate: number = null;
+    private watchTimer: any = null;
+    private lastSentSeconds = 0;
+
+    private trackWatchTime() {
+        this.watchedSeconds = 0;
+        this.lastTimeUpdate = null;
+        this.lastSentSeconds = 0;
+
+        this.player.on('timeupdate', () => {
+            const now = this.player.currentTime;
+            if (this.lastTimeUpdate !== null) {
+                const delta = now - this.lastTimeUpdate;
+                // Real playback advances in small steps. Anything bigger is a
+                // seek, and anything negative is a rewind.
+                if (delta > 0 && delta < 2) {
+                    this.watchedSeconds += delta;
+                }
+            }
+            this.lastTimeUpdate = now;
+        });
+
+        this.player.on('seeking', () => {
+            this.lastTimeUpdate = null;
+        });
+
+        this.stopWatchTimer();
+        // Heartbeat, so closing the tab abruptly still credits what was
+        // watched up to that point.
+        this.watchTimer = setInterval(() => this.flushWatchTime(), 15000);
+    }
+
+    private stopWatchTimer() {
+        if (this.watchTimer) {
+            clearInterval(this.watchTimer);
+            this.watchTimer = null;
+        }
+    }
+
+    private flushWatchTime() {
+        if (!this.video || !this.video.id) return;
+
+        const seconds = Math.floor(this.watchedSeconds);
+        // Nothing new worth a request.
+        if (seconds <= 0 || seconds <= this.lastSentSeconds) return;
+
+        this.lastSentSeconds = seconds;
+        this.playLogger.watchProgress(this.video, seconds);
     }
 
     private logTimeWatched() {

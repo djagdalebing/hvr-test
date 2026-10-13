@@ -14,4 +14,16 @@ export class VideoPlaysLoggerService {
             () => {}
         );
     }
+
+    /**
+     * Accumulated seconds actually played, for the Creator Earnings Program.
+     * Fire-and-forget: a dropped heartbeat must never interrupt playback, and
+     * the next one carries the running total anyway.
+     */
+    watchProgress(video: Video, seconds: number) {
+        this.videos.watchProgress(video, seconds).subscribe(
+            () => {},
+            () => {}
+        );
+    }
 }

@@ -571,6 +571,286 @@ class HvnAdminController extends Controller
     }
 
     // -----------------------------------------------------------------
+    // Creator Earnings Program
+    //
+    // The per-view rate lives in settings, never in code, so it can be raised
+    // as revenue grows. Earnings already recorded are never repriced -- each
+    // ledger row carries the rate that was in force when the view happened.
+    // -----------------------------------------------------------------
+
+    public function apiEarningsOverview(Request $request)
+    {
+        $this->apiAdminOrAbort();
+        $settings = app(\Common\Settings\Settings::class);
+
+        $totalEarned = (float) \DB::table('creator_earnings')->sum('amount');
+        $unpaid = (float) \DB::table('creator_earnings')
+            ->whereNull('payout_id')
+            ->sum('amount');
+        $paidOut = (float) \DB::table('creator_payouts')
+            ->where('status', 'paid')
+            ->sum('amount');
+
+        return [
+            'settings' => [
+                'enabled' => (bool) $settings->get('earnings.enabled', false),
+                'rate_per_view' => (float) $settings->get('earnings.rate_per_view', 0.001),
+                'min_seconds' => (int) $settings->get('earnings.min_seconds', 30),
+                'min_percent' => (float) $settings->get('earnings.min_percent', 0),
+                'percent_cap_seconds' => (int) $settings->get('earnings.percent_cap_seconds', 600),
+                'dedupe_hours' => (int) $settings->get('earnings.dedupe_hours', 24),
+                'min_payout' => (float) $settings->get('earnings.min_payout', 25),
+                'exclude_staff' => (bool) $settings->get('earnings.exclude_staff', true),
+            ],
+            'totals' => [
+                'eligible_views' => (int) \DB::table('creator_earnings')->count(),
+                'total_earned' => round($totalEarned, 4),
+                'unpaid' => round($unpaid, 4),
+                'paid_out' => round($paidOut, 2),
+                'creators_earning' => (int) \DB::table('creator_earnings')
+                    ->distinct()
+                    ->count('creator_id'),
+            ],
+        ];
+    }
+
+    public function apiSaveEarningsSettings(Request $request)
+    {
+        $this->apiAdminOrAbort();
+
+        $data = $request->validate([
+            'enabled' => 'nullable|boolean',
+            'rate_per_view' => 'nullable|numeric|min:0|max:1000',
+            'min_seconds' => 'nullable|integer|min:1|max:86400',
+            'min_percent' => 'nullable|numeric|min:0|max:100',
+            'percent_cap_seconds' => 'nullable|integer|min:1|max:86400',
+            'dedupe_hours' => 'nullable|integer|min:0|max:8760',
+            'min_payout' => 'nullable|numeric|min:0|max:100000',
+            'exclude_staff' => 'nullable|boolean',
+        ]);
+
+        $settings = app(\Common\Settings\Settings::class);
+        $save = [];
+        foreach ($data as $key => $value) {
+            if ($value === null) {
+                continue;
+            }
+            $save['earnings.' . $key] = is_bool($value)
+                ? ($value ? '1' : '0')
+                : (string) $value;
+        }
+
+        if (!empty($save)) {
+            $settings->save($save);
+        }
+
+        return ['status' => 'success'];
+    }
+
+    public function apiEarningsByCreator(Request $request)
+    {
+        $this->apiAdminOrAbort();
+
+        $rows = \DB::table('creator_earnings')
+            ->select(
+                'creator_id',
+                \DB::raw('COUNT(*) as eligible_views'),
+                \DB::raw('SUM(amount) as total_earned'),
+                \DB::raw('SUM(CASE WHEN payout_id IS NULL THEN amount ELSE 0 END) as unpaid'),
+                \DB::raw('MAX(created_at) as last_view'),
+            )
+            ->groupBy('creator_id')
+            ->orderByDesc('total_earned')
+            ->get();
+
+        $users = \App\User::whereIn('id', $rows->pluck('creator_id'))->get([
+            'id',
+            'username',
+            'email',
+        ]);
+
+        return [
+            'min_payout' => (float) app(\Common\Settings\Settings::class)->get('earnings.min_payout', 25),
+            'creators' => $rows->map(function ($r) use ($users) {
+                $u = $users->firstWhere('id', $r->creator_id);
+                return [
+                    'creator_id' => $r->creator_id,
+                    'username' => $u->username ?? null,
+                    'email' => $u->email ?? null,
+                    'eligible_views' => (int) $r->eligible_views,
+                    'total_earned' => round((float) $r->total_earned, 4),
+                    'unpaid' => round((float) $r->unpaid, 4),
+                    'last_view' => $r->last_view,
+                ];
+            }),
+        ];
+    }
+
+    public function apiEarningsByTitle(Request $request)
+    {
+        $this->apiAdminOrAbort();
+
+        $rows = \DB::table('creator_earnings')
+            ->select(
+                'title_id',
+                'creator_id',
+                \DB::raw('COUNT(*) as eligible_views'),
+                \DB::raw('SUM(amount) as total_earned'),
+            )
+            ->groupBy('title_id', 'creator_id')
+            ->orderByDesc('total_earned')
+            ->limit(200)
+            ->get();
+
+        $names = \App\Title::withoutGlobalScope('approved')
+            ->whereIn('id', $rows->pluck('title_id'))
+            ->pluck('name', 'id');
+
+        return [
+            'titles' => $rows->map(fn($r) => [
+                'title_id' => $r->title_id,
+                'name' => $names[$r->title_id] ?? 'Untitled',
+                'creator_id' => $r->creator_id,
+                'eligible_views' => (int) $r->eligible_views,
+                'total_earned' => round((float) $r->total_earned, 4),
+            ]),
+        ];
+    }
+
+    public function apiListPayouts(Request $request)
+    {
+        $this->apiAdminOrAbort();
+
+        $payouts = \DB::table('creator_payouts')
+            ->orderByDesc('created_at')
+            ->limit(200)
+            ->get();
+
+        $users = \App\User::whereIn('id', $payouts->pluck('creator_id'))->get([
+            'id',
+            'username',
+            'email',
+        ]);
+
+        return [
+            'payouts' => $payouts->map(function ($p) use ($users) {
+                $u = $users->firstWhere('id', $p->creator_id);
+                return array_merge((array) $p, [
+                    'username' => $u->username ?? null,
+                    'email' => $u->email ?? null,
+                ]);
+            }),
+        ];
+    }
+
+    /**
+     * Record a payout covering everything a creator has earned but not yet
+     * been paid. The ledger rows are stamped with the payout id in the same
+     * transaction, so the same earnings can never be paid twice.
+     */
+    public function apiCreatePayout(Request $request)
+    {
+        $this->apiAdminOrAbort();
+
+        $data = $request->validate([
+            'creator_id' => 'required|integer|exists:users,id',
+            'method' => 'nullable|string|max:40',
+            'reference' => 'nullable|string|max:190',
+            'notes' => 'nullable|string|max:2000',
+        ]);
+
+        $creatorId = (int) $data['creator_id'];
+
+        $payoutId = null;
+        $amount = 0.0;
+
+        \DB::transaction(function () use ($data, $creatorId, &$payoutId, &$amount) {
+            $pending = \DB::table('creator_earnings')
+                ->where('creator_id', $creatorId)
+                ->whereNull('payout_id')
+                ->lockForUpdate();
+
+            $amount = round((float) (clone $pending)->sum('amount'), 2);
+            $range = (clone $pending)
+                ->selectRaw('MIN(created_at) as a, MAX(created_at) as b')
+                ->first();
+
+            if ($amount <= 0) {
+                return;
+            }
+
+            $payoutId = \DB::table('creator_payouts')->insertGetId([
+                'creator_id' => $creatorId,
+                'amount' => $amount,
+                'status' => 'pending',
+                'method' => $data['method'] ?? null,
+                'reference' => $data['reference'] ?? null,
+                'notes' => $data['notes'] ?? null,
+                'period_start' => $range->a ?? null,
+                'period_end' => $range->b ?? null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            \DB::table('creator_earnings')
+                ->where('creator_id', $creatorId)
+                ->whereNull('payout_id')
+                ->update(['payout_id' => $payoutId]);
+        });
+
+        if (!$payoutId) {
+            return response()->json(
+                ['message' => 'This creator has no unpaid earnings.'],
+                422,
+            );
+        }
+
+        return ['status' => 'success', 'payout_id' => $payoutId, 'amount' => $amount];
+    }
+
+    public function apiUpdatePayout(Request $request, int $payoutId)
+    {
+        $this->apiAdminOrAbort();
+
+        $data = $request->validate([
+            'status' => 'required|in:pending,paid,failed,cancelled',
+            'method' => 'nullable|string|max:40',
+            'reference' => 'nullable|string|max:190',
+            'notes' => 'nullable|string|max:2000',
+        ]);
+
+        $payout = \DB::table('creator_payouts')->where('id', $payoutId)->first();
+        if (!$payout) {
+            return response()->json(['message' => 'Not found.'], 404);
+        }
+
+        $update = [
+            'status' => $data['status'],
+            'updated_at' => now(),
+        ];
+        foreach (['method', 'reference', 'notes'] as $f) {
+            if (array_key_exists($f, $data)) {
+                $update[$f] = $data[$f];
+            }
+        }
+        if ($data['status'] === 'paid' && !$payout->paid_at) {
+            $update['paid_at'] = now();
+        }
+
+        \DB::table('creator_payouts')->where('id', $payoutId)->update($update);
+
+        // Cancelling releases the earnings back into the unpaid pool so they
+        // can be rolled into a later payout rather than being stranded.
+        if (in_array($data['status'], ['failed', 'cancelled'], true)) {
+            \DB::table('creator_earnings')
+                ->where('payout_id', $payoutId)
+                ->update(['payout_id' => null]);
+        }
+
+        return ['status' => 'success'];
+    }
+
+    // -----------------------------------------------------------------
     // Editor's Picks — admin curates up to 10 titles pinned to the
     // homepage "Editor's Pick" row. Stored as an ordered list of title IDs
     // in the `homepage.editor_picks` setting.

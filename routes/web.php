@@ -84,6 +84,9 @@ Route::group(['prefix' => 'secure'], function () {
     Route::put('videos/{id}', 'VideosController@update');
     Route::delete('videos/{ids}', 'VideosController@destroy');
     Route::post('videos/{id}/rate', 'VideoRatingController@rate')->middleware('not.blocked');
+    // Watch-time heartbeat for the Creator Earnings Program. Separate from
+    // log-play because time_watched there is a resume pointer, not watch time.
+    Route::post('videos/{id}/watch-progress', [\App\Http\Controllers\CreatorEarningsController::class, 'watchProgress'])->where('id', '[0-9]+');
     Route::post('videos/{video}/approve', 'VideoApproveController@approve');
     Route::post('videos/{video}/disapprove', 'VideoApproveController@disapprove');
     Route::post('videos/{video}/report', 'VideoReportController@report');
@@ -203,6 +206,7 @@ Route::group(['prefix' => 'secure'], function () {
     Route::delete('creator/projects/{id}',[HvnController::class, 'apiDeleteProject'])->where('id', '[0-9]+');
     // Creator content uploads — same controller as the /api/v1 routes,
     // mounted under /secure so session-cookie auth (the SPA) reaches it.
+    Route::get('creator/earnings',         [\App\Http\Controllers\CreatorEarningsController::class, 'creatorSummary']);
     Route::get('creator/content',          [\App\Http\Controllers\CreatorContentController::class, 'index']);
     Route::post('creator/content/presign', [\App\Http\Controllers\CreatorContentController::class, 'presign']);
     Route::post('creator/content',         [\App\Http\Controllers\CreatorContentController::class, 'store']);
@@ -247,6 +251,15 @@ Route::group(['prefix' => 'secure/admin'], function () {
     // routes above act on the whole thing, these act on one episode's video.
     Route::post('moderation/episode/{videoId}/approve', [HvnAdminController::class, 'apiApproveEpisode'])->where('videoId', '[0-9]+');
     Route::post('moderation/episode/{videoId}/reject',  [HvnAdminController::class, 'apiRejectEpisode'])->where('videoId', '[0-9]+');
+
+    // Creator Earnings Program
+    Route::get('earnings',                 [HvnAdminController::class, 'apiEarningsOverview']);
+    Route::post('earnings/settings',       [HvnAdminController::class, 'apiSaveEarningsSettings']);
+    Route::get('earnings/creators',        [HvnAdminController::class, 'apiEarningsByCreator']);
+    Route::get('earnings/titles',          [HvnAdminController::class, 'apiEarningsByTitle']);
+    Route::get('earnings/payouts',         [HvnAdminController::class, 'apiListPayouts']);
+    Route::post('earnings/payouts',        [HvnAdminController::class, 'apiCreatePayout']);
+    Route::post('earnings/payouts/{id}',   [HvnAdminController::class, 'apiUpdatePayout'])->where('id', '[0-9]+');
     // People moderation (Phase 2)
     Route::get('people-moderation',               [HvnAdminController::class, 'apiPeopleModerationList']);
     Route::post('people-moderation/{id}/approve', [HvnAdminController::class, 'apiApprovePerson'])->where('id', '[0-9]+');

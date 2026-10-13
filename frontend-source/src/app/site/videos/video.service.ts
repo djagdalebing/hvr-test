@@ -38,6 +38,13 @@ export class VideoService {
         return this.http.post(`${VideoService.BASE_URI}/${id}/report`);
     }
 
+    public watchProgress(video: Video, seconds: number): BackendResponse<void> {
+        return this.http.post(
+            `${VideoService.BASE_URI}/${video.id}/watch-progress`,
+            {seconds},
+        );
+    }
+
     public logPlay(video: Video, params: object): BackendResponse<void> {
         return this.http.post(`${VideoService.BASE_URI}/${video.id}/log-play`, params);
     }
