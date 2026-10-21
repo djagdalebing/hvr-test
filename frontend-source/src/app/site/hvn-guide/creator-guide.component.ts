@@ -40,14 +40,22 @@ export class CreatorGuideComponent implements OnInit {
         return this.facts?.earnings || {};
     }
 
-    /** The rate needs more precision than currency formatting gives. */
+    /**
+     * The rate needs more precision than currency formatting gives, but
+     * trailing zeros make it look like a rounding artefact: $0.001, not
+     * $0.0010.
+     */
     public rateLabel(): string {
         const r = Number(this.earnings.rate || 0);
-        return '$' + r.toFixed(r < 0.01 ? 4 : 2);
+        if (r >= 0.01) return '$' + r.toFixed(2);
+        return '$' + r.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
     }
 
     public money(n: any): string {
-        return '$' + Number(n || 0).toFixed(2);
+        return '$' + Number(n || 0).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
     }
 
     /** Worked examples, so the rate means something concrete. */
@@ -55,7 +63,7 @@ export class CreatorGuideComponent implements OnInit {
         const rate = Number(this.earnings.rate || 0);
         return [1000, 10000, 50000, 100000, 1000000].map(v => ({
             views: v,
-            amount: '$' + (v * rate).toFixed(2),
+            amount: this.money(v * rate),
         }));
     }
 
