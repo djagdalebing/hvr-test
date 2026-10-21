@@ -25,6 +25,7 @@ import {DefaultPageWrapperComponent} from './shared/default-page-wrapper/default
 import {CreatorsPageComponent} from './hvn-creators/creators-page.component';
 import {CreatorProfilePageComponent} from './hvn-creators/creator-profile-page.component';
 import {CreatorDashboardPageComponent} from './hvn-creators/creator-dashboard-page.component';
+import {CreatorGuideComponent} from './hvn-guide/creator-guide.component';
 import {CommunityPageComponent} from './hvn-community/community-page.component';
 import {CommunityPostPageComponent} from './hvn-community/community-post-page.component';
 
@@ -222,6 +223,15 @@ const routes: Routes = [
                 component: UserListsComponent,
                 canActivate: [AuthGuard],
                 data: {name: 'Your Lists'},
+            },
+
+            // HVN: creator guide — how the platform works. Public on
+            // purpose: it is the page that persuades someone to sign up, so
+            // it cannot sit behind the thing it explains.
+            {
+                path: 'creator-guide',
+                component: CreatorGuideComponent,
+                data: {name: 'creator-guide', willSetSeo: true},
             },
 
             // HVN: creator dashboard (logged-in creator)

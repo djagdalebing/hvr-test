@@ -206,6 +206,7 @@ Route::group(['prefix' => 'secure'], function () {
     Route::delete('creator/projects/{id}',[HvnController::class, 'apiDeleteProject'])->where('id', '[0-9]+');
     // Creator content uploads — same controller as the /api/v1 routes,
     // mounted under /secure so session-cookie auth (the SPA) reaches it.
+    Route::get('creator-guide',            [\App\Http\Controllers\CreatorEarningsController::class, 'guideFacts']);
     Route::get('creator/earnings',         [\App\Http\Controllers\CreatorEarningsController::class, 'creatorSummary']);
     Route::get('creator/content',          [\App\Http\Controllers\CreatorContentController::class, 'index']);
     Route::post('creator/content/presign', [\App\Http\Controllers\CreatorContentController::class, 'presign']);

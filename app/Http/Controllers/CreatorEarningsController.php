@@ -83,6 +83,33 @@ class CreatorEarningsController extends BaseController
     }
 
     /**
+     * GET /secure/creator-guide
+     *
+     * The handful of live numbers the creator guide quotes. The page must
+     * never hard-code the rate or the thresholds: the moment an admin changes
+     * one, a static page starts telling creators something untrue about how
+     * they get paid.
+     *
+     * Open to signed-out visitors on purpose -- this is the page that
+     * persuades someone to become a creator in the first place.
+     */
+    public function guideFacts(): JsonResponse
+    {
+        $settings = app(\Common\Settings\Settings::class);
+
+        return response()->json([
+            'earnings' => [
+                'enabled' => (bool) $settings->get('earnings.enabled', false),
+                'rate' => (float) $settings->get('earnings.rate_per_view', 0.001),
+                'min_seconds' => (int) $settings->get('earnings.min_seconds', 30),
+                'min_payout' => (float) $settings->get('earnings.min_payout', 25),
+                'dedupe_hours' => (int) $settings->get('earnings.dedupe_hours', 24),
+            ],
+            'site_name' => $settings->get('branding.site_name', 'Her Vision Network'),
+        ]);
+    }
+
+    /**
      * GET /secure/creator/earnings
      *
      * The creator's own statement. Every figure here is derived from the

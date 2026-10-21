@@ -1,0 +1,179 @@
+<material-navbar menuPosition="primary"></material-navbar>
+
+<div class="guide">
+    <header class="guide-hero">
+        <h1>Creating on Her Vision Network</h1>
+        <p>
+            How to join, publish your work, reach an audience and earn from the people
+            who watch it. If something here isn't clear, use the feedback button on any
+            page and tell us — that's what it's for.
+        </p>
+        <div class="guide-hero-actions">
+            <a mat-flat-button color="accent" routerLink="/account/settings" fragment="public-profile"
+               *ngIf="currentUser.isLoggedIn()">Become a creator</a>
+            <a mat-flat-button color="accent" routerLink="/register" *ngIf="!currentUser.isLoggedIn()">Create an account</a>
+            <a mat-stroked-button routerLink="/creators">Browse creators</a>
+        </div>
+    </header>
+
+    <!-- 1. Becoming a creator -->
+    <section class="guide-section">
+        <h2><span class="guide-step">1</span> Becoming a creator</h2>
+        <p>
+            Anyone with an HVN account can become a creator — there's no application and
+            no waiting. Open <strong>Account Settings</strong> and choose
+            <strong>Become a Creator</strong>. That's the whole process.
+        </p>
+        <p>
+            You'll get a public creator profile and access to the Creator Dashboard.
+            Your profile is where viewers learn who you are: a display name, a bio,
+            links to your site and socials, and your previous work.
+        </p>
+    </section>
+
+    <!-- 2. Adding content -->
+    <section class="guide-section">
+        <h2><span class="guide-step">2</span> Adding your work</h2>
+        <p>
+            From the Creator Dashboard, choose <strong>Upload new title</strong>. You'll need:
+        </p>
+        <ul>
+            <li><strong>A title and cover image.</strong> The cover is what viewers see everywhere on the site — portrait artwork works best.</li>
+            <li><strong>The video itself</strong>, either as a file upload or a link to YouTube or Vimeo. Uploaded files go straight to our storage, so large files don't time out.</li>
+            <li><strong>A type</strong> — film, short, documentary, series, or proof of concept.</li>
+        </ul>
+        <p>
+            Everything else — synopsis, year, runtime, cast and crew, trailer — is optional,
+            but titles with a synopsis and cast get watched more. You can add them later.
+        </p>
+
+        <h3>Series and multi-episode work</h3>
+        <p>
+            Choose <strong>Series</strong> as the type, and the video you upload becomes
+            <strong>episode 1</strong>. After that, use <strong>Manage episodes</strong> on
+            the series in your dashboard to add the rest — one at a time, as you release them.
+            Pick an existing season or create a new one; episode numbers fill in automatically.
+        </p>
+        <p>
+            Episodes added to a series that's already live stay hidden until they're reviewed.
+            The rest of the series keeps playing in the meantime — publishing episode 6 never
+            takes episodes 1 to 5 offline.
+        </p>
+    </section>
+
+    <!-- 3. Review -->
+    <section class="guide-section">
+        <h2><span class="guide-step">3</span> Review</h2>
+        <p>
+            Every submission is reviewed by the HVN team before it goes live. You'll see the
+            status on each title in your dashboard:
+        </p>
+        <ul class="guide-statuses">
+            <li><span class="status-chip pending">Pending review</span> We've received it and haven't looked yet.</li>
+            <li><span class="status-chip approved">Approved</span> It's live and viewers can watch it.</li>
+            <li><span class="status-chip rejected">Rejected</span> We can't publish it as submitted. Hover the status to see why.</li>
+        </ul>
+        <p>
+            A rejection isn't permanent. Fix what was flagged, and we'll look again. If the
+            reason doesn't make sense to you, send us feedback and ask.
+        </p>
+    </section>
+
+    <!-- 4. The dashboard -->
+    <section class="guide-section">
+        <h2><span class="guide-step">4</span> Your dashboard</h2>
+        <p>The Creator Dashboard is where you manage everything:</p>
+        <ul>
+            <li><strong>Your titles</strong> — status of each, edit details, manage episodes, remove work.</li>
+            <li><strong>Previous work / projects</strong> — a portfolio section on your public profile for work that doesn't live on HVN.</li>
+            <li><strong>Earnings</strong> — views, eligible views and your current balance.</li>
+            <li><strong>Edit profile</strong> — your public bio, links and display name.</li>
+        </ul>
+        <p>
+            Keeping your profile filled in matters more than it sounds. Viewers who finish
+            something often go looking for who made it, and an empty profile is where that
+            trail ends.
+        </p>
+    </section>
+
+    <!-- 5. Earnings -->
+    <section class="guide-section guide-earnings" *ngIf="earnings.enabled">
+        <h2><span class="guide-step">5</span> Earning from your work</h2>
+        <p>
+            You earn <strong>{{ rateLabel() }}</strong> for every eligible view of your
+            full-length titles. We're honest that this is small today — HVN is new. The
+            point is that watching your work pays you something from the start, and the
+            rate rises as the platform grows.
+        </p>
+
+        <table class="guide-table">
+            <thead><tr><th>Eligible views</th><th>You earn</th></tr></thead>
+            <tbody>
+                <tr *ngFor="let e of examples()">
+                    <td>{{ e.views | number }}</td>
+                    <td>{{ e.amount }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>What counts as an eligible view</h3>
+        <p>Not every click. A view earns when:</p>
+        <ul>
+            <li>the viewer is <strong>signed in</strong>;</li>
+            <li>they watch at least <strong>{{ earnings.min_seconds }} seconds</strong> of actual
+                playback — skipping ahead doesn't count, because we measure time played, not
+                where the scrubber is;</li>
+            <li>it's the <strong>full title</strong>, not a trailer or clip;</li>
+            <li>the title is approved;</li>
+            <li>it's their <strong>first view of that title in {{ earnings.dedupe_hours }} hours</strong>;</li>
+            <li>the viewer isn't you, and isn't HVN staff.</li>
+        </ul>
+        <p class="guide-note">
+            Your dashboard shows <strong>total views</strong> and <strong>eligible views</strong>
+            side by side, so you can always see the difference rather than wondering about it.
+        </p>
+
+        <h3>Getting paid</h3>
+        <ul>
+            <li>Your balance builds as people watch.</li>
+            <li>Once it reaches <strong>{{ money(earnings.min_payout) }}</strong>, you're due a payout.</li>
+            <li>Payouts are issued manually by the HVN team, and your dashboard shows the status of each.</li>
+        </ul>
+        <p class="guide-note">
+            The rate is recorded at the moment of each view. If HVN raises it later, everything
+            you've already earned stays exactly as shown, and new views earn the new rate.
+            Your past statements never change underneath you.
+        </p>
+    </section>
+
+    <!-- FAQ -->
+    <section class="guide-section">
+        <h2>Common questions</h2>
+
+        <div class="faq" *ngFor="let q of [
+            {id:'q1', q:'Does it cost anything to publish on HVN?', a:'No. Creating an account, becoming a creator and uploading your work are all free.'},
+            {id:'q2', q:'Do I keep the rights to my work?', a:'Yes. You keep ownership of everything you upload. Publishing on HVN lets us stream it to viewers; it does not transfer your rights.'},
+            {id:'q3', q:'Can I remove something after publishing?', a:'Yes. Delete a title from your dashboard at any time and it comes off the site. Deleting also removes the video file from our storage, so keep your own copy.'},
+            {id:'q4', q:'How long does review take?', a:'It varies with how much is in the queue. HVN is small, so it is usually quick. If something has been pending unusually long, send us feedback and we will look.'},
+            {id:'q5', q:'Why is my view count higher than my eligible views?', a:'Total views counts every play, including people who watched a few seconds, rewatched something they had already seen that day, or were not signed in. Eligible views is the subset that met the earning rules.'},
+            {id:'q6', q:'Can I upload work that is also on YouTube or Vimeo?', a:'Yes. You can link a YouTube or Vimeo video instead of uploading a file, and publishing on HVN does not stop you publishing elsewhere.'},
+            {id:'q7', q:'What kind of work is HVN looking for?', a:'Independent film and series from creators who are often overlooked elsewhere — features, shorts, documentaries, series and proof-of-concept pitches.'}
+        ]">
+            <button type="button" class="faq-q" (click)="toggle(q.id)" [class.open]="isOpen(q.id)">
+                <span>{{ q.q }}</span>
+                <span class="faq-chev">{{ isOpen(q.id) ? '−' : '+' }}</span>
+            </button>
+            <div class="faq-a" *ngIf="isOpen(q.id)">{{ q.a }}</div>
+        </div>
+    </section>
+
+    <section class="guide-section guide-cta">
+        <h2>Ready to publish?</h2>
+        <p>Your first title can be live today.</p>
+        <a mat-flat-button color="accent" routerLink="/account/settings" fragment="public-profile"
+           *ngIf="currentUser.isLoggedIn()">Become a creator</a>
+        <a mat-flat-button color="accent" routerLink="/register" *ngIf="!currentUser.isLoggedIn()">Create an account</a>
+    </section>
+</div>
+
+<footer></footer>
