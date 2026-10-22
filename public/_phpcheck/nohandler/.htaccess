@@ -1,3 +1,0 @@
-# Strip the inherited cPanel AddHandler for this one directory only, to find
-# out whether it is what makes .php execute.
-RemoveHandler .php .php8 .phtml
