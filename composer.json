@@ -28,7 +28,6 @@
         "league/flysystem-rackspace": "^1.0",
         "league/omnipay": "^3.0",
         "maennchen/zipstream-php": "^2.1.0",
-        "matchish/laravel-scout-elasticsearch": "^4.0.7",
         "meilisearch/meilisearch-php": "^0.18.2",
         "mhetreramesh/flysystem-backblaze": "^1.6",
         "omnipay/paypal": "^3.0",
