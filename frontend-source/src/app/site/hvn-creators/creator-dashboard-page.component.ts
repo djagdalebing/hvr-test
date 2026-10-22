@@ -322,10 +322,15 @@ export class CreatorDashboardPageComponent implements OnInit {
         return '$' + n.toFixed(2);
     }
 
-    /** The per-view rate needs more precision than currency formatting gives. */
+    /**
+     * The per-view rate needs more precision than currency formatting gives,
+     * but trailing zeros make it look like a rounding artefact: $0.001, not
+     * $0.0010. Matches the creator guide, which quotes the same number.
+     */
     public rateLabel(): string {
         const r = Number(this.earnings?.rate || 0);
-        return '$' + r.toFixed(r < 0.01 ? 4 : 2);
+        if (r >= 0.01) return '$' + r.toFixed(2);
+        return '$' + r.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
     }
 
     /** Views still needed before the payout threshold is reachable. */
