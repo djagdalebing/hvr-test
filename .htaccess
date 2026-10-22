@@ -22,6 +22,14 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ /index.php?path=$1 [NC,L,QSA]
 
+# Do not advertise the exact PHP build in responses. With a mass-exploited
+# PHP RCE circulating, "x-powered-by: PHP/8.1.34" tells a scanner we are
+# running an unpatched end-of-life branch. expose_php itself is php.ini-only,
+# so strip the header at the web server instead.
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+</IfModule>
+
 # php -- BEGIN cPanel-generated handler, do not edit
 # Set the “ea-php83” package as the default “PHP” programming language.
 <IfModule mime_module>
