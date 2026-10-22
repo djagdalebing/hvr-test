@@ -6,7 +6,6 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'org\\bovigo\\vfs\\' => array($vendorDir . '/mikey179/vfsstream/src/main/php'),
     'Sentry\\Laravel\\' => array($vendorDir . '/sentry/sentry-laravel/src'),
     'OpenCloud' => array($vendorDir . '/rackspace/php-opencloud/lib'),
     'Guzzle\\Tests' => array($vendorDir . '/guzzle/guzzle/tests'),

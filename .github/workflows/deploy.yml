@@ -109,7 +109,10 @@ jobs:
       - name: Set up PHP 7.4
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '7.4'
+          # Build vendor on the version the site runs. It was 7.4 while the
+          # server ran 8.x, so composer resolved packages for an interpreter
+          # nothing used — the mismatch behind the Carbon 8.2 failure.
+          php-version: '8.3'
           tools: composer:v2
           extensions: mbstring, mysqli, pdo, pdo_mysql, gd, zip, bcmath, exif, fileinfo
 
